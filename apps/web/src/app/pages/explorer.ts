@@ -71,7 +71,16 @@ import { Api, TestCase, errorMessage } from '../core/api';
       </section>
       <section class="card">
         <h2>Configure execution</h2>
-        <p>{{ selected().length }} tests selected · API only</p>
+        <p>{{ selected().length }} tests selected</p>
+        @if (hasUi()) {
+          <label
+            >Browser<select [(ngModel)]="browser">
+              <option>chromium</option>
+              <option>firefox</option>
+              <option>webkit</option>
+            </select></label
+          >
+        }
         <label
           >Environment<select>
             <option>Local Lab sandbox</option>
@@ -105,6 +114,8 @@ export class Explorer {
   readonly error = signal('');
   workers = 1;
   retries = 0;
+  browser = 'chromium';
+  readonly hasUi = computed(() => this.selected().some((id) => id.startsWith('UI-')));
   private key = crypto.randomUUID();
   readonly filtered = computed(() =>
     this.tests().filter((test) =>
@@ -149,7 +160,13 @@ export class Explorer {
     this.starting.set(true);
     this.error.set('');
     try {
-      const run = await this.api.launch(this.selected(), this.key, this.workers, this.retries);
+      const run = await this.api.launch(
+        this.selected(),
+        this.key,
+        this.workers,
+        this.retries,
+        this.browser,
+      );
       await this.router.navigate(['/runs', run.id]);
     } catch (error) {
       this.error.set(errorMessage(error));

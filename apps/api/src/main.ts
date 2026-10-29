@@ -10,6 +10,9 @@ import { startLocalIdentity } from "./local-identity.ts";
 import { PlatformService, mountPlatform } from "./platform.ts";
 import { LocalRunner } from "./local-runner.ts";
 import { mountReportViewer } from "./report-viewer.ts";
+import { mountLiveEvents } from "./live.ts";
+import { mountAnalytics } from "./analytics.ts";
+import { startLocalSandbox } from "./local-sandbox.ts";
 
 @Module({})
 class AppModule {}
@@ -67,6 +70,8 @@ if (process.env["LOCAL_IDENTITY"] === "true") {
   );
 }
 mountPlatform(express, platform, identity);
+mountLiveEvents(express, identity, platform);
+mountAnalytics(express, identity, platform);
 const reportViewer =
   process.env["LOCAL_RUNNER"] === "true"
     ? await mountReportViewer(express, db, identity, platform)
@@ -89,9 +94,14 @@ await app.listen(Number(process.env["PORT"] ?? 4010), "127.0.0.1");
 const runner =
   process.env["LOCAL_RUNNER"] === "true" ? new LocalRunner(db) : undefined;
 await runner?.start();
+const sandbox =
+  process.env["LOCAL_SANDBOX"] === "true"
+    ? await startLocalSandbox()
+    : undefined;
 for (const signal of ["SIGINT", "SIGTERM"] as const)
   process.once(signal, () => {
     runner?.stop();
+    sandbox?.close();
     reportViewer?.close();
     localIdentity?.close();
     void app.close().then(() => db.close());

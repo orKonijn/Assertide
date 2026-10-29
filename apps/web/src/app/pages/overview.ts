@@ -1,8 +1,20 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Api, Run, errorMessage } from '../core/api';
+import { PercentPipe, DatePipe } from '@angular/common';
+interface Analytics {
+  executed: number;
+  excluded: number;
+  finalPassRate: number | null;
+  firstAttemptPassRate: number | null;
+  recoveredFlakyRate: number | null;
+  dataAsOf: string;
+  runCount: number;
+  failed: number;
+  broken: number;
+}
 @Component({
-  imports: [RouterLink],
+  imports: [RouterLink, PercentPipe, DatePipe],
   template: `
     <header class="page-header">
       <div>
@@ -35,6 +47,52 @@ import { Api, Run, errorMessage } from '../core/api';
           <p class="muted">Failed or broken test instances</p>
         </section>
       </div>
+      @if (analytics(); as metrics) {
+        <section class="card">
+          <h2>Last seven days</h2>
+          <p class="muted">
+            Data as of {{ metrics.dataAsOf | date: 'medium' }} · {{ metrics.executed }} executed
+            instances · {{ metrics.excluded }} excluded
+          </p>
+          <div class="grid">
+            <div>
+              <h3>Final pass rate</h3>
+              <p class="metric">
+                {{
+                  metrics.finalPassRate === null ? '—' : (metrics.finalPassRate | percent: '1.1-1')
+                }}
+              </p>
+              <p>Final passed / executed</p>
+            </div>
+            <div>
+              <h3>First-attempt pass rate</h3>
+              <p class="metric">
+                {{
+                  metrics.firstAttemptPassRate === null
+                    ? '—'
+                    : (metrics.firstAttemptPassRate | percent: '1.1-1')
+                }}
+              </p>
+              <p>First-attempt passed / executed</p>
+            </div>
+            <div>
+              <h3>Recovered after retry</h3>
+              <p class="metric">
+                {{
+                  metrics.recoveredFlakyRate === null
+                    ? '—'
+                    : (metrics.recoveredFlakyRate | percent: '1.1-1')
+                }}
+              </p>
+              <p>Passed after an earlier failure / executed</p>
+            </div>
+          </div>
+          <p class="muted">
+            Executed = passed + failed + broken. Skipped, canceled and incomplete results are
+            excluded. Live runs never enter these figures.
+          </p>
+        </section>
+      }
       <section class="card">
         <h2>Live activity</h2>
         @for (run of live(); track run.id) {
@@ -65,6 +123,7 @@ import { Api, Run, errorMessage } from '../core/api';
 export class Overview {
   private readonly api = inject(Api);
   readonly runs = signal<Run[]>([]);
+  readonly analytics = signal<Analytics | null>(null);
   readonly loading = signal(true);
   readonly error = signal('');
   readonly completed = computed(() => this.runs().filter((run) => run.phase === 'completed'));
@@ -88,6 +147,9 @@ export class Overview {
     try {
       this.runs.set(
         (await this.api.get<{ items: Run[] }>(`/runs?projectId=${this.api.projectId()}`)).items,
+      );
+      this.analytics.set(
+        await this.api.get<Analytics>(`/projects/${this.api.projectId()}/analytics`),
       );
     } catch (error) {
       this.error.set(errorMessage(error));

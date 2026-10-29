@@ -102,8 +102,12 @@ export async function mountReportViewer(
       .object({ projectIds: z.array(z.string()), organizationId: z.string() })
       .parse(row.body);
     const run = (
-      await db.query<{ project_id: string; organization_id: string }>(
-        "SELECT project_id,organization_id FROM platform_documents WHERE id=$1",
+      await db.query<{
+        project_id: string;
+        organization_id: string;
+        directory: string | null;
+      }>(
+        "SELECT project_id,organization_id,body->>'reportDirectory' AS directory FROM platform_documents WHERE id=$1",
         [id],
       )
     ).rows[0];
@@ -115,7 +119,16 @@ export async function mountReportViewer(
       res.status(403).end();
       return;
     }
-    express.static(path.join(runRoot, id, "report"), {
+    const directory = run.directory ?? "report";
+    if (!/^report(?:-[a-f0-9-]{36})?$/.test(directory)) {
+      res.status(404).end();
+      return;
+    }
+    res.set(
+      "Content-Security-Policy",
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+    );
+    express.static(path.join(runRoot, id, directory), {
       dotfiles: "deny",
       index: "index.html",
       fallthrough: false,

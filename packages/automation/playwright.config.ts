@@ -14,4 +14,18 @@ export default defineConfig({
     ["allure-playwright", { resultsDir: path.join(output, "allure-results") }],
   ],
   use: { baseURL: "http://127.0.0.1:4010/lab/v1/", trace: "off" },
+  projects: [
+    { name: "api", testMatch: "lab.spec.ts" },
+    ...(["chromium", "firefox", "webkit"] as const).map((browserName) => ({
+      name: browserName,
+      testMatch: "store.spec.ts",
+      use: {
+        browserName,
+        baseURL: "http://127.0.0.1:4013",
+        testIdAttribute: "data-test",
+        trace: "retain-on-failure" as const,
+        screenshot: "only-on-failure" as const,
+      },
+    })),
+  ],
 });

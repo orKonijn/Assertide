@@ -13,7 +13,8 @@ Use Node.js 24 and npm 11. In `apps/web`, run `npm ci`, then `npm start`. Run `n
 For the connected development application:
 
 1. Run `npm ci` in `apps/api`, `apps/web`, and `packages/automation`.
-2. From the repository root, run `node scripts/dev-api.mjs`. This generates ignored local credentials and starts the API, development OIDC provider, trusted local runner and report viewer.
+2. Run `node scripts/setup-sandbox.mjs` to build the pinned local Sauce Labs fixture with telemetry disabled. Its MIT license remains in the ignored checkout.
+3. From the repository root, run `node scripts/dev-api.mjs`. This generates ignored local credentials and starts the API, development OIDC provider, trusted local runner, browser sandbox and report viewer.
 3. In `apps/web`, run `npm start -- --host 127.0.0.1 --proxy-config proxy.conf.json`.
 4. Open `http://127.0.0.1:4200`, choose Continue with SSO, and sign in as `admin`, `operator` or `viewer` using the generated password in `.local/credentials.json`.
 5. In `packages/automation`, run `npx playwright test --config platform.config.ts` for the connected browser journey. The local services must be running.

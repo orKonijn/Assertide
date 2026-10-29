@@ -364,15 +364,12 @@ export function mountLab(app: Express, lab: LabService) {
   app.use(
     (error: unknown, _req: Request, res: Response, next: NextFunction) => {
       if (error instanceof SyntaxError) {
-        res
-          .status(400)
-          .type("application/problem+json")
-          .json({
-            type: "about:blank",
-            title: "Malformed JSON",
-            status: 400,
-            correlationId: randomUUID(),
-          });
+        res.status(400).type("application/problem+json").json({
+          type: "about:blank",
+          title: "Malformed JSON",
+          status: 400,
+          correlationId: randomUUID(),
+        });
         return;
       }
       next(error);

@@ -29,3 +29,15 @@ jobs:
         working-directory: apps/api
       - run: npm test
         working-directory: apps/api
+      - run: npm ci
+        working-directory: packages/automation
+      - run: npx playwright install --with-deps chromium
+        working-directory: packages/automation
+      - run: node scripts/setup-sandbox.mjs
+      - run: npx playwright test --config platform.config.ts
+        working-directory: packages/automation
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure-screenshots
+          path: packages/automation/test-results/**/*.png

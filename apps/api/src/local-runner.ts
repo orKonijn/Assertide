@@ -3,6 +3,7 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import type { SqlConnection } from "./database.ts";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
@@ -11,11 +12,14 @@ const automationRoot = path.join(root, "packages", "automation");
 const configuration = z.object({
   workers: z.number().int().min(1).max(4),
   retries: z.number().int().min(0).max(2),
+  browserProjects: z
+    .array(z.enum(["chromium", "firefox", "webkit"]))
+    .default([]),
 });
 const runSchema = z.object({
   id: z.uuid(),
   selection: z.object({
-    testIds: z.array(z.string().regex(/^LAB-\d{3}$/)).min(1),
+    testIds: z.array(z.string().regex(/^(LAB|UI)-\d{3}$/)).min(1),
   }),
   config: configuration,
 });
@@ -26,7 +30,13 @@ const attemptSchema = z.object({
 });
 const specSchema = z.object({
   title: z.string(),
-  tests: z.array(z.object({ results: z.array(attemptSchema) })),
+  tests: z.array(
+    z.object({
+      projectName: z.string().default("api"),
+      expectedStatus: z.string().default("passed"),
+      results: z.array(attemptSchema),
+    }),
+  ),
 });
 interface SuiteNode {
   specs: z.infer<typeof specSchema>[];
@@ -81,6 +91,15 @@ export class LocalRunner {
   }
   private async tick() {
     try {
+      const rebuild = (
+        await this.db.query<{ id: string }>(
+          `UPDATE platform_documents SET body=jsonb_set(body,'{reportPhase}','"generating"'),version=version+1 WHERE id=(SELECT id FROM platform_documents WHERE kind='run' AND body->>'reportPhase'='rebuild_requested' LIMIT 1) AND body->>'reportPhase'='rebuild_requested' RETURNING id`,
+        )
+      ).rows[0];
+      if (rebuild) {
+        await this.generateReport(rebuild.id);
+        return;
+      }
       const row = (
         await this.db.query<{
           body: unknown;
@@ -174,6 +193,12 @@ export class LocalRunner {
           String(run.config.workers),
           "--retries",
           String(run.config.retries),
+          ...[
+            ...(run.selection.testIds.some((id) => id.startsWith("LAB-"))
+              ? ["api"]
+              : []),
+            ...run.config.browserProjects,
+          ].flatMap((project) => ["--project", project]),
         ],
         output,
         run.id,
@@ -188,26 +213,40 @@ export class LocalRunner {
       const data = resultSchema.parse(
         JSON.parse(await readFile(path.join(output, "results.json"), "utf8")),
       );
-      const results = data.suites.flatMap(flatten).map((spec) => {
-        const attempts = spec.tests.flatMap((test) => test.results);
-        const last = attempts.at(-1);
-        return {
-          id: spec.title.split(" ")[0],
-          title: spec.title,
-          status: last?.status ?? "broken",
-          duration: attempts.reduce((sum, item) => sum + item.duration, 0),
-          error: redact(last?.error?.message ?? ""),
-          attempts: attempts.map((attempt) => ({
-            status: attempt.status,
-            duration: attempt.duration,
-            error: redact(attempt.error?.message ?? ""),
-          })),
-        };
-      });
+      const results = data.suites.flatMap(flatten).flatMap((spec) =>
+        spec.tests.map((test) => {
+          const attempts = test.results;
+          const last = attempts.at(-1);
+          const caseId = spec.title.split(" ")[0] ?? spec.title;
+          return {
+            id:
+              test.projectName === "api"
+                ? caseId
+                : `${caseId}:${test.projectName}`,
+            caseId,
+            browser: test.projectName === "api" ? null : test.projectName,
+            expectedStatus: test.expectedStatus,
+            expectedFailure: test.expectedStatus === "failed",
+            title: spec.title,
+            status: last?.status ?? "broken",
+            duration: attempts.reduce((sum, item) => sum + item.duration, 0),
+            error: redact(last?.error?.message ?? ""),
+            attempts: attempts.map((attempt) => ({
+              status: attempt.status,
+              duration: attempt.duration,
+              error: redact(attempt.error?.message ?? ""),
+            })),
+          };
+        }),
+      );
       for (const id of run.selection.testIds)
-        if (!results.some((result) => result.id === id))
+        if (!results.some((result) => result.caseId === id))
           results.push({
             id,
+            caseId: id,
+            browser: null,
+            expectedStatus: "passed",
+            expectedFailure: false,
             title: id,
             status: canceled ? "canceled" : "broken",
             duration: 0,
@@ -232,20 +271,7 @@ export class LocalRunner {
           const file = path.join(raw, entry);
           await writeFile(file, redact(await readFile(file, "utf8")));
         }
-      const reportCode = await this.command(
-        [
-          "node_modules/allure/cli.js",
-          "generate",
-          raw,
-          "--output",
-          path.join(output, "report"),
-        ],
-        output,
-        run.id,
-      );
-      await this.update(run.id, {
-        reportPhase: reportCode === 0 ? "ready" : "failed",
-      });
+      await this.generateReport(run.id);
     } catch (error) {
       const diagnostic = redact(
         error instanceof Error ? error.message : "Worker failed",
@@ -261,6 +287,36 @@ export class LocalRunner {
               endedAt: new Date().toISOString(),
             },
       );
+    }
+  }
+  private async generateReport(id: string) {
+    const output = path.join(runRoot, id);
+    const directory = `report-${randomUUID()}`;
+    try {
+      const code = await this.command(
+        [
+          "node_modules/allure/cli.js",
+          "generate",
+          path.join(output, "allure-results"),
+          "--output",
+          path.join(output, directory),
+        ],
+        output,
+        id,
+      );
+      await this.update(
+        id,
+        code === 0
+          ? { reportPhase: "ready", reportDirectory: directory }
+          : { reportPhase: "failed" },
+      );
+    } catch (error) {
+      await this.update(id, {
+        reportPhase: "failed",
+        reportDiagnostic: redact(
+          error instanceof Error ? error.message : "Report generation failed",
+        ),
+      });
     }
   }
 }

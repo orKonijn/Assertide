@@ -33,6 +33,7 @@ const child = spawn(process.execPath, ["--import", "tsx", "src/main.ts"], {
     NODE_ENV: "development",
     LOCAL_IDENTITY: "true",
     LOCAL_RUNNER: "true",
+    LOCAL_SANDBOX: "true",
     LOCAL_PASSWORD: credentials.password,
     OIDC_CLIENT_SECRET: credentials.clientSecret,
     ENABLE_LAB: "true",

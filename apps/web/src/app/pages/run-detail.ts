@@ -18,6 +18,11 @@ import { Api, Run, errorMessage } from '../core/api';
     @if (error()) {
       <p class="error" role="alert">{{ error() }}</p>
     }
+    @if (disconnected()) {
+      <p class="error" role="status">
+        Live connection interrupted. Reconnecting; displayed results may be stale.
+      </p>
+    }
     @if (run(); as current) {
       <div class="grid">
         <section class="card">
@@ -38,6 +43,9 @@ import { Api, Run, errorMessage } from '../core/api';
         <section class="card">
           <h2>Allure report</h2>
           <p>{{ current.reportPhase }}</p>
+          @if (current.phase === 'completed' && ['ready', 'failed'].includes(current.reportPhase)) {
+            <button [disabled]="busy()" (click)="rebuild()">Rebuild report</button>
+          }
           @if (current.reportPhase === 'ready') {
             <a [href]="'/v1/runs/' + id + '/report'" target="_blank" rel="noopener">Open report</a>
           }
@@ -49,6 +57,12 @@ import { Api, Run, errorMessage } from '../core/api';
           <details>
             <summary>{{ result.id }} · {{ result.status }} · {{ result.duration }}ms</summary>
             <p>{{ result.title }}</p>
+            @for (attempt of result.attempts ?? []; track $index) {
+              <p>Attempt {{ $index + 1 }} · {{ attempt.status }} · {{ attempt.duration }}ms</p>
+              @if (attempt.error) {
+                <pre>{{ attempt.error }}</pre>
+              }
+            }
             @if (result.error) {
               <pre>{{ result.error }}</pre>
             }
@@ -75,24 +89,31 @@ export class RunDetail {
   readonly run = signal<Run | null>(null);
   readonly error = signal('');
   readonly busy = signal(false);
-  private stopped = false;
-  private timer: ReturnType<typeof setTimeout> | undefined;
+  readonly disconnected = signal(false);
+  private readonly stream = new EventSource(`/v1/runs/${this.id}/events`);
+  private lastSequence = 0;
   constructor() {
     inject(DestroyRef).onDestroy(() => {
-      this.stopped = true;
-      clearTimeout(this.timer);
+      this.stream.close();
     });
-    void this.poll();
-  }
-  private async poll() {
-    await this.load();
-    if (
-      !this.stopped &&
-      (!this.run() ||
-        this.run()?.reportPhase === 'generating' ||
-        ['queued', 'running', 'provisioning', 'finalizing'].includes(this.run()?.phase ?? ''))
-    )
-      this.timer = setTimeout(() => void this.poll(), 2000);
+    this.stream.onopen = () => {
+      this.disconnected.set(false);
+      void this.load();
+    };
+    this.stream.onerror = () => this.disconnected.set(true);
+    this.stream.addEventListener('update', (event: MessageEvent<string>) => {
+      const sequence = Number(event.lastEventId);
+      if (Number.isSafeInteger(sequence) && sequence > this.lastSequence) {
+        this.lastSequence = sequence;
+        void this.load();
+      }
+    });
+    this.stream.addEventListener('access_revoked', () => {
+      this.stream.close();
+      this.run.set(null);
+      this.api.identity.set(null);
+    });
+    void this.load();
   }
   async load() {
     try {
@@ -124,6 +145,16 @@ export class RunDetail {
       const run = await this.api.post<Run>(`/runs/${this.id}/reruns`, {}, crypto.randomUUID());
       await this.router.navigateByUrl('/runs');
       await this.router.navigate(['/runs', run.id]);
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+  async rebuild() {
+    this.busy.set(true);
+    try {
+      this.run.set(await this.api.post<Run>(`/runs/${this.id}/report-rebuilds`, {}));
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

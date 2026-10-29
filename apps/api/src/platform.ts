@@ -13,12 +13,24 @@ export const localCatalog = [
   ["LAB-005", "Tenant separation", "Authorization"],
   ["LAB-008", "Optimistic concurrency", "Orders"],
   ["LAB-009", "Idempotency deduplication", "Orders"],
+  ["UI-001", "Valid login unlocks catalog", "Store authentication"],
+  ["UI-002", "Locked user cannot enter", "Store authentication"],
+  ["UI-003", "Invalid password is rejected", "Store authentication"],
+  ["UI-004", "Required login input", "Store authentication"],
+  ["UI-005", "Checkout completes", "Checkout"],
+  ["UI-006", "Cart removal preserves remaining items", "Cart"],
+  ["UI-007", "Price sort is numeric", "Catalog"],
+  ["UI-008", "Checkout rejects missing customer data", "Checkout"],
+  ["UI-009", "Logout clears session", "Store authentication"],
+  ["UI-010", "Cancel checkout preserves cart", "Checkout"],
+  ["UI-011", "Product detail matches catalog", "Catalog"],
+  ["UI-012", "Checkout total arithmetic", "Checkout"],
 ].map(([id, title, feature]) => ({
   id,
   title,
   feature,
-  kind: "api",
-  tags: ["smoke", "api"],
+  kind: id?.startsWith("UI-") ? "ui" : "api",
+  tags: ["smoke", id?.startsWith("UI-") ? "ui" : "api"],
   priority: "P0",
   enabled: true,
 }));
@@ -43,7 +55,7 @@ const runInput = z
     catalogRevision: z.literal("local-lab-v1"),
     selection: selectionInput,
     environmentId: z.literal("local-lab"),
-    browserProjects: z.array(z.enum(["chromium", "firefox", "webkit"])).max(0),
+    browserProjects: z.array(z.enum(["chromium", "firefox", "webkit"])).max(3),
     workers: z.number().int().min(1).max(4),
     retries: z.number().int().min(0).max(2),
     headed: z.literal(false),
@@ -241,6 +253,12 @@ export class PlatformService {
         testIds: [...new Set(parsed.data.selection.testIds)].sort(),
       },
     };
+    const hasUi = config.selection.testIds.some((id) => id.startsWith("UI-"));
+    if (hasUi !== Boolean(config.browserProjects.length))
+      throw new ApiError(
+        422,
+        "UI selections require a browser; API-only selections must not select browsers",
+      );
     const payload = JSON.stringify({
       config,
       parentRunId: parentRunId ?? null,
@@ -483,6 +501,27 @@ export function mountPlatform(
       res
         .status(202)
         .json(await service.cancel(principal, String(req.params["id"])));
+    }),
+  );
+  app.post(
+    "/v1/runs/:id/report-rebuilds",
+    handler(async (req, res, principal) => {
+      const id = String(req.params["id"]);
+      const run = await service.get(principal, id, "run");
+      service.authorize(principal, String(run["projectId"]), "maintainer");
+      if (run["phase"] !== "completed")
+        throw new ApiError(409, "Only completed runs have rebuildable reports");
+      await service.db.query(
+        `UPDATE platform_documents SET body=jsonb_set(body,'{reportPhase}','"rebuild_requested"'),version=version+1 WHERE id=$1 AND body->>'reportPhase' IN ('ready','failed')`,
+        [id],
+      );
+      await service.audit(
+        principal,
+        String(run["projectId"]),
+        "report.rebuild_requested",
+        id,
+      );
+      res.status(202).json(await service.get(principal, id, "run"));
     }),
   );
   app.post(

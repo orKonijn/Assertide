@@ -18,7 +18,7 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
   await expect(
     page.getByRole("checkbox", { name: "Select LAB-001", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("checkbox")).toHaveCount(6);
+  await expect(page.getByRole("checkbox")).toHaveCount(18);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.screenshot({
     path: "../../docs/changelog/assets/unreleased/catalog-desktop.png",
@@ -44,6 +44,12 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
   });
   await page
     .getByRole("checkbox", { name: "Select LAB-001", exact: true })
+    .check();
+  await page
+    .getByRole("checkbox", { name: "Select UI-001", exact: true })
+    .check();
+  await page
+    .getByRole("checkbox", { name: "Select UI-005", exact: true })
     .check();
   await page
     .getByRole("button", { name: "Start execution", exact: true })
@@ -77,5 +83,24 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
     path: "../../docs/changelog/assets/unreleased/execution-result.png",
     fullPage: true,
   });
+  const runUrl = page.url();
+  const endpoint = new URL(runUrl).pathname.replace("/runs/", "/v1/runs/");
+  const before = await (await page.request.get(endpoint)).json();
+  await page
+    .getByRole("button", { name: "Rebuild report", exact: true })
+    .click();
+  await expect
+    .poll(
+      async () =>
+        (await (await page.request.get(endpoint)).json()).reportDirectory,
+      { timeout: 20_000 },
+    )
+    .not.toBe(before.reportDirectory);
+  await expect(
+    page.getByRole("link", { name: "Open report", exact: true }),
+  ).toBeVisible({ timeout: 20_000 });
+  const after = await (await page.request.get(endpoint)).json();
+  expect(after.results).toEqual(before.results);
+  expect(after.reportDirectory).not.toBe(before.reportDirectory);
   expect(errors).toEqual([]);
 });

@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, catchError, throwError } from 'rxjs';
 
 export interface Identity {
   subject: string;
@@ -45,6 +45,7 @@ export interface CaseResult {
   status: string;
   duration: number;
   error?: string;
+  attempts?: { status: string; duration: number; error: string }[];
 }
 export function errorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
@@ -68,7 +69,14 @@ export class Api {
     if (identity.projectIds[0]) this.projectId.set(identity.projectIds[0]);
   }
   get<T>(path: string) {
-    return firstValueFrom(this.http.get<T>(`/v1${path}`));
+    return firstValueFrom(
+      this.http.get<T>(`/v1${path}`).pipe(
+        catchError((error: unknown) => {
+          if (error instanceof HttpErrorResponse && error.status === 401) this.identity.set(null);
+          return throwError(() => error);
+        }),
+      ),
+    );
   }
   post<T>(path: string, body: unknown, key?: string) {
     return firstValueFrom(
@@ -80,14 +88,14 @@ export class Api {
     this.identity.set(null);
     location.assign('/');
   }
-  launch(testIds: string[], key: string, workers: number, retries: number) {
+  launch(testIds: string[], key: string, workers: number, retries: number, browser = 'chromium') {
     return this.post<Run>(
       `/projects/${this.projectId()}/runs`,
       {
         catalogRevision: 'local-lab-v1',
         selection: { testIds },
         environmentId: 'local-lab',
-        browserProjects: [],
+        browserProjects: testIds.some((id) => id.startsWith('UI-')) ? [browser] : [],
         workers,
         retries,
         headed: false,
