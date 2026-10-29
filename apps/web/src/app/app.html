@@ -1,10 +1,44 @@
-<main>
-  <h1>Assertide</h1>
-  <p>QA automation control plane</p>
-  <section aria-labelledby="setup-title">
-    <h2 id="setup-title">Platform setup in progress</h2>
-    <p>The control API and execution infrastructure are not connected yet.</p>
-    <p>Test discovery, execution and reports will become available after backend setup.</p>
-  </section>
-</main>
-<router-outlet />
+@if (loading()) {
+  <main class="login">
+    <h1>Assertide</h1>
+    <p role="status">Connecting to your workspace…</p>
+  </main>
+} @else if (!api.identity()) {
+  <main class="login">
+    <img src="/brand/logo-mark.svg" width="72" height="72" alt="" />
+    <p class="eyebrow">CONFIDENCE, ONE RUN AT A TIME</p>
+    <h1>Your quality workspace.</h1>
+    <p>Discover tests, follow executions, and investigate the evidence in one place.</p>
+    <a class="button" href="/auth/login">Continue with SSO</a>
+    <p class="muted">Sign in with your organization account.</p>
+  </main>
+} @else {
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="mobile-header">
+    <strong>Assertide</strong
+    ><button (click)="toggleMenu()" [attr.aria-expanded]="menu()">Menu</button>
+  </header>
+  <aside [class.open]="menu()">
+    <a class="brand" routerLink="/"
+      ><img src="/brand/logo-mark.svg" width="36" height="36" alt="" />Assertide</a
+    >
+    <p class="workspace">QUALITY WORKSPACE</p>
+    <nav aria-label="Main navigation">
+      @for (link of links; track link[0]) {
+        <a
+          [routerLink]="link[0]"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="menu.set(false)"
+          >{{ link[1] }}</a
+        >
+      }
+    </nav>
+    <div class="account">
+      <span>{{ api.identity()?.name }} · {{ api.identity()?.role }}</span
+      ><button (click)="toggleTheme()">{{ dark() ? 'Light theme' : 'Dark theme' }}</button
+      ><button (click)="api.logout()">Sign out</button>
+    </div>
+  </aside>
+  <main id="content" class="content"><router-outlet /></main>
+}
