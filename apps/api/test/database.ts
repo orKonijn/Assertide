@@ -14,6 +14,7 @@ export async function testDatabase(): Promise<SqlConnection> {
   const database = await connectDatabase(scoped.href);
   return {
     query: (sql, values) => database.query(sql, values),
+    transaction: (handler) => database.transaction(handler),
     close: async () => {
       await database.close();
       try {

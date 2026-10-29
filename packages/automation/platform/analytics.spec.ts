@@ -53,4 +53,19 @@ test("analytics filters persist in the URL and charts provide table alternatives
   await expect(
     page.getByLabel("Execution project", { exact: true }),
   ).toHaveValue("api");
+  await page.goto("/runs");
+  await page.getByLabel("Phase", { exact: true }).selectOption("completed");
+  await page.getByLabel("Browser or API", { exact: true }).selectOption("api");
+  await page
+    .getByRole("button", { name: "Apply filters", exact: true })
+    .click();
+  await expect(page).toHaveURL(/phase=completed&browser=api/);
+  await expect(
+    page.getByRole("columnheader", { name: "Created", exact: true }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({
+    path: "../../docs/changelog/assets/unreleased/history-filters.png",
+    fullPage: true,
+  });
 });

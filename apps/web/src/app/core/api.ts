@@ -45,6 +45,7 @@ export interface Run {
   cancelRequested?: boolean;
   source?: { revision: string };
   logTail?: string;
+  queueReason?: string;
   artifacts?: {
     id: string;
     resultId: string;

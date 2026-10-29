@@ -1,8 +1,14 @@
-import { Queue, Worker } from "bullmq";
+import { Queue, Worker, DelayedError } from "bullmq";
 import { z } from "zod";
 import type { SqlConnection } from "./database.ts";
 
 export async function initializeScheduler(db: SqlConnection) {
+  await db.query(
+    "CREATE TABLE IF NOT EXISTS scheduler_mutex (id integer PRIMARY KEY)",
+  );
+  await db.query(
+    "INSERT INTO scheduler_mutex(id) VALUES(1) ON CONFLICT DO NOTHING",
+  );
   await db.query(
     "CREATE TABLE IF NOT EXISTS run_outbox (run_id text PRIMARY KEY REFERENCES platform_documents(id), created_at timestamptz NOT NULL DEFAULT now(), published_at timestamptz)",
   );
@@ -15,14 +21,46 @@ export async function claimExecution(
   owner: string,
   id?: string,
 ) {
-  const row = (
-    await db.query<{ body: Record<string, unknown> }>(
-      `UPDATE platform_documents SET body=body || jsonb_build_object('phase','running','leaseOwner',$1::text,'leaseEpoch',COALESCE((body->>'leaseEpoch')::int,0)+1,'leaseExpires',now()+interval '30 seconds'),version=version+1 WHERE id=COALESCE($2::text,(SELECT id FROM platform_documents WHERE kind='run' AND body->>'phase'='queued' ORDER BY body->>'createdAt' LIMIT 1)) AND body->>'phase'='queued' RETURNING body`,
-      [owner, id ?? null],
-    )
-  ).rows[0];
-  return row?.body;
+  return db.transaction(async (tx) => {
+    await tx.query("SELECT id FROM scheduler_mutex WHERE id=1 FOR UPDATE");
+    const target = (
+      await tx.query<{
+        id: string;
+        organization_id: string;
+        project_id: string;
+        workers: number;
+      }>(
+        "SELECT id,organization_id,project_id,(body->'config'->>'workers')::int AS workers FROM platform_documents WHERE kind='run' AND body->>'phase'='queued' AND ($1::text IS NULL OR id=$1) ORDER BY body->>'createdAt' LIMIT 1",
+        [id ?? null],
+      )
+    ).rows[0];
+    if (!target) return undefined;
+    const active = (
+      await tx.query<{ runs: string; workers: string; project_runs: string }>(
+        "SELECT count(*) AS runs,COALESCE(sum((body->'config'->>'workers')::int),0) AS workers,count(*) FILTER(WHERE project_id=$2) AS project_runs FROM platform_documents WHERE organization_id=$1 AND kind='run' AND body->>'phase' IN ('running','provisioning','finalizing')",
+        [target.organization_id, target.project_id],
+      )
+    ).rows[0];
+    if (
+      Number(active?.runs) >= 4 ||
+      Number(active?.project_runs) >= 2 ||
+      Number(active?.workers) + target.workers > 8
+    ) {
+      await tx.query(
+        "UPDATE platform_documents SET body=jsonb_set(body,'{queueReason}','\"Waiting for project or organization worker capacity\"') WHERE id=$1",
+        [target.id],
+      );
+      return undefined;
+    }
+    return (
+      await tx.query<{ body: Record<string, unknown> }>(
+        `UPDATE platform_documents SET body=(body-'queueReason') || jsonb_build_object('phase','running','leaseOwner',$1::text,'leaseEpoch',COALESCE((body->>'leaseEpoch')::int,0)+1,'leaseExpires',now()+interval '30 seconds'),version=version+1 WHERE id=$2 AND body->>'phase'='queued' RETURNING body`,
+        [owner, target.id],
+      )
+    ).rows[0]?.body;
+  });
 }
+export class CapacityUnavailable extends Error {}
 export async function renewLease(
   db: SqlConnection,
   id: string,
@@ -92,8 +130,14 @@ export class RedisTransport {
     });
     this.worker = new Worker(
       name,
-      async (job) => {
-        await processRun(z.object({ runId: z.uuid() }).parse(job.data).runId);
+      async (job, token) => {
+        try {
+          await processRun(z.object({ runId: z.uuid() }).parse(job.data).runId);
+        } catch (error) {
+          if (!(error instanceof CapacityUnavailable)) throw error;
+          await job.moveToDelayed(Date.now() + 1000, token);
+          throw new DelayedError();
+        }
       },
       {
         connection: { ...connection, maxRetriesPerRequest: null },

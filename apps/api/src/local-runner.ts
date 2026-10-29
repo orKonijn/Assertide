@@ -13,6 +13,7 @@ import {
   updateOwnedRun,
   recoverExpiredLeases,
   RedisTransport,
+  CapacityUnavailable,
 } from "./scheduler.ts";
 import {
   attachmentSchema,
@@ -143,6 +144,16 @@ export class LocalRunner {
         this.active = true;
         try {
           const body = await claimExecution(this.db, this.owner, id);
+          if (!body) {
+            const phase = (
+              await this.db.query<{ phase: string }>(
+                "SELECT body->>'phase' AS phase FROM platform_documents WHERE id=$1",
+                [id],
+              )
+            ).rows[0]?.phase;
+            if (phase === "queued")
+              throw new CapacityUnavailable("Capacity unavailable");
+          }
           if (body)
             await this.withLease(body, () =>
               this.execute(runSchema.parse(body)),

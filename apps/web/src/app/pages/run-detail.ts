@@ -32,6 +32,9 @@ import { Api, Run, errorMessage } from '../core/api';
         <section class="card">
           <h2>Execution phase</h2>
           <p class="metric" role="status">{{ current.phase }}</p>
+          @if (current.queueReason) {
+            <p>{{ current.queueReason }}. The run will start when capacity becomes available.</p>
+          }
           @if (current.cancelRequested && current.phase !== 'canceled') {
             <p>Stopping workers…</p>
           }

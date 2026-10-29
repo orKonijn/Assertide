@@ -116,6 +116,29 @@ test("platform authorization, suite concurrency, launch deduplication and cancel
     assert.equal(retry["parentRunId"], id);
     assert.deepEqual(retry["selection"], { testIds: ["LAB-001"] });
     assert.equal((await service.get(admin, id, "run"))["phase"], "completed");
+    const firstPage = await service.history(admin, localProjectId, {
+      limit: 1,
+      browser: "api",
+    });
+    assert.equal(firstPage.items.length, 1);
+    assert.ok(firstPage.nextCursor);
+    const secondPage = await service.history(admin, localProjectId, {
+      limit: 1,
+      browser: "api",
+      cursor: firstPage.nextCursor,
+    });
+    assert.equal(secondPage.items.length, 1);
+    assert.notDeepEqual(firstPage.items, secondPage.items);
+    assert.equal(secondPage.nextCursor, null);
+    assert.equal(
+      (await service.history(admin, localProjectId, { browser: "chromium" }))
+        .items.length,
+      0,
+    );
+    await assert.rejects(
+      service.history(admin, localProjectId, { cursor: "forged" }),
+      { status: 422 },
+    );
     const suite = await service.saveSuite(admin, localProjectId, {
       name: "Smoke",
       testIds: ["LAB-001"],

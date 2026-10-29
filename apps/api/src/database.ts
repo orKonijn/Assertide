@@ -1,11 +1,14 @@
 import { PGlite } from "@electric-sql/pglite";
 import pg from "pg";
 
-export interface SqlConnection {
+export interface SqlExecutor {
   query<T extends Record<string, unknown>>(
     sql: string,
     values?: unknown[],
   ): Promise<{ rows: T[] }>;
+}
+export interface SqlConnection extends SqlExecutor {
+  transaction<T>(handler: (connection: SqlExecutor) => Promise<T>): Promise<T>;
   close(): Promise<void>;
 }
 
@@ -14,6 +17,22 @@ export async function connectDatabase(url?: string): Promise<SqlConnection> {
     const pool = new pg.Pool({ connectionString: url });
     return {
       query: (sql, values) => pool.query(sql, values),
+      transaction: async (handler) => {
+        const client = await pool.connect();
+        try {
+          await client.query("BEGIN");
+          const value = await handler({
+            query: (sql, values) => client.query(sql, values),
+          });
+          await client.query("COMMIT");
+          return value;
+        } catch (error) {
+          await client.query("ROLLBACK");
+          throw error;
+        } finally {
+          client.release();
+        }
+      },
       close: () => pool.end(),
     };
   }
@@ -23,6 +42,10 @@ export async function connectDatabase(url?: string): Promise<SqlConnection> {
   await db.waitReady;
   return {
     query: (sql, values) => db.query(sql, values),
+    transaction: (handler) =>
+      db.transaction((tx) =>
+        handler({ query: (sql, values) => tx.query(sql, values) }),
+      ),
     close: () => db.close(),
   };
 }

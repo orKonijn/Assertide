@@ -6,6 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added serialized project/organization capacity checks (two active runs per project, four per organization and eight aggregate workers) and queued-run explanations. Concurrent-claim tests pass. History now has stable cursor pagination and URL-persisted phase, browser and UTC date filters, verified by database and browser checks.
 - Catalog discovery now reads Playwright's actual test list from the saved source snapshot, including file locations and browser projects. Failed discovery preserves the previous catalog; duplicate stable IDs are rejected. Explorer search includes tags and URL-persisted kind/priority filters.
 - Added an atomic SQL run outbox, renewable worker leases, stale-worker write rejection and optional Redis/BullMQ delivery. Local database and browser workflows pass; Redis delivery is exercised separately by CI.
 - Added URL-persisted analytics filters, daily reliability charts with table alternatives, browser/API breakdowns, failure rankings, average run duration and recorded API request p95. Calculation tests and desktop/mobile browser checks pass; empty and small samples are labeled explicitly.

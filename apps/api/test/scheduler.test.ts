@@ -101,6 +101,54 @@ test("transactional outbox and leases reject duplicate owners, stale writes and 
   }
 });
 
+test("concurrent claims enforce project and organization worker capacity", async () => {
+  const db = await testDatabase();
+  const service = new PlatformService(db);
+  try {
+    await service.initialize();
+    const runs = await Promise.all(
+      Array.from({ length: 3 }, () =>
+        service.launch(
+          principal,
+          localProjectId,
+          { ...config(service), workers: 4 },
+          randomUUID(),
+        ),
+      ),
+    );
+    const claims = await Promise.all(
+      runs.map((run, index) =>
+        claimExecution(db, `quota-${index}`, String(run["id"])),
+      ),
+    );
+    assert.equal(claims.filter(Boolean).length, 2);
+    const blocked = runs.find((_, index) => !claims[index])!;
+    assert.equal(
+      (await service.get(principal, String(blocked["id"]), "run"))["phase"],
+      "queued",
+    );
+    assert.match(
+      String(
+        (await service.get(principal, String(blocked["id"]), "run"))[
+          "queueReason"
+        ],
+      ),
+      /capacity/,
+    );
+    const active = claims.find(Boolean)!;
+    await updateOwnedRun(
+      db,
+      String(active["id"]),
+      String(active["leaseOwner"]),
+      Number(active["leaseEpoch"]),
+      { phase: "completed" },
+    );
+    assert.ok(await claimExecution(db, "quota-next", String(blocked["id"])));
+  } finally {
+    await db.close();
+  }
+});
+
 test(
   "Redis outbox delivery remains idempotent across duplicate publication",
   { skip: !process.env["TEST_REDIS_URL"], timeout: 20000 },

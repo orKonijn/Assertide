@@ -217,7 +217,7 @@ export class PlatformService {
     this.authorize(principal, projectId);
     return (
       await this.db.query<Row>(
-        "SELECT body,version FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind=$3 ORDER BY id LIMIT 200",
+        "SELECT body,version FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind=$3 ORDER BY COALESCE(body->>'createdAt',body->>'occurredAt','') DESC,id DESC LIMIT 200",
         [principal.organizationId, projectId, kind],
       )
     ).rows.map((row) => ({ ...row.body, version: row.version }));
@@ -237,6 +237,83 @@ export class PlatformService {
     const projectId = kind === "project" ? id : String(row.body["projectId"]);
     this.authorize(principal, projectId);
     return { ...row.body, version: row.version };
+  }
+  async history(principal: Principal, projectId: string, input: unknown) {
+    this.authorize(principal, projectId);
+    const parsed = z
+      .object({
+        phase: z
+          .enum([
+            "all",
+            "queued",
+            "running",
+            "provisioning",
+            "finalizing",
+            "completed",
+            "canceled",
+            "infrastructure_error",
+            "timed_out",
+          ])
+          .default("all"),
+        browser: z
+          .enum(["all", "api", "chromium", "firefox", "webkit"])
+          .default("all"),
+        from: z.iso.date().optional(),
+        to: z.iso.date().optional(),
+        cursor: z.string().max(500).optional(),
+        limit: z.coerce.number().int().min(1).max(200).default(50),
+      })
+      .safeParse(input);
+    if (!parsed.success) throw new ApiError(422, "Invalid history filters");
+    const filters = parsed.data;
+    let cursor: { at: string; id: string } | undefined;
+    try {
+      if (filters.cursor)
+        cursor = z
+          .object({ at: z.iso.datetime(), id: z.uuid() })
+          .parse(
+            JSON.parse(
+              Buffer.from(filters.cursor, "base64url").toString("utf8"),
+            ),
+          );
+    } catch {
+      throw new ApiError(422, "Invalid history cursor");
+    }
+    if (filters.from && filters.to && filters.from > filters.to)
+      throw new ApiError(422, "Start date must precede end date");
+    const rows = (
+      await this.db.query<Row>(
+        `SELECT body,version FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind='run' AND ($3='all' OR body->>'phase'=$3) AND ($4='all' OR body->'config'->'browserProjects' ? $4 OR ($4='api' AND EXISTS(SELECT 1 FROM jsonb_array_elements_text(body->'selection'->'testIds') t WHERE t LIKE 'LAB-%'))) AND ($5::text IS NULL OR (body->>'createdAt',id)<($5,$6)) AND ($7::timestamptz IS NULL OR (body->>'createdAt')::timestamptz >= $7) AND ($8::timestamptz IS NULL OR (body->>'createdAt')::timestamptz < $8) ORDER BY body->>'createdAt' DESC,id DESC LIMIT $9`,
+        [
+          principal.organizationId,
+          projectId,
+          filters.phase,
+          filters.browser,
+          cursor?.at ?? null,
+          cursor?.id ?? null,
+          filters.from ? `${filters.from}T00:00:00Z` : null,
+          filters.to
+            ? new Date(
+                Date.parse(`${filters.to}T00:00:00Z`) + 86400000,
+              ).toISOString()
+            : null,
+          filters.limit + 1,
+        ],
+      )
+    ).rows;
+    const items = rows
+      .slice(0, filters.limit)
+      .map((row) => ({ ...row.body, version: row.version }));
+    const last = rows.slice(0, filters.limit).at(-1)?.body;
+    return {
+      items,
+      nextCursor:
+        rows.length > filters.limit && last
+          ? Buffer.from(
+              JSON.stringify({ at: last["createdAt"], id: last["id"] }),
+            ).toString("base64url")
+          : null,
+    };
   }
   async audit(
     principal: Principal,
@@ -679,13 +756,13 @@ export function mountPlatform(
   app.get(
     "/v1/runs",
     handler(async (req, res, principal) => {
-      res.json({
-        items: await service.list(
+      res.json(
+        await service.history(
           principal,
           String(req.query["projectId"]),
-          "run",
+          req.query,
         ),
-      });
+      );
     }),
   );
   app.get(
