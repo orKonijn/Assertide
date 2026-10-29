@@ -44,6 +44,10 @@ export class LabError extends Error {
 export class LabService {
   private readonly key: Uint8Array;
   private readonly pending = new Map<string, Promise<unknown>>();
+  private readonly rateWindows = new Map<
+    string,
+    { minute: number; count: number; touched: number }
+  >();
   constructor(
     private readonly db: SqlConnection,
     private readonly password: string,
@@ -108,6 +112,61 @@ export class LabService {
     if (identity.role !== "operator")
       throw new LabError(403, "Operator role required");
   }
+  async guard(req: Request, res: Response): Promise<void> {
+    const identity = await this.authenticate(req.get("Authorization"));
+    const fault = req.get("X-Lab-Fault");
+    const fixture = req.get("X-Lab-Fixture");
+    let clock = Date.now();
+    let scope = identity.subject;
+    if (fixture) {
+      try {
+        const { payload } = await jwtVerify(fixture, this.key, {
+          issuer: "assertide-lab",
+          audience: "assertide-lab-fixture",
+          algorithms: ["HS256"],
+        });
+        const control = z
+          .object({
+            sub: z.literal(identity.subject),
+            scope: z.uuid(),
+            clock: z.number().int().nonnegative(),
+            fault: z.enum(["timeout", "503", "rate-limit"]).optional(),
+          })
+          .parse(payload);
+        if (control.fault !== fault) throw new Error("Fault mismatch");
+        clock = control.clock;
+        scope += `:${control.scope}`;
+      } catch {
+        throw new LabError(403, "Invalid fixture control");
+      }
+    } else if (fault)
+      throw new LabError(403, "Signed fixture control required");
+    const minute = Math.floor(clock / 60_000);
+    const window = this.rateWindows.get(scope);
+    const count = window?.minute === minute ? window.count + 1 : 1;
+    // Bound development fixture state without weakening a live user's rate window.
+    if (this.rateWindows.size > 1000)
+      for (const [key, value] of this.rateWindows) {
+        if (Date.now() - value.touched > 300_000) this.rateWindows.delete(key);
+      }
+    if (this.rateWindows.size > 10000)
+      throw new LabError(503, "Fixture capacity reached");
+    this.rateWindows.set(scope, { minute, count, touched: Date.now() });
+    if (fault === "rate-limit" || count > 20) {
+      res.set("Retry-After", "2");
+      throw new LabError(429, "Fixture rate limit exceeded");
+    }
+    if (fault === "503")
+      throw new LabError(503, "Injected service unavailability");
+    if (fault === "timeout")
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, 2000);
+        res.once("close", () => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
+  }
   private parse(input: unknown, partial = false) {
     const result = (partial ? writable.partial() : writable).safeParse(input);
     if (!result.success)
@@ -135,13 +194,14 @@ export class LabService {
         limit: z.coerce.number().int().min(1).max(200).default(20),
         cursor: z.uuid().optional(),
         status: z.enum(["draft", "confirmed"]).optional(),
+        sku: z.string().max(100).optional(),
       })
       .safeParse(input);
     if (!parsed.success) throw new LabError(422, "Invalid list filters");
-    const { limit, cursor, status } = parsed.data;
+    const { limit, cursor, status, sku } = parsed.data;
     const result = await this.db.query<StoredOrder>(
-      "SELECT body FROM lab_orders WHERE tenant=$1 AND ($2::uuid IS NULL OR id>$2) AND ($3::text IS NULL OR body->>'status'=$3) ORDER BY id LIMIT $4",
-      [identity.tenant, cursor ?? null, status ?? null, limit + 1],
+      "SELECT body FROM lab_orders WHERE tenant=$1 AND ($2::uuid IS NULL OR id>$2) AND ($3::text IS NULL OR body->>'status'=$3) AND ($5::text IS NULL OR body->>'sku'=$5) ORDER BY id LIMIT $4",
+      [identity.tenant, cursor ?? null, status ?? null, limit + 1, sku ?? null],
     );
     const items = result.rows
       .slice(0, limit)
@@ -254,6 +314,8 @@ export function mountLab(app: Express, lab: LabService) {
     (handler: (req: Request, res: Response) => Promise<void>) =>
     async (req: Request, res: Response) => {
       try {
+        if (req.path !== "/lab/v1/auth/token") await lab.guard(req, res);
+        if (res.destroyed) return;
         await handler(req, res);
       } catch (error) {
         const status = error instanceof LabError ? error.status : 500;

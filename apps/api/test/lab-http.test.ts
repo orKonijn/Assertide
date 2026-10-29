@@ -35,6 +35,19 @@ test("HTTP contract: auth, CRUD, ETags, malformed payloads and media types", asy
       "Content-Type": "application/json",
       "Idempotency-Key": randomUUID(),
     };
+    for (const extra of [
+      { "X-Lab-Fault": "503" },
+      { "X-Lab-Fixture": "forged" },
+    ]) {
+      assert.equal(
+        (
+          await fetch(`${origin}/lab/v1/orders`, {
+            headers: { ...headers, ...extra },
+          })
+        ).status,
+        403,
+      );
+    }
     const create = await fetch(`${origin}/lab/v1/orders`, {
       method: "POST",
       headers,

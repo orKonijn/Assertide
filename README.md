@@ -4,7 +4,7 @@ QA automation control plane specified in [the product requirements](deliverables
 
 ## Implementation status
 
-The local development application supports OIDC sign-in, project-scoped catalog browsing, suite creation, queued execution of six controlled Lab API cases, execution results, and an authenticated Allure 3 viewer on a separate hostname. The local runner executes only this repository's trusted fixtures and is not a production isolation boundary. Production worker isolation, full catalog discovery, the complete UI/API test catalog, operational acceptance and several specification features remain under development. The files in `deliverables` are specifications, design previews and illustrative examples.
+The local development application supports OIDC sign-in, project-scoped catalog browsing, suite creation, queued execution of 15 controlled Lab API cases and 12 browser cases, execution results, and an authenticated Allure 3 viewer on a separate hostname. The local runner executes only this repository's trusted fixtures and is not a production isolation boundary. Production worker isolation, full catalog discovery, supplemental practice targets, operational acceptance and several specification features remain under development. The files in `deliverables` are specifications, design previews and illustrative examples.
 
 ## Web development
 

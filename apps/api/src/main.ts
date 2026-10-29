@@ -20,6 +20,21 @@ class AppModule {}
 const db = await connectDatabase(process.env["DATABASE_URL"]);
 const app = await NestFactory.create(AppModule);
 const express: Express = app.getHttpAdapter().getInstance();
+express.use((req, res, next) => {
+  if (
+    !req.path.startsWith("/lab/v1/") &&
+    (req.get("X-Lab-Fault") || req.get("X-Lab-Fixture"))
+  ) {
+    res
+      .status(400)
+      .json({
+        status: 400,
+        title: "Fixture headers are restricted to the Lab",
+      });
+    return;
+  }
+  next();
+});
 express.use(expressParser.json({ limit: "64kb" }));
 const appOrigin = process.env["APP_ORIGIN"] ?? "http://127.0.0.1:4200";
 const identity = new IdentityService(db, appOrigin);

@@ -1,5 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
-import express, { type Express } from "express";
+import express, {
+  type Express,
+  type Request,
+  type Response,
+  type NextFunction,
+} from "express";
 import path from "node:path";
 import { z } from "zod";
 import { runRoot } from "./local-runner.ts";
@@ -134,6 +139,15 @@ export async function mountReportViewer(
       fallthrough: false,
     })(req, res, next);
   });
+  viewer.use(
+    (error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+      const failure = z.object({ status: z.number() }).safeParse(error);
+      res
+        .status(failure.success && failure.data.status === 404 ? 404 : 500)
+        .type("text/plain")
+        .send("Report asset unavailable");
+    },
+  );
   const server = viewer.listen(4012, "127.0.0.1");
   await new Promise<void>((resolve, reject) => {
     server.once("listening", resolve);
