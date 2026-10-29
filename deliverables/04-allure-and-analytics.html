@@ -1,0 +1,94 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Assertide Allure reporting and analytics specification</title><style>body{margin:0;background:#f5f6fa;color:#182237;font:15px/1.7 Inter,Arial,sans-serif}header{background:#151e30;color:white;padding:48px max(24px,calc((100% - 1180px)/2))}header p{color:#c4cee2}main{max-width:1180px;margin:auto;padding:36px 24px}h1,h2,h3{line-height:1.3}h1{font-size:36px;letter-spacing:-1px}h2{margin-top:36px}a{color:#5145cd}header a{color:#c8c0ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.card,article{background:white;border:1px solid #d8dfea;border-radius:12px;padding:24px;margin-bottom:18px}.card h2{margin:0;font-size:19px}.card p{color:#58657b}table{border-collapse:collapse;display:block;overflow:auto;font-size:13px;width:100%}th,td{border:1px solid #d8dfea;padding:12px;text-align:left;vertical-align:top}th{background:#eef0f7}pre{background:#151e30;color:#eef3ff;border-radius:9px;padding:20px;overflow:auto;font-size:12px}code{font-family:Consolas,monospace}img{max-width:100%}.badge{display:inline-block;background:#eeebff;color:#5145cd;padding:6px 12px;border-radius:20px;font-size:12px}.warning{border-left:4px solid #926000;background:#fff9eb;padding:18px 22px}.assets{display:flex;gap:24px;flex-wrap:wrap;align-items:center}.assets img{width:140px}.assets .logo{width:235px}footer{font-size:12px;color:#58657b;margin:36px 0}@media(max-width:700px){header{padding:32px 20px}main{padding:20px}h1{font-size:29px}}</style><header><a href="index.html">← Assertide deliverables</a></header><main><article><h1>Assertide Allure reporting and analytics specification</h1>
+<h2>Integration contract</h2>
+<p>Allure Report 3 is a core evidence renderer. PostgreSQL is the product's historical analytics source; raw Allure files are not scraped from generated HTML to compute KPIs. This separation supports long retention, filtering and truthful cancellation counts without depending on report presentation internals. Raw result adapters are versioned and validated against fixtures during dependency upgrades.</p>
+<p>Each run has its own empty raw-results directory. Keep every retry within that directory and never merge unrelated runs as retries. Give each worker a separate output path and preserve UUID attachment references when collecting into the report input. Validate paths and hashes before building. The reporter adds case identity, suite hierarchy, feature/story, owner/severity and useful steps. Playwright tracing is recognized by the Allure integration; verify trace links in the integration smoke test. <a href="https://allurereport.org/docs/playwright/">Allure Playwright setup</a>, <a href="https://allurereport.org/docs/playwright-reference/">metadata reference</a>.</p>
+<p>Store report, integration and browser versions with each run. Allure Report 3 history uses a configured JSONL historyPath; do not apply the Allure 2 history-directory procedure. Set historyBaseUrl to the stable authenticated report address, never an expiring presigned object URL. Partition history by project, branch lineage, environment, suite/selection family and contract version. Browser is a non-excluded distinguishing parameter. Serialize history updates by stream and publish through a compare-and-swap version to prevent concurrent jobs overwriting history. Stable fullName/testCaseId and deterministic non-excluded parameters link cases; run IDs, timestamps and randomized fixture IDs must not fragment identity. <a href="https://allurereport.org/docs/history-and-retries/">Allure history and retries</a>.</p>
+<h2>Evidence and status presentation</h2>
+<p>Each result opens an attempt timeline first: Attempt 1 failed → Attempt 2 passed is labeled “Passed after retry.” A final pass never hides the first failure. Tabs: Summary, Steps, Evidence, Request/response (API), History. Show source SHA, target, browser/version, worker, timings, expected/actual and failure category above the fold. Open screenshot in a keyboard-accessible lightbox. Open traces in a private viewer; download remains available subject to permission. Videos are opt-in and retain-on-failure. Large JSON bodies collapse after 200 lines and offer a redacted download.</p>
+<p>Categories are deterministic rules in order: canceled/interrupted (execution condition, not defect), infrastructure/runner failure, authentication/authorization, timeout, schema/contract, assertion/product behavior, unknown. Keep category rule version and raw error. Rules do not assert root cause; users may annotate a diagnosis with author/time without rewriting the raw event. Allure's passed/failed/broken/skipped/unknown states may not encode every product state; the Assertide result record preserves cancellation and infrastructure distinctions. Expected failures and quarantine have explicit badges.</p>
+<p>Report explorer groups runs with phase generating/ready/failed/expired. A ready report's download produces an immutable ZIP with checksum and generation version. A failed build provides safe logs, rebuild action and access to normalized results. Artifact expiry does not erase the run or suggest it passed. The default investigation path is Dashboard failed count → filtered History → failed Run → Result, with direct failure links where a specific run is known.</p>
+<h2>Metric definitions</h2>
+<p>A test instance is (run, stable case, environment, UI browser or null, parameter fingerprint). Retries are attempts of one instance. Date filters select terminal run endedAt in UTC, converted to organization timezone for daily buckets. Live executions have a separate strip and never enter historical denominators. All comparative queries apply identical filters to both intervals and report missing comparable cases.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Definition</th>
+<th>Exclusions / interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total executions</td>
+<td>Count final test instances in selected completed runs</td>
+<td>Not attempt count; display selected, skipped and canceled separately</td>
+</tr>
+<tr>
+<td>Executed denominator</td>
+<td>passed + failed + broken final instances</td>
+<td>Exclude skipped, canceled, expected-failure and incomplete instances; disclose excluded totals</td>
+</tr>
+<tr>
+<td>Final pass rate</td>
+<td>final passed / executed denominator ×100</td>
+<td>Includes recovery after retry; zero denominator displays —</td>
+</tr>
+<tr>
+<td>First-attempt pass rate</td>
+<td>instances whose first attempt passed / same executed denominator</td>
+<td>Not interchangeable with final pass rate</td>
+</tr>
+<tr>
+<td>Failed tests</td>
+<td>Final failed + broken instances, with separate breakdown</td>
+<td>“Product failure” uses failed only</td>
+</tr>
+<tr>
+<td>Recovered-flaky rate</td>
+<td>Instances with earlier failed attempt and final passed / executed denominator</td>
+<td>Same-run recovery signal; does not claim every intermittent defect is flaky</td>
+</tr>
+<tr>
+<td>Historically unstable cases</td>
+<td>Case/config identities with both pass and fail over last 10 eligible runs, minimum 5</td>
+<td>Flag as instability candidate; code changes can explain status changes</td>
+</tr>
+<tr>
+<td>Average execution duration</td>
+<td>Mean (run endedAt − startedAt) for completed runs</td>
+<td>Excludes queue wait, canceled and infrastructure-error runs; sample count shown</td>
+</tr>
+<tr>
+<td>Test duration trend</td>
+<td>Median/p95 sum of attempt durations per instance</td>
+<td>Retry cost retained; filter comparable identities</td>
+</tr>
+<tr>
+<td>Browser failure rate</td>
+<td>failed+broken UI instances / executed UI instances per browser</td>
+<td>API browser=null excluded; never compare raw failures without denominators</td>
+</tr>
+<tr>
+<td>API response p95</td>
+<td>Nearest-rank p95 of measured completed HTTP exchanges for selected endpoints</td>
+<td>Timeouts separately counted; method+route template grouping; show n and window</td>
+</tr>
+<tr>
+<td>Frequent failures</td>
+<td>failed+broken count per stable case/config plus rate and n</td>
+<td>Rank count by default; display exposure to avoid misleading small samples</td>
+</tr>
+<tr>
+<td>Evidence completeness</td>
+<td>failed/broken attempts with all policy-required artifacts / eligible failed/broken attempts</td>
+<td>Disabled capture is disclosed; missing upload and expiry have distinct reasons</td>
+</tr>
+</tbody>
+</table>
+<p>Historical aggregates refresh within 60 seconds of terminal ingestion; show dataAsOf and a delayed badge after 120 seconds. Incremental materialization keys on runId+terminalVersion to avoid duplicate counts. Backfills rebuild from normalized attempts into a new aggregate generation, then atomically swap. Raw SQL reconciliation runs against fixed fixtures and random samples in CI. Never average daily percentages: sum numerators and denominators for the selected period.</p>
+<h2>Dashboard and chart contract</h2>
+<p>Top filters: date range, project, suite, environment, browser, status. Browser filter explains that API cases are excluded when a concrete browser is selected. Active chips can be removed individually; Reset returns to last seven days/current project/all suites. Shareable URLs contain filter IDs only, no secrets.</p>
+<p>Cards: Total executions 2,400; Final pass 96.9%; Failed 72; Average run 2m48s; Recovered after retry 1.9%; API p95 182ms. Data is illustrative. Trend chart has first-attempt and final-pass series, denominator tooltip and a table view. Browser chart displays count and rate. Failure list links to case history. Selecting a day applies an explicit date chip and updates all historical panels. Live R-1043 is independently labeled “Live · 1 of 2 complete” and cannot be confused with the seven-day slice.</p>
+<p>Chart empty states distinguish no runs, no matching executions and insufficient samples. API latency with n&lt;20 is marked “small sample.” Date comparison aligns equal-length preceding intervals; DST boundaries use local calendar days and UTC query bounds. Percent change is undefined when baseline is zero; show absolute change. Export includes filter snapshot, metric definitions, generatedAt, dataAsOf and sample counts.</p>
+<h2>Report readiness acceptance</h2>
+<p>Use fixture runs containing success, assertion failure, setup error, skip, expected failure, cancel, first-failure/retry-pass, API schema error and missing attachment. Confirm each maps to the right product state, correct Allure attempt and correct denominator. Build two compatible runs and inspect history links. Run two simultaneous report builds on one stream and assert no lost history. Open report assets under authorized and unauthorized identities, test expired access, and verify relative links/trace viewer under CSP. Kill report worker mid-upload and confirm no partial report is marked ready.</p></article></main></html>

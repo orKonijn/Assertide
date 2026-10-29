@@ -1,0 +1,15 @@
+{
+  "product": "Assertide",
+  "fileKey": "Omm8667aVR3UJbtJ5VTYfC",
+  "fileUrl": "https://www.figma.com/design/Omm8667aVR3UJbtJ5VTYfC",
+  "sessionId": "0d8ea3cd-b00c-4604-94f0-5f1a09b3f5a9",
+  "status": "blocked",
+  "reason": "Figma Starter-plan MCP tool-call limit",
+  "completedNativeSteps": ["create_new_file", "create_session"],
+  "nativeCanvasMutationsCompleted": false,
+  "entities": {"pages": {}, "frames": {}, "components": {}, "variables": {}},
+  "intendedScreenStateFrameCount": 100,
+  "pending": ["library discovery", "execute generator or equivalent native tool creation", "record returned node IDs", "native structural audit", "native screenshots", "prototype verification"],
+  "localPreviewValidated": true,
+  "nativePluginExecuted": false
+}

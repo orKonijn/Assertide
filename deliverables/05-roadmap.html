@@ -1,0 +1,73 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Assertide implementation roadmap</title><style>body{margin:0;background:#f5f6fa;color:#182237;font:15px/1.7 Inter,Arial,sans-serif}header{background:#151e30;color:white;padding:48px max(24px,calc((100% - 1180px)/2))}header p{color:#c4cee2}main{max-width:1180px;margin:auto;padding:36px 24px}h1,h2,h3{line-height:1.3}h1{font-size:36px;letter-spacing:-1px}h2{margin-top:36px}a{color:#5145cd}header a{color:#c8c0ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.card,article{background:white;border:1px solid #d8dfea;border-radius:12px;padding:24px;margin-bottom:18px}.card h2{margin:0;font-size:19px}.card p{color:#58657b}table{border-collapse:collapse;display:block;overflow:auto;font-size:13px;width:100%}th,td{border:1px solid #d8dfea;padding:12px;text-align:left;vertical-align:top}th{background:#eef0f7}pre{background:#151e30;color:#eef3ff;border-radius:9px;padding:20px;overflow:auto;font-size:12px}code{font-family:Consolas,monospace}img{max-width:100%}.badge{display:inline-block;background:#eeebff;color:#5145cd;padding:6px 12px;border-radius:20px;font-size:12px}.warning{border-left:4px solid #926000;background:#fff9eb;padding:18px 22px}.assets{display:flex;gap:24px;flex-wrap:wrap;align-items:center}.assets img{width:140px}.assets .logo{width:235px}footer{font-size:12px;color:#58657b;margin:36px 0}@media(max-width:700px){header{padding:32px 20px}main{padding:20px}h1{font-size:29px}}</style><header><a href="index.html">← Assertide deliverables</a></header><main><article><h1>Assertide implementation roadmap</h1>
+<p>This plan is sequenced for two full-stack engineers and one QA automation engineer with part-time design/security support. Estimates are planning ranges, not commitments. Phases 1–3 form the usable browser MVP; Phase 4 completes first-class API workflows; Phases 5–6 complete the proposed commercial-quality scope. Auth, basic API test execution, isolation and tenant keys start early rather than being retrofitted.</p>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Duration</th>
+<th>Work and dependencies</th>
+<th>Measurable exit gate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 Core architecture and runner</td>
+<td>2–3 weeks</td>
+<td>Monorepo, locked toolchain, OIDC, project schema, approved bundle builder, local SauceDemo/The Internet, Lab API skeleton, isolated Chromium job, durable events. No prior phase.</td>
+<td>Launch UI and API fixtures from CLI through queue; repeated delivery produces one job; worker termination creates diagnosed infrastructure error; secrets absent from captured logs</td>
+</tr>
+<tr>
+<td>2 Catalog and execution UI</td>
+<td>2–3 weeks</td>
+<td>Depends on 1. Catalog sync, suites, explorer, configuration, quotas, idempotency, cancellation, live SSE, roles and primary flow A.</td>
+<td>UI-001 and UI-005 selectable independently; 10k-case search target met; cancel and reconnect races pass; unauthorized project access rejected</td>
+</tr>
+<tr>
+<td>3 Allure and history</td>
+<td>1–2 weeks</td>
+<td>Depends on immutable results in 1–2. Raw evidence collection, isolated report generation, Allure 3 history, private viewer, history/result screens, retention and flow C.</td>
+<td>Retry grouping correct; report rebuild does not rerun tests; all expected failed-attempt artifacts available; expired artifact shown truthfully; unauthorized report child assets denied</td>
+</tr>
+<tr>
+<td>4 API automation workspace</td>
+<td>2 weeks</td>
+<td>Depends on shared runner/results. Finish Lab API contract, all methods/auth/schema cases, redacted exchanges, request/response views and flow B.</td>
+<td>API-001–007 and LAB P0 cases pass; no browser launched for API-only suite; secrets absent from attachments; auth and persistence tests target Lab, not JSONPlaceholder</td>
+</tr>
+<tr>
+<td>5 Analytics and UI refinement</td>
+<td>2 weeks</td>
+<td>Depends on 3–4 normalized data. ECharts, KPI materialization, cross-browser pools, light/dark, mobile, empty/error/loading states, accessibility and design reconciliation.</td>
+<td>PRD metric fixture matches exactly; no live/history mixing; all 12 views work at 390/768/1440px; three journeys pass keyboard and contrast review</td>
+</tr>
+<tr>
+<td>6 Production readiness</td>
+<td>2–3 weeks</td>
+<td>Depends on prior gates. CI signed images, migration/canary strategy, vault, hardened egress, audit/retention verification, restore drills, load tests and runbooks.</td>
+<td>Reference-load SLOs met; restore within 4h with ≤24h loss; no cross-tenant leaks; no unresolved P0 or exploitable critical findings; incident drill completed</td>
+</tr>
+</tbody>
+</table>
+<h2>Engineering backlog in implementation order</h2>
+<ol>
+<li>Record ADRs for source-owned tests, Allure 3, authoritative Postgres state, isolated report origin and trusted-code MVP. Lock OpenAPI/event schemas and reference data from the PRD.</li>
+<li>Build authentication and project authorization middleware before exposed object endpoints. Add tenant-safe repository layer and migration tests. Add audit primitives.</li>
+<li>Implement catalog discovery in an isolated job, stable case IDs and revision snapshots. Detect duplicate IDs as a discovery error. Do not replace valid catalog on failed discovery.</li>
+<li>Implement launch transaction/outbox, idempotency conflict handling, fair scheduler and fencing tokens. Test duplicate dispatch and process crashes before adding UI affordances.</li>
+<li>Build reporter spool, event ingestion and durable final manifest. Reconcile partially uploaded runs. Implement cancel_requested and race-safe finalization.</li>
+<li>Add Angular shell, project/suite/explorer views and form validation from backend policies. Connect live stream with cursor recovery and snapshot reconciliation.</li>
+<li>Implement artifact checksum/MIME validation, scoped access, redaction and retention. Add Allure generator compatibility fixture and history stream serialization.</li>
+<li>Ship result detail, history and report explorer; inspect a real first-attempt failure and recovery with screenshot/trace. Validate private-origin viewer behavior in all supported browsers.</li>
+<li>Implement the Lab API contract and API POM-free request utilities. Complete authorization/contract tests before enabling API workspace export.</li>
+<li>Add analytics materializer and formula tests, then charts, saved filters and comparison. Avoid deriving historical percentages from UI summaries.</li>
+<li>Complete Firefox/WebKit runners and headed virtual-display pool. Apply capacity accounting across browser matrix and Playwright workers, not just number of jobs.</li>
+<li>Complete responsive views, semantic keyboard controls, dark theme and failure states. Run moderated task validation with representative users.</li>
+<li>Finish backup/restore, dependency upgrades, security review, resource load and outage drills. Publish operational runbooks and release checklist.</li>
+</ol>
+<h2>MVP cut and trade-offs</h2>
+<p>Release a useful vertical slice: approved repo → discovered suite → Chromium run → live progress → failed result → private Allure report → rerun. MVP supports API execution and evidence through the common runner but defers the dedicated workspace until Phase 4. A single organization deployment limits operational complexity; it does not excuse omitting authorization. PostgreSQL analytics costs more ingestion work than reading report HTML but supports durable filtering and reliable formulas. BullMQ is simple to operate with Redis, but needs a DB outbox and reconciliation to handle failure boundaries. Code-owned tests limit nontechnical authoring but avoid exposing an unsafe browser scripting service.</p>
+<h2>Dependencies and release risks</h2>
+<p>Public fixtures can change or disappear: pinned local targets are the CI gate. Figma's provider quota currently prevents creating the hosted design contents: import the supplied development plugin and validate its output when access is restored. Allure identity/version changes can break history: pin compatibility and run two-launch history checks. Videos/traces can dominate cost: quotas, retention and capture policy must ship with capture. Cancellation may race side effects: never automatically replay an abandoned business mutation. Domain and trademark status need separate clearance before commercial launch.</p>
+<h2>Definition of done and handoff</h2>
+<p>Every feature links PRD requirement → API/schema contract → design screen → automated acceptance case. A PR includes user-visible behavior, security impact, migration compatibility and relevant verification. Features cannot be called complete merely because a mocked UI exists. UI acceptance requires real API data, correct authorization and keyboard behavior. Reporting acceptance requires a real generated report and attempt evidence. Release readiness requires measured performance and recovery, not the illustrative figures in the design.</p>
+<p>Outstanding design gate: the Figma file was created but no canvas writes succeeded because of the Starter-plan tool limit. Plugin syntax and local construction logic can be checked here; native Figma rendering, actual variable-mode support, prototype navigation and visual inspection must be checked in Figma before Deliverable D is accepted. This is an external delivery blocker, not a completed design claim.</p></article></main></html>

@@ -1,0 +1,460 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Assertide testing targets and test plan</title><style>body{margin:0;background:#f5f6fa;color:#182237;font:15px/1.7 Inter,Arial,sans-serif}header{background:#151e30;color:white;padding:48px max(24px,calc((100% - 1180px)/2))}header p{color:#c4cee2}main{max-width:1180px;margin:auto;padding:36px 24px}h1,h2,h3{line-height:1.3}h1{font-size:36px;letter-spacing:-1px}h2{margin-top:36px}a{color:#5145cd}header a{color:#c8c0ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.card,article{background:white;border:1px solid #d8dfea;border-radius:12px;padding:24px;margin-bottom:18px}.card h2{margin:0;font-size:19px}.card p{color:#58657b}table{border-collapse:collapse;display:block;overflow:auto;font-size:13px;width:100%}th,td{border:1px solid #d8dfea;padding:12px;text-align:left;vertical-align:top}th{background:#eef0f7}pre{background:#151e30;color:#eef3ff;border-radius:9px;padding:20px;overflow:auto;font-size:12px}code{font-family:Consolas,monospace}img{max-width:100%}.badge{display:inline-block;background:#eeebff;color:#5145cd;padding:6px 12px;border-radius:20px;font-size:12px}.warning{border-left:4px solid #926000;background:#fff9eb;padding:18px 22px}.assets{display:flex;gap:24px;flex-wrap:wrap;align-items:center}.assets img{width:140px}.assets .logo{width:235px}footer{font-size:12px;color:#58657b;margin:36px 0}@media(max-width:700px){header{padding:32px 20px}main{padding:20px}h1{font-size:29px}}</style><header><a href="index.html">← Assertide deliverables</a></header><main><article><h1>Assertide testing targets and test plan</h1>
+<p>Research date: 29 October 2026. This is a planned test catalog; no browser or API tests were executed against the public targets during this work.</p>
+<h2>Target selection and permission evidence</h2>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th>Purpose and evidence</th>
+<th>Decision and limitations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://www.saucedemo.com/">SauceDemo</a></td>
+<td>Sauce Labs publishes <a href="https://docs.saucelabs.com/web-apps/automated-testing/selenium/sample-scripts/">automated login demonstrations</a> targeting SauceDemo. The <a href="https://github.com/saucelabs/sample-app-web">official source</a> includes automated tests, deployment destinations and an MIT license.</td>
+<td>Approved for small functional practice runs consistent with those examples; not load/security testing. Direct page retrieval failed in this research tool, so current end-to-end availability was not verified. Preflight before use; use a pinned local source build for CI and reproducibility.</td>
+</tr>
+<tr>
+<td><a href="https://the-internet.herokuapp.com/">The Internet</a></td>
+<td>The <a href="https://github.com/saucelabs/the-internet">official repository</a> explicitly describes the app as suitable for automated acceptance testing. The public index was readable and lists practice features.</td>
+<td>Supplemental UI target for dynamic controls, windows and forms. Public hosting has no verified SLA or published numeric request cap in reviewed material. Default to a self-hosted pinned revision for repeated CI. Avoid intentionally unstable examples in the release gate.</td>
+</tr>
+<tr>
+<td><a href="https://jsonplaceholder.typicode.com/">JSONPlaceholder</a></td>
+<td>Official homepage describes a fake REST API for testing/prototyping and documents requests made with any HTTP client. <a href="https://jsonplaceholder.typicode.com/guide/">Guide</a> documents CRUD-shaped operations.</td>
+<td>Approved low-volume public API practice; no API key required. Writes are simulated and not persistent. Not an authorization, validation, transactional consistency or performance benchmarking target. No numeric rate limit verified in reviewed official material; absence of a number is not unlimited permission.</td>
+</tr>
+<tr>
+<td>Assertide Lab API, http://lab-api:4010/v1 inside isolated network</td>
+<td>Newly specified self-controlled fixture service owned by the implementing team. No claim that this service already exists publicly.</td>
+<td>Required for real CRUD, auth, validation, conflicts, rate-limit and fault scenarios. Build it in Phase 1/4 before executing LAB cases. Bind developer port only to loopback; no production data.</td>
+</tr>
+</tbody>
+</table>
+<p>Public-target policy: one worker, maximum one API request/second, no automatic retries on failed public calls, no soak/load tests, stop on 429/403/access challenge, honor Retry-After. These are conservative Assertide limits, not publisher terms. Cache documentation, keep synthetic accounts/data, and never bypass CAPTCHA or access controls. Recheck permission evidence and target behavior when upstream changes. If scope of permission becomes unclear, disable public execution and use a pinned self-hosted copy. Preserve license notices and disable upstream telemetry in local fixtures where applicable.</p>
+<h2>Public API operation matrix</h2>
+<p>JSONPlaceholder documents /posts (100), /comments (500), /albums (100), /photos (5000), /todos (200), /users (10). The suite uses a small subset. Authentication: none. Headers: Content-Type application/json for JSON writes. GET /posts/1 reads one item; GET /posts?userId=1 filters; GET /posts/1/comments is nested. POST /posts returns an echoed resource with a generated ID, commonly 101; PUT /posts/1 replaces fields in the simulated response; PATCH /posts/1 changes supplied fields in the simulated response; DELETE /posts/1 returns an empty object. Do not assert that a later GET sees any write. Numeric quotas and a latency SLA were not established. <a href="https://jsonplaceholder.typicode.com/guide/">Official API guide</a>.</p>
+<h2>Controlled Lab API contract</h2>
+<p>The following is the contract to implement, not observed public behavior. POST /auth/token accepts fixture username/password and returns a 5-minute JWT for operator-a (tenant A), viewer-a (tenant A) or operator-b (tenant B). Invalid credentials return 401; no production authentication system is reused. JWT checks issuer, audience, expiry and signature; fixture refresh is explicit.</p>
+<p>Orders: {id:uuid, tenantId:uuid, sku:string, quantity:integer 1..10, status:"draft"|"confirmed", version:integer, createdAt:date-time}. POST /orders requires operator role and Idempotency-Key, returns 201 + Location + ETag. GET /orders/{id} returns 200 to same-tenant members and 404 to other tenants. GET /orders?status=draft&amp;limit=20&amp;cursor=... returns stable ordered pages. PUT replaces writable fields with If-Match; PATCH updates allowed fields with If-Match; both return 200 and new ETag, stale ETag returns 412. DELETE draft order returns 204, then GET returns 404; confirmed order delete returns 409. Missing/invalid token 401, insufficient same-tenant role 403, malformed JSON 400, invalid contract fields 422, unsupported media type 415. Duplicate idempotency key with a different payload returns 409. Secret admin seed/reset endpoint is network-restricted and disabled outside the lab.</p>
+<p>Fault hooks exist only in the lab: signed fixture header X-Lab-Fault: timeout|503|rate-limit. Rate-limit mode returns 429 and Retry-After: 2; timeout delays 2 seconds for a request configured with 500ms timeout. Production routes reject these headers. Rate policy 20 requests/minute per fixture user with deterministic test-clock reset, enabling reliable 429 tests without flooding. Lab p95 latency target &lt;500ms over 20 serial warmed GETs is a local acceptance budget, not a public-service SLA.</p>
+<h2>Catalog conventions</h2>
+<p>Every case below inherits: clean browser context or standalone API context; target health preflight; approved environment; no real customer data. UI cases run Chromium for PR smoke and Chromium/Firefox/WebKit nightly. API cases run once, with browser=null. P0 blocks release; P1 required regression; P2 supplemental. Each row includes its business objective in the name/objective column. Preconditions supplement the shared baseline. Steps execute left-to-right; expected result is independently asserted.</p>
+<p>Allure labels for every case: id=case ID, epic=Quality sandbox, feature=module, story=case name, suite=UI or API, owner=QA Platform, severity mapped P0 critical/P1 normal/P2 minor, tags=kind+coverage. Non-excluded parameters: target contract version, environment, browser for UI. Random entity IDs and run IDs are excluded from history identity. UI evidence U = test steps, error/stack, screenshot+trace on failure, optional retained video. API evidence A = redacted method/path/query, allowlisted headers/body, response status/body/schema diff and duration. Never attach bearer tokens. Each case lists its module/coverage and evidence profile; those values complete its label/attachment requirements.</p>
+<h2>UI cases</h2>
+<table>
+<thead>
+<tr>
+<th>ID and objective</th>
+<th>Preconditions and data</th>
+<th>Steps</th>
+<th>Expected result</th>
+<th>Priority; labels; evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UI-001 Valid login unlocks catalog</td>
+<td>SauceDemo; standard_user / secret_sauce demo credentials</td>
+<td>Open login → fill username/password → submit</td>
+<td>Inventory URL and Products heading; six product cards on pinned fixture</td>
+<td>P0; Auth/smoke/positive; U</td>
+</tr>
+<tr>
+<td>UI-002 Locked user cannot enter</td>
+<td>SauceDemo; locked_out_user / secret_sauce</td>
+<td>Fill credentials → submit</td>
+<td>Locked-out message and login remains; no inventory access</td>
+<td>P0; Auth/regression/negative; U</td>
+</tr>
+<tr>
+<td>UI-003 Invalid password is rejected</td>
+<td>SauceDemo; standard_user / wrong-password</td>
+<td>Submit invalid credentials</td>
+<td>Error visible; no authenticated navigation</td>
+<td>P1; Auth/regression/negative; U</td>
+</tr>
+<tr>
+<td>UI-004 Required login input</td>
+<td>SauceDemo; empty username then empty password</td>
+<td>Submit blank → fill username → submit</td>
+<td>Appropriate required-field error for each submission</td>
+<td>P1; Auth/regression/negative; U</td>
+</tr>
+<tr>
+<td>UI-005 Checkout completes</td>
+<td>SauceDemo; standard login; backpack; Ada/Test/10001</td>
+<td>Add backpack → cart → checkout → fill customer → continue → finish</td>
+<td>Summary matches item; success confirmation appears; cart cleared</td>
+<td>P0; Checkout/smoke/e2e; U</td>
+</tr>
+<tr>
+<td>UI-006 Cart removal preserves remaining items</td>
+<td>Login; backpack and bike light</td>
+<td>Add both → cart → remove backpack</td>
+<td>One correct item remains and badge becomes 1</td>
+<td>P1; Cart/functional; U</td>
+</tr>
+<tr>
+<td>UI-007 Price sort is numeric</td>
+<td>Login; seeded six-item catalog</td>
+<td>Select low-to-high → read all prices</td>
+<td>Numeric array nondecreasing, same item count and IDs</td>
+<td>P1; Catalog/regression; U</td>
+</tr>
+<tr>
+<td>UI-008 Checkout rejects missing customer data</td>
+<td>Login; backpack in cart</td>
+<td>Checkout → blank continue → fill first/last → blank postal continue</td>
+<td>Required errors; user stays on information page; cart preserved</td>
+<td>P0; Checkout/negative; U</td>
+</tr>
+<tr>
+<td>UI-009 Logout clears session</td>
+<td>Login; one cart item</td>
+<td>Menu → logout → navigate directly to inventory</td>
+<td>Login required; protected inventory not usable</td>
+<td>P0; Auth/smoke/security-functional; U</td>
+</tr>
+<tr>
+<td>UI-010 Cancel checkout preserves cart</td>
+<td>Login; backpack in cart</td>
+<td>Checkout info → cancel</td>
+<td>Cart displayed with original backpack, no completion</td>
+<td>P1; Checkout/regression; U</td>
+</tr>
+<tr>
+<td>UI-011 Product detail matches catalog</td>
+<td>Login; backpack</td>
+<td>Capture title/price → open item → add to cart → view cart</td>
+<td>Name/price match through all views; quantity 1</td>
+<td>P1; Catalog/e2e; U</td>
+</tr>
+<tr>
+<td>UI-012 Checkout total arithmetic</td>
+<td>Login; backpack and bike light; pinned price fixture</td>
+<td>Checkout overview → capture item prices/subtotal/tax/total</td>
+<td>Subtotal equals sum to cent; total equals subtotal+displayed tax; no floating-point tolerance beyond cent</td>
+<td>P0; Checkout/regression; U</td>
+</tr>
+<tr>
+<td>WEB-001 Dynamic loading waits for content</td>
+<td>The Internet /dynamic_loading/1</td>
+<td>Start → await Hello World</td>
+<td>Text visible within timeout without fixed sleep</td>
+<td>P1; Dynamic/functional; U</td>
+</tr>
+<tr>
+<td>WEB-002 Checkbox state persists within page</td>
+<td>/checkboxes</td>
+<td>Inspect states → check first → uncheck second</td>
+<td>First checked, second unchecked using semantic state</td>
+<td>P1; Forms/functional; U</td>
+</tr>
+<tr>
+<td>WEB-003 Dropdown selects requested option</td>
+<td>/dropdown; value 2</td>
+<td>Select value 2</td>
+<td>Selected value 2 and Option 2 label</td>
+<td>P1; Forms/functional; U</td>
+</tr>
+<tr>
+<td>WEB-004 Alert confirmation accepts/dismisses</td>
+<td>/javascript_alerts</td>
+<td>Register dialog handler → click confirm → dismiss; repeat accept</td>
+<td>Correct result text for each path; handler attached before trigger</td>
+<td>P1; Dialog/positive-negative; U</td>
+</tr>
+<tr>
+<td>WEB-005 New window isolation</td>
+<td>/windows</td>
+<td>Await popup event while clicking link → inspect popup → close</td>
+<td>New Window heading in popup; original page remains usable</td>
+<td>P1; Navigation/regression; U</td>
+</tr>
+<tr>
+<td>WEB-006 Upload synthetic text file</td>
+<td>/upload; local hello.txt, 20 bytes</td>
+<td>Set input files → upload</td>
+<td>Uploaded filename displayed; no personal files used</td>
+<td>P2; Forms/regression; U</td>
+</tr>
+<tr>
+<td>WEB-007 Dynamic input enablement</td>
+<td>/dynamic_controls</td>
+<td>Enable → wait for enabled input → fill demo</td>
+<td>Input becomes enabled; entered text matches</td>
+<td>P1; Dynamic/regression; U</td>
+</tr>
+</tbody>
+</table>
+<h2>Public API cases</h2>
+<table>
+<thead>
+<tr>
+<th>ID and objective</th>
+<th>Preconditions and data</th>
+<th>Steps</th>
+<th>Expected result</th>
+<th>Priority; labels; evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API-001 Read post contract</td>
+<td>JSONPlaceholder; post 1</td>
+<td>GET /posts/1 → validate schema</td>
+<td>200; integer id=1/userId; string title/body; JSON content type</td>
+<td>P0; Posts/smoke/positive; A</td>
+</tr>
+<tr>
+<td>API-002 Filter by owner</td>
+<td>userId=1</td>
+<td>GET /posts?userId=1</td>
+<td>200; nonempty list; every userId=1</td>
+<td>P1; Posts/functional; A</td>
+</tr>
+<tr>
+<td>API-003 Simulated creation</td>
+<td>{userId:1,title:"Assertide",body:"fixture"}</td>
+<td>POST /posts → inspect echo</td>
+<td>201; generated numeric ID; supplied fields returned; no persistence assertion</td>
+<td>P0; Posts/smoke/POST; A</td>
+</tr>
+<tr>
+<td>API-004 Simulated replacement</td>
+<td>post 1; full replacement fields</td>
+<td>PUT /posts/1</td>
+<td>200; id=1 and replacement values in response</td>
+<td>P1; Posts/regression/PUT; A</td>
+</tr>
+<tr>
+<td>API-005 Simulated patch</td>
+<td>post 1; title="Updated"</td>
+<td>PATCH /posts/1</td>
+<td>200; updated title; id remains 1; baseline body retained</td>
+<td>P1; Posts/regression/PATCH; A</td>
+</tr>
+<tr>
+<td>API-006 Simulated deletion</td>
+<td>post 1</td>
+<td>DELETE /posts/1</td>
+<td>200; empty object; later reads not assumed deleted</td>
+<td>P1; Posts/regression/DELETE; A</td>
+</tr>
+<tr>
+<td>API-007 Nested relationship</td>
+<td>post 1</td>
+<td>GET /posts/1/comments</td>
+<td>200; nonempty schema-valid collection; every postId=1</td>
+<td>P1; Comments/integration; A</td>
+</tr>
+</tbody>
+</table>
+<h2>Controlled API cases</h2>
+<table>
+<thead>
+<tr>
+<th>ID and objective</th>
+<th>Preconditions and data</th>
+<th>Steps</th>
+<th>Expected result</th>
+<th>Priority; labels; evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LAB-001 Persistent order lifecycle</td>
+<td>operator-a token; unique idempotency key; sku DEMO-01 qty 2</td>
+<td>POST → GET returned Location → PUT qty 3 with ETag → PATCH qty 4 with new ETag → DELETE with current ETag → GET</td>
+<td>201,200,200,200,204,404; state/version preserved across reads</td>
+<td>P0; Orders/smoke/e2e; A</td>
+</tr>
+<tr>
+<td>LAB-002 Missing authentication</td>
+<td>No token</td>
+<td>GET /orders</td>
+<td>401 with safe auth error; no tenant data</td>
+<td>P0; Auth/negative; A</td>
+</tr>
+<tr>
+<td>LAB-003 Invalid/expired token</td>
+<td>Controlled bad signature and expired JWT variants</td>
+<td>GET /orders per variant</td>
+<td>401 for both; no internal signing detail</td>
+<td>P0; Auth/negative; A</td>
+</tr>
+<tr>
+<td>LAB-004 Viewer cannot create</td>
+<td>viewer-a token; valid body</td>
+<td>POST /orders</td>
+<td>403; resource count unchanged</td>
+<td>P0; Authorization/negative; A</td>
+</tr>
+<tr>
+<td>LAB-005 Tenant separation</td>
+<td>A-created order; operator-b token</td>
+<td>GET/PATCH/DELETE A order as B</td>
+<td>404 each; subsequent A GET unchanged</td>
+<td>P0; Authorization/regression; A</td>
+</tr>
+<tr>
+<td>LAB-006 Quantity boundary validation</td>
+<td>operator-a; quantities 0,1,10,11</td>
+<td>POST each with distinct keys → cleanup successes</td>
+<td>422,201,201,422; error pointer /quantity for invalid values</td>
+<td>P1; Schema/boundary; A</td>
+</tr>
+<tr>
+<td>LAB-007 Malformed JSON/media type</td>
+<td>operator-a; body "{" then text/plain</td>
+<td>POST malformed JSON → POST wrong content type</td>
+<td>400 then 415; no resource created</td>
+<td>P1; Transport/negative; A</td>
+</tr>
+<tr>
+<td>LAB-008 Optimistic concurrency</td>
+<td>Fresh order and ETag v1</td>
+<td>Update with v1 → attempt another update using stale v1</td>
+<td>First 200/new ETag; second 412; successful value remains</td>
+<td>P0; Orders/concurrency; A</td>
+</tr>
+<tr>
+<td>LAB-009 Idempotency deduplication</td>
+<td>Same principal and key</td>
+<td>POST twice same body → third POST changed body same key</td>
+<td>First/second same ID and creation response; only one row; third 409</td>
+<td>P0; Orders/integration; A</td>
+</tr>
+<tr>
+<td>LAB-010 Pagination has no overlap</td>
+<td>Seed 25 owned orders, frozen test clock</td>
+<td>GET limit20 → use next cursor</td>
+<td>20 then 5; unique IDs; stable ordering; no cross-tenant records</td>
+<td>P1; Orders/regression; A</td>
+</tr>
+<tr>
+<td>LAB-011 Rate-limit handling</td>
+<td>Fault hook enabled; reset fixture counter</td>
+<td>GET with rate-limit fault</td>
+<td>429; Retry-After=2; runner records one attempt and does not busy-loop</td>
+<td>P1; Resilience/negative; A</td>
+</tr>
+<tr>
+<td>LAB-012 Bounded timeout</td>
+<td>Timeout fault; request timeout 500ms</td>
+<td>GET with timeout hook → capture transport exception</td>
+<td>Timeout classified as transport, within 1.5s local tolerance; no fake HTTP status</td>
+<td>P1; Resilience/negative; A</td>
+</tr>
+<tr>
+<td>LAB-013 Service failure diagnosis</td>
+<td>503 fault hook</td>
+<td>GET orders with injected fault</td>
+<td>503; correlation ID; safe body; Allure failure includes request context</td>
+<td>P1; Resilience/negative; A</td>
+</tr>
+<tr>
+<td>LAB-014 Response-time budget</td>
+<td>Warm local service; operator-a</td>
+<td>Warm 3 GETs → measure 20 serial GETs</td>
+<td>All 200; sorted nearest-rank p95 &lt;500ms; samples attached</td>
+<td>P2; Performance/budget; A</td>
+</tr>
+<tr>
+<td>LAB-015 Confirmed-order deletion protection</td>
+<td>Confirmed order</td>
+<td>DELETE confirmed order → GET</td>
+<td>409 then 200; order intact</td>
+<td>P1; Orders/business-rule; A</td>
+</tr>
+</tbody>
+</table>
+<h2>Assertide platform acceptance tests</h2>
+<table>
+<thead>
+<tr>
+<th>ID and objective</th>
+<th>Preconditions</th>
+<th>Steps</th>
+<th>Expected result</th>
+<th>Priority; labels; evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PLAT-001 Duplicate start is safe</td>
+<td>Operator and one case</td>
+<td>Submit same key/body concurrently</td>
+<td>One run/job, both responses reference same run</td>
+<td>P0; Execution/concurrency; API trace + DB invariant</td>
+</tr>
+<tr>
+<td>PLAT-002 Cancel race preserves truth</td>
+<td>Run near completion</td>
+<td>Cancel while final event arrives</td>
+<td>Exactly one terminal state; completed attempts preserved; audit shows race result</td>
+<td>P0; Execution/race; event sequence</td>
+</tr>
+<tr>
+<td>PLAT-003 Worker loss is visible</td>
+<td>Running isolated job</td>
+<td>Kill worker → wait lease expiry</td>
+<td>infrastructure_error; incomplete items diagnosed; no silent rerun</td>
+<td>P0; Execution/chaos; events/logs</td>
+</tr>
+<tr>
+<td>PLAT-004 Stream resume deduplicates</td>
+<td>Live stream with last event ID</td>
+<td>Disconnect/reconnect/replay duplicate</td>
+<td>Ordered unique UI updates; same counts as snapshot</td>
+<td>P0; Live/integration; event log</td>
+</tr>
+<tr>
+<td>PLAT-005 Cross-project evidence denied</td>
+<td>User lacks other project</td>
+<td>Request result, trace, report child asset and SSE</td>
+<td>404/403 consistently; no bytes or live events leaked</td>
+<td>P0; Security/authorization; redacted API trace</td>
+</tr>
+<tr>
+<td>PLAT-006 Report failure independent</td>
+<td>Completed failing run</td>
+<td>Inject report job error → rebuild</td>
+<td>Test outcomes unchanged; report failed then ready</td>
+<td>P0; Reporting/resilience; report logs</td>
+</tr>
+<tr>
+<td>PLAT-007 Retention is truthful</td>
+<td>Expired objects + valid result</td>
+<td>Retention worker → reload result</td>
+<td>Tombstone explains expiry; download unavailable; stats retained</td>
+<td>P1; Retention/integration; audit</td>
+</tr>
+<tr>
+<td>PLAT-008 Metric denominators</td>
+<td>Seed PRD fixture</td>
+<td>Query 7-day analytics with same filters</td>
+<td>2268/2340=96.9%; retry recovery 45/2340=1.9%; skipped=60</td>
+<td>P0; Analytics/contract; fixture query</td>
+</tr>
+<tr>
+<td>PLAT-009 Config injection is rejected</td>
+<td>Operator form/API</td>
+<td>Submit shell text, private destination, excess workers</td>
+<td>422; no process/network side effect</td>
+<td>P0; Security/negative; policy audit</td>
+</tr>
+<tr>
+<td>PLAT-010 Accessible primary journeys</td>
+<td>Keyboard + screen reader</td>
+<td>Complete A/B/C without pointer; 200% zoom; 390px</td>
+<td>No trapped focus; labels/status read; no page overflow</td>
+<td>P1; UX/accessibility; review notes</td>
+</tr>
+</tbody>
+</table>
+<h2>Execution strategy and exit criteria</h2>
+<p>PR gate uses local UI-001/005/008/009/012 and LAB-001/002/004/005/008/009 plus platform P0. Full regression nightly runs UI across three browsers and API once. Public practice suites run manually/on demand, not every PR. Public infrastructure failure is categorized separately from a product regression. Quarantine requires owner, issue, reason and 7-day expiry; quarantined tests remain visible and never inflate gate coverage. Retry is a diagnostic aid: first-attempt and eventual outcome are both retained.</p>
+<p>Entry: target revision pinned, permission decision stored, fixture contract implemented, dependency compatibility verified, sandbox healthy. Exit: all P0 cases pass on the release candidate, no unresolved security isolation defects, at least 95% evidence completeness, flake recovery under an agreed pilot threshold (initial target &lt;2%), browser and API contract coverage reviewed. Thresholds are proposed release policies, not observed results. Unexpected public behavior opens a target-maintenance issue rather than changing assertions merely to force green.</p></article></main></html>

@@ -1,0 +1,268 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Assertide product requirements</title><style>body{margin:0;background:#f5f6fa;color:#182237;font:15px/1.7 Inter,Arial,sans-serif}header{background:#151e30;color:white;padding:48px max(24px,calc((100% - 1180px)/2))}header p{color:#c4cee2}main{max-width:1180px;margin:auto;padding:36px 24px}h1,h2,h3{line-height:1.3}h1{font-size:36px;letter-spacing:-1px}h2{margin-top:36px}a{color:#5145cd}header a{color:#c8c0ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.card,article{background:white;border:1px solid #d8dfea;border-radius:12px;padding:24px;margin-bottom:18px}.card h2{margin:0;font-size:19px}.card p{color:#58657b}table{border-collapse:collapse;display:block;overflow:auto;font-size:13px;width:100%}th,td{border:1px solid #d8dfea;padding:12px;text-align:left;vertical-align:top}th{background:#eef0f7}pre{background:#151e30;color:#eef3ff;border-radius:9px;padding:20px;overflow:auto;font-size:12px}code{font-family:Consolas,monospace}img{max-width:100%}.badge{display:inline-block;background:#eeebff;color:#5145cd;padding:6px 12px;border-radius:20px;font-size:12px}.warning{border-left:4px solid #926000;background:#fff9eb;padding:18px 22px}.assets{display:flex;gap:24px;flex-wrap:wrap;align-items:center}.assets img{width:140px}.assets .logo{width:235px}footer{font-size:12px;color:#58657b;margin:36px 0}@media(max-width:700px){header{padding:32px 20px}main{padding:20px}h1{font-size:29px}}</style><header><a href="index.html">← Assertide deliverables</a></header><main><article><h1>Assertide product requirements</h1>
+<p>Version 1.0 · 29 October 2026 · Product and engineering baseline</p>
+<p>Assertide is a QA automation control plane for teams using Playwright and Allure. It connects a versioned test catalog, controlled execution, live evidence, and comparable historical results. The primary job is to help an engineer move from a failing quality signal to a reproducible diagnosis without reconstructing what ran, where it ran, or which artifacts belong to it.</p>
+<h2>Product decisions</h2>
+<p>The source repository owns executable TypeScript tests. Assertide owns catalog metadata, suite membership, run selection, execution policies, investigation, and history. Editing arbitrary executable scripts in a web form is outside the MVP. API tests have the same catalog, execution, evidence, and history contracts as browser tests; the API workspace additionally shows structured request and response evidence.</p>
+<p>MVP supports one organization per deployment, multiple projects, an OIDC identity provider, approved repositories, Chromium runs, a controlled sandbox, and Allure reports. Tenant IDs and authorization checks are present from the start. Firefox, WebKit, API workspace, advanced trends, and managed multi-tenant hosting follow through the six-phase roadmap. Headed execution means a dedicated worker with a virtual display; interactive remote desktop control is not implied.</p>
+<p>The brand name is a working original proposal. Exact-name searches found no relevant product match, but trademark clearance and domain registration availability remain unverified. The created Figma file still has its provisional creation name because the provider blocked further tool calls. It contains no completed screens. The supplied plugin is a recovery artifact, not evidence of a completed hosted design.</p>
+<h2>Users and outcomes</h2>
+<table>
+<thead>
+<tr>
+<th>Persona</th>
+<th>Current problem</th>
+<th>Assertide outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Automation engineer</td>
+<td>Logs, traces and retries scattered across CI</td>
+<td>Open the exact attempt, source revision and evidence from one result</td>
+</tr>
+<tr>
+<td>QA lead</td>
+<td>A green retry hides instability</td>
+<td>Compare first-attempt reliability and final pass rate separately</td>
+</tr>
+<tr>
+<td>Developer</td>
+<td>Cannot reproduce a reported failure</td>
+<td>Rerun an immutable selection and environment snapshot with lineage</td>
+</tr>
+<tr>
+<td>Release manager</td>
+<td>Cannot distinguish infrastructure issues from product defects</td>
+<td>See failed, broken, canceled, skipped and incomplete coverage separately</td>
+</tr>
+<tr>
+<td>Administrator</td>
+<td>Test jobs can consume resources or expose secrets</td>
+<td>Approved destinations, quotas, isolated workers and auditable policies</td>
+</tr>
+</tbody>
+</table>
+<p>Pilot success targets, to measure rather than assume: median failure-to-artifact navigation under 30 seconds in five moderated sessions; at least 90% task completion for the three primary journeys; 95% of supported failed attempts retain expected evidence; no duplicate run from a repeated start submission; no cross-project evidence disclosure in adversarial authorization tests.</p>
+<h2>Scope and priorities</h2>
+<p>P0 means release-blocking MVP; P1 means required full-product scope; P2 means post-launch optimization.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Priority</th>
+<th>Acceptance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AUTH-01</td>
+<td>OIDC login, logout, session expiry, role-aware navigation</td>
+<td>P0</td>
+<td>Expired session preserves return URL but never exposes cached protected evidence</td>
+</tr>
+<tr>
+<td>CAT-01</td>
+<td>Discover Playwright tests from an approved immutable revision</td>
+<td>P0</td>
+<td>Discovery yields stable case IDs, file, title, tags and project; discovery errors never overwrite the previous catalog</td>
+</tr>
+<tr>
+<td>CAT-02</td>
+<td>Project/module/feature/tag organization and search</td>
+<td>P0</td>
+<td>URL stores query and filters; 10,000 cases searchable in under 1 second p95 at reference load</td>
+</tr>
+<tr>
+<td>CAT-03</td>
+<td>Manage suites, owner, description, priority and enabled membership</td>
+<td>P0</td>
+<td>Optimistic concurrency rejects stale writes; disabling affects future selections only</td>
+</tr>
+<tr>
+<td>RUN-01</td>
+<td>Run single case, suite or selection</td>
+<td>P0</td>
+<td>Server resolves and freezes IDs before queueing; empty selection returns 422</td>
+</tr>
+<tr>
+<td>RUN-02</td>
+<td>Browser, environment, workers, retries, video and headed policy</td>
+<td>P1</td>
+<td>Invalid or forbidden options rejected server-side; API-only selection has no browser selector</td>
+</tr>
+<tr>
+<td>RUN-03</td>
+<td>Queue, monitor, cancel and rerun</td>
+<td>P0</td>
+<td>Idempotent start; cancellation outcome reconciled; rerun creates a distinct linked run</td>
+</tr>
+<tr>
+<td>RUN-04</td>
+<td>Live logs, progress, reconnect and stale-stream indicator</td>
+<td>P0</td>
+<td>Reconnect resumes after last event; a missing segment prompts snapshot resync</td>
+</tr>
+<tr>
+<td>REP-01</td>
+<td>Allure generation, explorer and secured viewer</td>
+<td>P0</td>
+<td>Report failure never changes test outcomes; generation can be retried independently</td>
+</tr>
+<tr>
+<td>REP-02</td>
+<td>Screenshot, trace, optional video and stack trace</td>
+<td>P0</td>
+<td>Evidence shows attempt, timestamp, redaction policy and expiry; missing artifact has a reason</td>
+</tr>
+<tr>
+<td>API-01</td>
+<td>First-class API suite and request/response investigation</td>
+<td>P1</td>
+<td>GET/POST/PUT/PATCH/DELETE supported; schema and authorization failures visible in Allure</td>
+</tr>
+<tr>
+<td>ANA-01</td>
+<td>Final pass rate, first-attempt reliability, duration and flakiness</td>
+<td>P1</td>
+<td>Formula, denominator, filters and freshness available beside every KPI</td>
+</tr>
+<tr>
+<td>ANA-02</td>
+<td>Browser breakdown, API latency and failure ranking</td>
+<td>P1</td>
+<td>Browserless API cases never counted as Chromium; small samples marked</td>
+</tr>
+<tr>
+<td>ENV-01</td>
+<td>Approved environments and secret references</td>
+<td>P0</td>
+<td>Secret values cannot be read back; all modifications are audited</td>
+</tr>
+<tr>
+<td>UX-01</td>
+<td>Light/dark desktop and responsive mobile</td>
+<td>P1</td>
+<td>All 12 views usable at 390px; keyboard paths and WCAG 2.2 AA review pass</td>
+</tr>
+<tr>
+<td>OPS-01</td>
+<td>Retention, quotas, health and audit trail</td>
+<td>P0</td>
+<td>Deletion removes object versions according to policy; quota errors explain remedy</td>
+</tr>
+<tr>
+<td>CI-01</td>
+<td>CI service account and commit-linked executions</td>
+<td>P1</td>
+<td>Scoped token can launch only its project; secret rotation does not require redeploy</td>
+</tr>
+<tr>
+<td>INT-01</td>
+<td>Notifications and integrations</td>
+<td>P2</td>
+<td>Delivery retries deduplicated; no notification is sent without configured destination</td>
+</tr>
+</tbody>
+</table>
+<h2>Roles and authorization</h2>
+<p>Viewer reads authorized project metadata and redacted evidence. Operator additionally launches, cancels and reruns executions and edits personal saved filters. Maintainer manages suites and catalog metadata. Administrator manages members, environments, secret references, approved repositories and retention. Platform service identities have narrower machine scopes. Backend authorization is enforced on every object access and streaming subscription, not just navigation. Cancellation is allowed for the run creator or a project maintainer/admin; an operator cannot cancel another user's work by guessing an ID.</p>
+<h2>Information architecture and screens</h2>
+<p>Persistent navigation: Overview, Projects, Test suites, Test explorer, Executions, Reports, API workspace, Settings. Project switcher always visible on desktop; mobile uses a menu and project header. Run configuration and live monitor are task screens within Executions. A result detail is linked from every failure count. Global search is project-scoped unless the user explicitly chooses all accessible projects.</p>
+<table>
+<thead>
+<tr>
+<th>Screen</th>
+<th>Main content</th>
+<th>Primary action</th>
+<th>Essential secondary states</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Login</td>
+<td>Product identity, work-email hint, SSO action</td>
+<td>Continue with SSO</td>
+<td>Redirecting, expired session, access denied, provider unavailable</td>
+</tr>
+<tr>
+<td>Dashboard</td>
+<td>Historical KPIs and trends; independent live activity strip</td>
+<td>New run</td>
+<td>No history, filtered-empty, delayed aggregates, partial service outage</td>
+</tr>
+<tr>
+<td>Projects</td>
+<td>Owner, target, case count, recent run and health</td>
+<td>Open project</td>
+<td>No access, create-first-project, archived project</td>
+</tr>
+<tr>
+<td>Suites</td>
+<td>Suite composition, tags, owners and revision</td>
+<td>Run suite</td>
+<td>Empty suite, stale revision, read-only role</td>
+</tr>
+<tr>
+<td>Explorer</td>
+<td>Search, tags, priority, selection and result history</td>
+<td>Run selected</td>
+<td>No matches, discovery in progress, discovery failed</td>
+</tr>
+<tr>
+<td>Configure</td>
+<td>Frozen selection, browser, environment, workers and retry policy</td>
+<td>Start execution</td>
+<td>Policy cap, unavailable worker, changed source revision</td>
+</tr>
+<tr>
+<td>Live monitor</td>
+<td>Progress, worker activity, attempts, elapsed time and logs</td>
+<td>Open results</td>
+<td>Queueing, disconnect, cancellation pending, worker loss</td>
+</tr>
+<tr>
+<td>History</td>
+<td>Runs by date, status, suite, browser and environment</td>
+<td>Open run</td>
+<td>Empty, cursor pagination, partial run</td>
+</tr>
+<tr>
+<td>Reports</td>
+<td>Report build status, comparison and download</td>
+<td>Open Allure</td>
+<td>Generating, generation failed, expired artifacts</td>
+</tr>
+<tr>
+<td>Result</td>
+<td>Assertion, expected/actual, attempt tabs, steps and evidence</td>
+<td>Rerun failed</td>
+<td>Broken setup, flaky retry, evidence unavailable</td>
+</tr>
+<tr>
+<td>API workspace</td>
+<td>Suites, method/path, request, response, schema and timings</td>
+<td>Run API suite</td>
+<td>Redacted body, invalid schema, timeout, auth failure</td>
+</tr>
+<tr>
+<td>Settings</td>
+<td>Environments, quotas, roles, secrets, retention and audit</td>
+<td>Save changes</td>
+<td>Validation failure, stale edit, forbidden, success</td>
+</tr>
+</tbody>
+</table>
+<h2>Core journeys</h2>
+<p><strong>A — selection to evidence:</strong> Login → choose Swag Store project → Test explorer → select UI-001 and UI-005 → Configure → verify resolved count, revision and target → Start → run detail appears immediately in queued state → live updates → completed outcomes → Open Allure. Start remains disabled after submission until its idempotency key resolves. Navigating away never stops a run. A success toast links to the created run; errors remain inline and preserve form input.</p>
+<p><strong>B — API investigation:</strong> API workspace → Orders contract suite → choose controlled sandbox → Start API run → inspect failed schema assertion → select request/response tabs → open redacted body and JSON pointer → open corresponding Allure case. A browser is not required. Token values are represented by secret reference and never enter screenshots, URLs or analytics.</p>
+<p><strong>C — reproduce a failure:</strong> History → filter Failed → open R-1042 → open UI-005 → inspect first-attempt screenshot and trace → compare previous result → Rerun failed → review inherited selection and current environment availability → create R-1043 with parent R-1042. Default rerun uses the same revision and frozen parameters. Changing revision produces an explicit “changed revision” badge; results are never rewritten.</p>
+<p>Cancel opens a confirmation describing currently running and not-yet-started tests. Confirm immediately sets cancel_requested; the UI says “Stopping workers” until acknowledged. Save environment with a changed destination requires a policy check, not just a client confirmation. Revoking access removes the active subscription and clears sensitive view state.</p>
+<h2>Shared sample data</h2>
+<p>All design data is illustrative, not executed test results. Organization Meridian Engineering; project Swag Store; environment Local sandbox; suite Checkout smoke; revision 8f2c0a1 (illustrative); owner Maya Chen. Historical 7-day slice: 2,400 final test instances, 2,268 passed, 72 failed, 60 skipped, no canceled/broken in this sample. Executed denominator 2,340; final pass rate 96.9%; 45 passed after retry, so recovered-flaky rate 1.9%. Average run duration 2m 48s is a separate run-level fixture, not derived from test durations. API p95 182ms is a separate synthetic request fixture.</p>
+<p>R-1042 is a completed UI run: 24 selected, 21 passed, 2 failed, 1 skipped; 91.3% final pass rate (21/23). UI-005 Checkout completes is a failure, UI-009 Logout clears session is the other failure. R-1043 is its running rerun: 2 selected, 1 passed, 1 running. These live numbers never enter historical cards before terminalization and aggregation.</p>
+<h2>Interaction and accessibility contract</h2>
+<p>150ms button/focus transitions, 200ms route crossfade, 250ms panel reveal; reduced-motion preference disables movement. Polling and SSE updates must not steal focus. Announce run state changes with a polite live region, not every log line. Preserve scroll and filters on back navigation. Provide table sorting via keyboard, visible 2px focus rings, persistent field labels, text and icons for statuses, 44px mobile targets, chart table alternatives and non-color differentiation.</p>
+<p>Loading shows structural skeletons only after 200ms to avoid flashes. Empty states explain what is missing and offer one relevant action. Recoverable errors include retry and correlation ID; destructive errors do not invite automatic retries. Success toasts last 5 seconds and have an accessible notification log. Mobile turns wide tables into result cards; detailed request bodies use bounded horizontal scrolling and do not force the whole page wider.</p>
+<h2>Operational acceptance and non-goals</h2>
+<p>Reference load: 50 concurrent UI users, 10,000 discovered cases, 100,000 result rows, 20 active workers across five projects. Metadata read p95 &lt;500ms, start API p95 &lt;1 second excluding execution, live update delay p95 &lt;2 seconds. These are test targets, not measured guarantees. API availability target 99.5% for pilot; recovery point 24 hours and recovery time 4 hours, proven by restore drill. No production execution of untrusted customer code in MVP; no public load testing, no CAPTCHA bypass, no billing, no generic low-code scripting engine, and no claim that a green report certifies a release.</p></article></main></html>
