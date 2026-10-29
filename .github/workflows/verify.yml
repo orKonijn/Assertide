@@ -23,3 +23,9 @@ jobs:
         working-directory: apps/web
       - run: npm run build
         working-directory: apps/web
+      - run: npm ci
+        working-directory: apps/api
+      - run: npm run typecheck
+        working-directory: apps/api
+      - run: npm test
+        working-directory: apps/api
