@@ -1,6 +1,7 @@
 import { Component, inject, signal, DestroyRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Api, Run, errorMessage } from '../core/api';
 @Component({
   imports: [RouterLink, DatePipe],
@@ -144,6 +145,21 @@ import { Api, Run, errorMessage } from '../core/api';
           current.logTail || 'Waiting for worker output.'
         }}</pre>
       </section>
+      @if (history().length) {
+        <section class="card">
+          <h2>Compatible execution history</h2>
+          <p class="muted">
+            Same project, environment, selection family and browser configuration.
+          </p>
+          @for (entry of history(); track entry.runId) {
+            <p>
+              <a [routerLink]="['/runs', entry.runId]">{{ entry.runId.slice(0, 8) }}</a> ·
+              {{ entry.endedAt | date: 'short' }} ·
+              {{ entry.reportAvailable ? 'Report available' : 'Report expired; results retained' }}
+            </p>
+          }
+        </section>
+      }
       @if (current.parentRunId) {
         <p>
           Parent execution:
@@ -156,7 +172,8 @@ import { Api, Run, errorMessage } from '../core/api';
 export class RunDetail {
   readonly api = inject(Api);
   private readonly router = inject(Router);
-  readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
+  id = '';
+  readonly history = signal<{ runId: string; endedAt: string; reportAvailable: boolean }[]>([]);
   readonly run = signal<Run | null>(null);
   readonly error = signal('');
   readonly busy = signal(false);
@@ -182,38 +199,62 @@ export class RunDetail {
       ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
     );
   }
-  private readonly stream = new EventSource(`/v1/runs/${this.id}/events`);
+  private stream: EventSource | undefined;
   private lastSequence = 0;
   constructor() {
     inject(DestroyRef).onDestroy(() => {
-      this.stream.close();
+      this.stream?.close();
     });
-    this.stream.onopen = () => {
+    inject(ActivatedRoute)
+      .paramMap.pipe(takeUntilDestroyed())
+      .subscribe((params) => {
+        this.id = params.get('id') ?? '';
+        this.run.set(null);
+        this.history.set([]);
+        this.selected.set([]);
+        this.lastSequence = 0;
+        this.connect();
+      });
+  }
+  private connect() {
+    this.stream?.close();
+    const stream = (this.stream = new EventSource(`/v1/runs/${this.id}/events`));
+    stream.onopen = () => {
       this.disconnected.set(false);
       void this.load();
     };
-    this.stream.onerror = () => this.disconnected.set(true);
-    this.stream.addEventListener('resync', () => {
+    stream.onerror = () => this.disconnected.set(true);
+    stream.addEventListener('resync', () => {
       this.lastSequence = 0;
       void this.load();
     });
-    this.stream.addEventListener('update', (event: MessageEvent<string>) => {
+    stream.addEventListener('update', (event: MessageEvent<string>) => {
       const sequence = Number(event.lastEventId);
       if (Number.isSafeInteger(sequence) && sequence > this.lastSequence) {
         this.lastSequence = sequence;
         void this.load();
       }
     });
-    this.stream.addEventListener('access_revoked', () => {
-      this.stream.close();
+    stream.addEventListener('access_revoked', () => {
+      stream.close();
       this.run.set(null);
       this.api.identity.set(null);
     });
     void this.load();
   }
   async load() {
+    const id = this.id;
     try {
-      this.run.set(await this.api.get<Run>(`/runs/${this.id}`));
+      const run = await this.api.get<Run>(`/runs/${id}`);
+      if (id !== this.id) return;
+      this.run.set(run);
+      if (run.historyStream) {
+        const data = await this.api.get<{
+          items: { runId: string; endedAt: string; reportAvailable: boolean }[];
+        }>(`/runs/${id}/history`);
+        if (id !== this.id) return;
+        this.history.set(data.items);
+      }
       this.error.set('');
     } catch (error) {
       this.error.set(errorMessage(error));

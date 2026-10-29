@@ -44,6 +44,8 @@ export async function expireRunData(db: SqlConnection, now = new Date()) {
       "attempts.ndjson",
       "results.json",
       "worker.log",
+      "history.jsonl",
+      "allure.config.mjs",
     ]) {
       const target = path.resolve(directory, name);
       if (path.dirname(target) !== directory)
@@ -92,6 +94,10 @@ export async function expireRunData(db: SqlConnection, now = new Date()) {
   }
   await db.query(
     "DELETE FROM platform_documents WHERE kind='audit' AND body->>'occurredAt'<$1",
+    [historyCutoff],
+  );
+  await db.query(
+    "UPDATE report_history SET body=COALESCE((SELECT jsonb_agg(entry) FROM jsonb_array_elements(body) entry WHERE entry->>'endedAt'>=$1),'[]'::jsonb),version=version+1 WHERE (lease_expires IS NULL OR lease_expires<now()) AND EXISTS (SELECT 1 FROM jsonb_array_elements(body) entry WHERE entry->>'endedAt'<$1)",
     [historyCutoff],
   );
   return { rawRuns: rows.length, historyRuns: expired.length };

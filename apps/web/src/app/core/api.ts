@@ -60,6 +60,7 @@ export interface Run {
   reportPhase: string;
   reportExpiresAt?: string;
   reportDiagnostic?: string;
+  historyStream?: string;
   rawExpiredAt?: string;
   rawUnavailableReason?: string;
   selection: { testIds: string[] };

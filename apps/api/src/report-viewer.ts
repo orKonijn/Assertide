@@ -28,52 +28,55 @@ export async function mountReportViewer(
   await db.query(
     "ALTER TABLE report_tickets ADD COLUMN IF NOT EXISTS auth_digest text, ADD COLUMN IF NOT EXISTS auth_kind text, ADD COLUMN IF NOT EXISTS report_directory text",
   );
-  app.get("/v1/runs/:id/report", async (req, res) => {
-    try {
-      const principal = await identity.principal(req);
-      if (!principal) {
-        res.status(401).end();
-        return;
+  app.get(
+    ["/v1/runs/:id/report", "/v1/runs/:id/report/{*asset}"],
+    async (req, res) => {
+      try {
+        const principal = await identity.principal(req);
+        if (!principal) {
+          res.status(401).end();
+          return;
+        }
+        const id = String(req.params["id"]);
+        const run = await platform.get(principal, id, "run");
+        if (
+          run["reportPhase"] === "expired" ||
+          (typeof run["reportExpiresAt"] === "string" &&
+            new Date(run["reportExpiresAt"]) <= new Date())
+        ) {
+          res.status(410).json({ title: "Report expired" });
+          return;
+        }
+        if (run["reportPhase"] !== "ready") {
+          res.status(409).json({ title: "Report not ready" });
+          return;
+        }
+        const token = randomBytes(32).toString("hex");
+        const binding = identity.credential(req);
+        if (!binding) {
+          res.status(401).end();
+          return;
+        }
+        await db.query(
+          "INSERT INTO report_tickets(digest,run_id,subject,expires_at,auth_digest,auth_kind,report_directory) VALUES($1,$2,$3,now()+interval '60 seconds',$4,$5,$6)",
+          [
+            digest(token),
+            id,
+            principal.subject,
+            binding.digest,
+            binding.kind,
+            run["reportDirectory"],
+          ],
+        );
+        res
+          .set("Cache-Control", "no-store")
+          .set("Referrer-Policy", "no-referrer")
+          .redirect(`http://localhost:4012/open?ticket=${token}`);
+      } catch {
+        res.status(404).end();
       }
-      const id = String(req.params["id"]);
-      const run = await platform.get(principal, id, "run");
-      if (
-        run["reportPhase"] === "expired" ||
-        (typeof run["reportExpiresAt"] === "string" &&
-          new Date(run["reportExpiresAt"]) <= new Date())
-      ) {
-        res.status(410).json({ title: "Report expired" });
-        return;
-      }
-      if (run["reportPhase"] !== "ready") {
-        res.status(409).json({ title: "Report not ready" });
-        return;
-      }
-      const token = randomBytes(32).toString("hex");
-      const binding = identity.credential(req);
-      if (!binding) {
-        res.status(401).end();
-        return;
-      }
-      await db.query(
-        "INSERT INTO report_tickets(digest,run_id,subject,expires_at,auth_digest,auth_kind,report_directory) VALUES($1,$2,$3,now()+interval '60 seconds',$4,$5,$6)",
-        [
-          digest(token),
-          id,
-          principal.subject,
-          binding.digest,
-          binding.kind,
-          run["reportDirectory"],
-        ],
-      );
-      res
-        .set("Cache-Control", "no-store")
-        .set("Referrer-Policy", "no-referrer")
-        .redirect(`http://localhost:4012/open?ticket=${token}`);
-    } catch {
-      res.status(404).end();
-    }
-  });
+    },
+  );
   const viewer = express();
   viewer.use((_req, res, next) => {
     res

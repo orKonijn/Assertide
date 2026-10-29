@@ -10,6 +10,16 @@ import { stopProcessTree } from "./process-tree.ts";
 import { archiveReport, expireReports } from "./report-storage.ts";
 import { expireRunData } from "./retention.ts";
 import {
+  historyStream,
+  claimHistory,
+  renewHistory,
+  releaseHistory,
+  commitHistory,
+  visibleHistory,
+  historyPoint,
+} from "./report-history.ts";
+import { setTimeout as delay } from "node:timers/promises";
+import {
   environmentSchema,
   defaultEnvironment,
   resolveSecret,
@@ -33,6 +43,7 @@ const root = fileURLToPath(new URL("../../../", import.meta.url));
 export const runRoot = path.join(root, ".local", "runs");
 const automationRoot = path.join(root, "packages", "automation");
 const configuration = z.object({
+  environmentId: z.string().default("local-lab"),
   catalogRevision: z.string(),
   workers: z.number().int().min(1).max(4),
   retries: z.number().int().min(0).max(2),
@@ -45,6 +56,8 @@ const runSchema = z.object({
   id: z.uuid(),
   organizationId: z.uuid(),
   projectId: z.uuid(),
+  endedAt: z.iso.datetime().optional(),
+  historyFamily: z.array(z.string()).optional(),
   environment: environmentSchema
     .extend({ version: z.number().optional() })
     .default(defaultEnvironment),
@@ -514,30 +527,92 @@ export class LocalRunner {
   private async generateReport(id: string) {
     const output = path.join(runRoot, id);
     const directory = `report-${randomUUID()}`;
+    const historyOwner = randomUUID();
+    let stream = "";
+    let heartbeat: ReturnType<typeof setInterval> | undefined;
     try {
+      const row = (
+        await this.db.query<{ body: unknown }>(
+          "SELECT body FROM platform_documents WHERE id=$1",
+          [id],
+        )
+      ).rows[0];
+      const run = runSchema.parse(row?.body);
+      stream = historyStream(run);
+      let lease = await claimHistory(this.db, stream, historyOwner);
+      const deadline = Date.now() + 30000;
+      while (!lease && Date.now() < deadline && !this.stopped) {
+        await delay(100);
+        lease = await claimHistory(this.db, stream, historyOwner);
+      }
+      if (!lease)
+        throw new Error(
+          "Compatible report history is busy; retry report generation",
+        );
+      heartbeat = setInterval(() => {
+        void renewHistory(this.db, stream, historyOwner).catch(() => {
+          if (this.child) stopProcessTree(this.child);
+        });
+      }, 5000);
+      const historyFile = path.join(output, "history.jsonl");
+      const configFile = path.join(output, "allure.config.mjs");
+      await writeFile(
+        historyFile,
+        visibleHistory(lease.entries, id)
+          .map((entry) => JSON.stringify(entry))
+          .join("\n") + "\n",
+      );
+      await writeFile(
+        configFile,
+        `export default ${JSON.stringify({ name: `Assertide ${id}`, historyPath: historyFile, appendHistory: true, historyLimit: 200, historyBaseUrl: `${process.env["APP_ORIGIN"] ?? "http://127.0.0.1:4200"}/v1/runs/${id}/report/` })};`,
+      );
       const code = await this.command(
         [
           "node_modules/allure/cli.js",
           "generate",
           path.join(output, "allure-results"),
+          "--config",
+          configFile,
           "--output",
           path.join(output, directory),
         ],
         output,
         id,
       );
-      const expiresAt =
-        code === 0 ? await archiveReport(this.db, id, directory) : undefined;
-      await this.update(
-        id,
-        code === 0
-          ? {
-              reportPhase: "ready",
-              reportDirectory: directory,
-              reportExpiresAt: expiresAt,
-            }
-          : { reportPhase: "failed" },
-      );
+      if (code !== 0)
+        throw new Error("Allure generation failed; see worker output");
+      const expiresAt = await archiveReport(this.db, id, directory);
+      const points = (await readFile(historyFile, "utf8"))
+        .split(/\r?\n/)
+        .filter(Boolean)
+        .map((line) => historyPoint.parse(JSON.parse(line)));
+      const point = points.at(-1);
+      if (!point) throw new Error("Allure history output missing");
+      const entries = [
+        ...lease.entries.filter(
+          (entry) =>
+            entry.runId !== id &&
+            new Date(entry.endedAt).getTime() + 365 * 86400000 > Date.now(),
+        ),
+        {
+          runId: id,
+          endedAt: run.endedAt ?? new Date().toISOString(),
+          reportExpiresAt: expiresAt,
+          point,
+        },
+      ];
+      await this.db.transaction(async (tx) => {
+        await commitHistory(tx, stream, historyOwner, lease.version, entries);
+        await updateOwnedRun(tx, id, this.owner, this.epoch, {
+          reportPhase: "ready",
+          reportDirectory: directory,
+          reportExpiresAt: expiresAt,
+          historyStream: stream,
+          historyVersion: lease.version + 1,
+          historyEntries: entries.slice(-200).length,
+          reportDiagnostic: null,
+        });
+      });
     } catch (error) {
       await this.update(id, {
         reportPhase: "failed",
@@ -545,6 +620,9 @@ export class LocalRunner {
           error instanceof Error ? error.message : "Report generation failed",
         ),
       });
+    } finally {
+      clearInterval(heartbeat);
+      if (stream) await releaseHistory(this.db, stream, historyOwner);
     }
   }
 }

@@ -56,9 +56,21 @@ test("administrator creates, rotates and revokes a CI credential", async ({
     ).status(),
   ).toBe(200);
   page.once("dialog", (dialog) => dialog.accept());
+  const revoked = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      response.url().endsWith("/revoke"),
+  );
   await page
     .getByRole("button", { name: `Revoke ${name}`, exact: true })
     .click();
+  expect((await revoked).status()).toBe(200);
+  await expect(
+    page
+      .locator("article")
+      .filter({ has: page.getByRole("heading", { name, exact: true }) })
+      .getByText(/Revoked/),
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: `Revoke ${name}`, exact: true }),
   ).toBeDisabled();

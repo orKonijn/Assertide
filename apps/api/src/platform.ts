@@ -6,6 +6,7 @@ import { IdentityService, type Principal } from "./identity.ts";
 import { discoverApprovedSource, discoveredCase } from "./discovery.ts";
 import { initializeScheduler } from "./scheduler.ts";
 import { initializeReports } from "./report-storage.ts";
+import { initializeHistory, readHistory } from "./report-history.ts";
 import {
   environmentSchema,
   initializeEnvironments,
@@ -180,6 +181,7 @@ export class PlatformService {
     );
     await initializeScheduler(this.db);
     await initializeReports(this.db);
+    await initializeHistory(this.db);
     await initializeEnvironments(this.db);
   }
   private setCatalog(items: z.infer<typeof discoveredCase>[]) {
@@ -522,6 +524,7 @@ export class PlatformService {
         );
       return this.get(principal, existing.run_id, "run");
     }
+    let historyFamily = config.selection.testIds;
     let source: unknown = {
       revision: this.revision,
       manifest: this.manifest,
@@ -563,6 +566,9 @@ export class PlatformService {
         throw new ApiError(409, "Original source snapshot is unavailable");
       }
       source = parent["source"];
+      historyFamily = z
+        .array(z.string())
+        .parse(parent["historyFamily"] ?? parentConfig.selection.testIds);
       if (Array.isArray(parent["metadata"]))
         metadata = parent["metadata"].filter((item: { id: string }) =>
           config.selection.testIds.includes(item.id),
@@ -593,6 +599,7 @@ export class PlatformService {
       parentRunId: parentRunId ?? null,
       source,
       metadata,
+      historyFamily,
       environment,
     };
     const result = await this.db.query<Row>(
@@ -919,6 +926,25 @@ export function mountPlatform(
       res
         .status(202)
         .json(await service.cancel(principal, String(req.params["id"])));
+    }),
+  );
+  app.get(
+    "/v1/runs/:id/history",
+    handler(async (req, res, principal) => {
+      const run = await service.get(principal, String(req.params["id"]), "run");
+      const stream = run["historyStream"];
+      const entries =
+        typeof stream === "string" ? await readHistory(service.db, stream) : [];
+      res.json({
+        items: entries
+          .filter((entry) => entry.runId !== run["id"])
+          .reverse()
+          .map((entry) => ({
+            runId: entry.runId,
+            endedAt: entry.endedAt,
+            reportAvailable: new Date(entry.reportExpiresAt) > new Date(),
+          })),
+      });
     }),
   );
   app.post(

@@ -1,6 +1,6 @@
 import { Queue, Worker, DelayedError } from "bullmq";
 import { z } from "zod";
-import type { SqlConnection } from "./database.ts";
+import type { SqlConnection, SqlExecutor } from "./database.ts";
 
 export async function initializeScheduler(db: SqlConnection) {
   await db.query(
@@ -74,7 +74,7 @@ export async function renewLease(
   if (!result.rows.length) throw new Error("Execution lease lost");
 }
 export async function updateOwnedRun(
-  db: SqlConnection,
+  db: SqlExecutor,
   id: string,
   owner: string,
   epoch: number,

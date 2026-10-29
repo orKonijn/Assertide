@@ -6,6 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added Allure 3 JSONL history partitioned by project, environment, selection family and browsers. SQL leases and version checks protect concurrent history writers; report history and the ready pointer publish atomically. Rebuilds replace their point, expired links are cleared in new reports, and execution pages link to compatible runs. Database and browser checks pass.
 - Added private S3-compatible evidence and report storage with version-pinned, integrity-checked downloads. Complete report uploads publish immutable manifests; viewer access remains bound to the issuing credential. Real local MinIO tests verify privacy, object-version/delete-marker removal and interrupted multipart cleanup, and the browser report/rebuild journey passes against object storage.
 - Added 30-day report/raw-data expiration and 365-day result/audit cleanup without changing retained test outcomes. Trace/video copies expire independently after 14 days, including embedded report assets and original raw files. Real-store tests and an Allure rebuild after attachment expiry pass; see [storage setup and retention details](docs/object-storage.md).
 - Maintainers can edit project-scoped test owners, modules, features, tags, priorities and enabled status, with stale-edit rejection. Disabled tests are excluded from new selections; earlier runs retain their metadata snapshots. Suite priority is editable. Database checks and browser editing/reload checks pass.
@@ -41,6 +42,10 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - Cancellation now stops the owned worker process tree and retains completed attempts from durable checkpoints. Missing browser instances are reconciled individually, queued cancellations retain explicit canceled outcomes, and concurrent progress updates no longer discard a cancellation request. The Windows browser cancellation test and database checks pass.
 
 ### Design preview visuals
+
+![Compatible execution history in a running result page](docs/changelog/assets/unreleased/report-history.png)
+
+History links open the selected execution and retain its authorization and report-expiry checks.
 
 ![Catalog metadata editing in the running application](docs/changelog/assets/unreleased/catalog-metadata.png)
 
