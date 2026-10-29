@@ -28,6 +28,7 @@ export function mountLiveEvents(
     }
     let cursor = Number(requested);
     let closed = false;
+    let initial = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     res.set({
       "Content-Type": "text/event-stream",
@@ -46,6 +47,28 @@ export function mountLiveEvents(
           return;
         }
         await service.get(principal, id, "run");
+        if (initial && cursor > 0) {
+          const bounds = (
+            await service.db.query<{
+              minimum: string | null;
+              maximum: string | null;
+            }>(
+              "SELECT min(sequence) AS minimum,max(sequence) AS maximum FROM run_events WHERE run_id=$1",
+              [id],
+            )
+          ).rows[0];
+          if (
+            !bounds?.minimum ||
+            cursor < Number(bounds.minimum) ||
+            cursor > Number(bounds.maximum)
+          ) {
+            cursor = Number(bounds?.maximum ?? 0);
+            res.write(
+              `id: ${cursor}\nevent: resync\ndata: {"reason":"Replay window expired; reload snapshot"}\n\n`,
+            );
+          }
+        }
+        initial = false;
         const rows = (
           await service.db.query<{
             sequence: string;

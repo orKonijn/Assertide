@@ -6,6 +6,12 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import type { SqlConnection } from "./database.ts";
 import { verifySource } from "./source.ts";
+import {
+  attachmentSchema,
+  captureAttachments,
+  expireArtifacts,
+  type Artifact,
+} from "./artifacts.ts";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 export const runRoot = path.join(root, ".local", "runs");
@@ -26,6 +32,7 @@ const runSchema = z.object({
   config: configuration,
 });
 const attemptSchema = z.object({
+  attachments: z.array(attachmentSchema).default([]),
   status: z.string(),
   duration: z.number(),
   error: z.object({ message: z.string().optional() }).optional(),
@@ -67,6 +74,7 @@ export class LocalRunner {
   private stopped = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private child: ChildProcess | undefined;
+  private nextRetentionSweep = 0;
   constructor(private readonly db: SqlConnection) {
     if (process.env["NODE_ENV"] === "production")
       throw new Error("Local runner is forbidden in production");
@@ -93,6 +101,13 @@ export class LocalRunner {
   }
   private async tick() {
     try {
+      if (Date.now() >= this.nextRetentionSweep) {
+        await expireArtifacts(this.db);
+        await this.db.query(
+          "DELETE FROM run_events WHERE occurred_at < now()-interval '24 hours'",
+        );
+        this.nextRetentionSweep = Date.now() + 60_000;
+      }
       const rebuild = (
         await this.db.query<{ id: string }>(
           `UPDATE platform_documents SET body=jsonb_set(body,'{reportPhase}','"generating"'),version=version+1 WHERE id=(SELECT id FROM platform_documents WHERE kind='run' AND body->>'reportPhase'='rebuild_requested' LIMIT 1) AND body->>'reportPhase'='rebuild_requested' RETURNING id`,
@@ -121,19 +136,22 @@ export class LocalRunner {
   }
   private async update(id: string, patch: Record<string, unknown>) {
     await this.db.query(
-      "UPDATE platform_documents SET body=body || $1::jsonb,version=version+1 WHERE id=$2",
+      `WITH updated AS (UPDATE platform_documents SET body=body || $1::jsonb || CASE WHEN body->>'cancelRequested'='true' AND $1::jsonb->>'phase'='completed' THEN '{"phase":"canceled","reportPhase":"failed"}'::jsonb ELSE '{}'::jsonb END,version=version+1 WHERE id=$2 RETURNING id) INSERT INTO run_events(run_id,body) SELECT id,$1::jsonb FROM updated`,
       [JSON.stringify(patch), id],
     );
-    await this.db.query("INSERT INTO run_events(run_id,body) VALUES($1,$2)", [
-      id,
-      JSON.stringify(patch),
-    ]);
   }
   private async command(
     args: string[],
     output: string,
     id: string,
   ): Promise<number> {
+    const previous =
+      (
+        await this.db.query<{ log: string | null }>(
+          "SELECT body->>'logTail' AS log FROM platform_documents WHERE id=$1",
+          [id],
+        )
+      ).rows[0]?.log ?? "";
     return new Promise((resolve, reject) => {
       const child = spawn(process.execPath, args, {
         cwd: automationRoot,
@@ -142,13 +160,27 @@ export class LocalRunner {
         stdio: ["ignore", "pipe", "pipe"],
       });
       this.child = child;
-      let logs = "";
+      let logs = previous;
+      let sent = "";
+      let pending = Promise.resolve();
       child.stdout?.on("data", (chunk: Buffer) => {
-        logs = (logs + redact(chunk.toString())).slice(-100_000);
+        logs = (logs + chunk.toString()).slice(-100_000);
       });
       child.stderr?.on("data", (chunk: Buffer) => {
-        logs = (logs + redact(chunk.toString())).slice(-100_000);
+        logs = (logs + chunk.toString()).slice(-100_000);
       });
+      const flush = () => {
+        const complete = redact(logs.slice(0, logs.lastIndexOf("\n") + 1));
+        if (complete !== sent) {
+          sent = complete;
+          pending = pending
+            .then(() => this.update(id, { logTail: complete }))
+            .catch(() => {
+              child.kill();
+            });
+        }
+      };
+      const liveLog = setInterval(flush, 1000);
       const timeout = setTimeout(() => child.kill(), 30 * 60_000);
       const cancel = setInterval(() => {
         void this.db
@@ -164,6 +196,7 @@ export class LocalRunner {
       const clean = () => {
         clearTimeout(timeout);
         clearInterval(cancel);
+        clearInterval(liveLog);
         this.child = undefined;
       };
       child.once("error", (error) => {
@@ -171,11 +204,11 @@ export class LocalRunner {
         reject(error);
       });
       child.once("close", (code) => {
+        flush();
         clean();
-        void writeFile(path.join(output, "worker.log"), logs).then(
-          () => resolve(code ?? -1),
-          reject,
-        );
+        void pending
+          .then(() => writeFile(path.join(output, "worker.log"), redact(logs)))
+          .then(() => resolve(code ?? -1), reject);
       });
     });
   }
@@ -218,6 +251,25 @@ export class LocalRunner {
       const data = resultSchema.parse(
         JSON.parse(await readFile(path.join(output, "results.json"), "utf8")),
       );
+      const artifacts: Artifact[] = [];
+      for (const spec of data.suites.flatMap(flatten))
+        for (const test of spec.tests) {
+          const caseId = spec.title.split(" ")[0] ?? spec.title;
+          const resultId =
+            test.projectName === "api"
+              ? caseId
+              : `${caseId}:${test.projectName}`;
+          for (const [index, attempt] of test.results.entries())
+            artifacts.push(
+              ...(await captureAttachments(
+                run.id,
+                resultId,
+                index + 1,
+                attempt.attachments,
+                redact,
+              )),
+            );
+        }
       const results = data.suites.flatMap(flatten).flatMap((spec) =>
         spec.tests.map((test) => {
           const attempts = test.results;
@@ -266,10 +318,17 @@ export class LocalRunner {
             : "completed",
         endedAt: new Date().toISOString(),
         results,
+        artifacts,
         reportPhase: canceled ? "failed" : "generating",
       });
       executionFinalized = true;
-      if (canceled) return;
+      const terminal = (
+        await this.db.query<{ phase: string }>(
+          "SELECT body->>'phase' AS phase FROM platform_documents WHERE id=$1",
+          [run.id],
+        )
+      ).rows[0];
+      if (canceled || terminal?.phase === "canceled") return;
       const raw = path.join(output, "allure-results");
       for (const entry of await readdir(raw))
         if (entry.endsWith(".json")) {

@@ -426,11 +426,9 @@ export class PlatformService {
       );
     if (!["queued", "running", "provisioning"].includes(String(run["phase"])))
       return run;
-    const phase = run["phase"] === "queued" ? "canceled" : run["phase"];
-    const updated = { ...run, phase, cancelRequested: true };
     await this.db.query(
-      "UPDATE platform_documents SET body=$1,version=version+1 WHERE id=$2 AND version=$3",
-      [JSON.stringify(updated), id, run.version],
+      `UPDATE platform_documents SET body=body || jsonb_build_object('cancelRequested',true,'phase',CASE WHEN body->>'phase'='queued' THEN 'canceled' ELSE body->>'phase' END),version=version+1 WHERE id=$1 AND body->>'phase' IN ('queued','running','provisioning')`,
+      [id],
     );
     await this.audit(
       principal,

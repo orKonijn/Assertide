@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./pages/overview').then((m) => m.Overview) },
   { path: 'explorer', loadComponent: () => import('./pages/explorer').then((m) => m.Explorer) },
-  { path: 'api', loadComponent: () => import('./pages/explorer').then((m) => m.Explorer) },
+  { path: 'api', loadComponent: () => import('./pages/api-workspace').then((m) => m.ApiWorkspace) },
   { path: 'runs', loadComponent: () => import('./pages/runs').then((m) => m.Runs) },
   { path: 'runs/:id', loadComponent: () => import('./pages/run-detail').then((m) => m.RunDetail) },
   { path: 'projects', loadComponent: () => import('./pages/projects').then((m) => m.Projects) },

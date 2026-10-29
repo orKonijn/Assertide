@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added an API evidence workspace showing recorded methods, paths, request/response bodies, status and duration without repeating requests. The browser journey verifies authenticated evidence retrieval and responsive desktop/mobile views.
+- Added attempt-linked evidence downloads with access checks, audited retrieval, secret redaction for text, 14/30-day expiry and deletion that preserves an explanatory tombstone. SQL/HTTP tests verify access revocation and expiry. Worker output now streams through authenticated events, with snapshot resync after the replay window expires.
 - Executions now save and verify content-addressed test-source snapshots. Added editable suite owners/tags/membership and linked reruns for failed or selected tests. Strict compilation, database tests and four browser journeys pass; suite editing was captured from the running app.
 - Completed all 15 controlled Lab cases, including invalid/expired tokens, boundaries, pagination, signed fault injection, bounded transport timeout, a 20-request rate window and local latency evidence. All pass locally and in the browser-launched mixed run; unsigned fixture controls are rejected.
 - Added browser execution against a pinned local Sauce Labs sandbox, with telemetry disabled. All 12 catalog browser cases pass in Chromium, Firefox and WebKit; mixed browser/API launch and Allure viewing pass through the Angular UI.

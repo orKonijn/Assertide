@@ -13,6 +13,7 @@ import { mountReportViewer } from "./report-viewer.ts";
 import { mountLiveEvents } from "./live.ts";
 import { mountAnalytics } from "./analytics.ts";
 import { startLocalSandbox } from "./local-sandbox.ts";
+import { mountArtifacts } from "./artifacts.ts";
 
 @Module({})
 class AppModule {}
@@ -25,12 +26,10 @@ express.use((req, res, next) => {
     !req.path.startsWith("/lab/v1/") &&
     (req.get("X-Lab-Fault") || req.get("X-Lab-Fixture"))
   ) {
-    res
-      .status(400)
-      .json({
-        status: 400,
-        title: "Fixture headers are restricted to the Lab",
-      });
+    res.status(400).json({
+      status: 400,
+      title: "Fixture headers are restricted to the Lab",
+    });
     return;
   }
   next();
@@ -87,6 +86,7 @@ if (process.env["LOCAL_IDENTITY"] === "true") {
 mountPlatform(express, platform, identity);
 mountLiveEvents(express, identity, platform);
 mountAnalytics(express, identity, platform);
+mountArtifacts(express, identity, platform);
 const reportViewer =
   process.env["LOCAL_RUNNER"] === "true"
     ? await mountReportViewer(express, db, identity, platform)

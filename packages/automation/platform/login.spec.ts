@@ -134,5 +134,43 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
   expect(child.parentRunId).toBe(before.id);
   expect(child.selection.testIds).toEqual(["LAB-001"]);
   expect(child.source.revision).toBe(before.source.revision);
+  expect(child.artifacts.length).toBeGreaterThan(0);
+  const evidence = await page.request.get(
+    `/v1/runs/${child.id}/artifacts/${child.artifacts[0].id}`,
+  );
+  expect(evidence.status()).toBe(200);
+  expect(await evidence.json()).toMatchObject({
+    request: { method: "POST", path: "orders" },
+    response: { status: 201 },
+  });
+  await page.getByRole("link", { name: "API workspace", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "API workspace", exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Execution", { exact: true }).selectOption(child.id);
+  await page
+    .getByRole("button", { name: /LAB-001 · attempt 1 · api-exchange.json/ })
+    .first()
+    .click();
+  await expect(page.getByLabel("Recorded request and response")).toContainText(
+    '"method": "POST"',
+  );
+  await expect(
+    page.getByLabel("Recorded request and response"),
+  ).not.toContainText(credentials.password);
+  await page.screenshot({
+    path: "../../docs/changelog/assets/unreleased/api-evidence.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "../../docs/changelog/assets/unreleased/api-evidence-mobile.png",
+    fullPage: true,
+  });
   expect(errors).toEqual([]);
 });

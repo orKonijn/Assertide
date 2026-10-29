@@ -41,6 +41,18 @@ export interface Run {
   parentRunId?: string;
   cancelRequested?: boolean;
   source?: { revision: string };
+  logTail?: string;
+  artifacts?: {
+    id: string;
+    resultId: string;
+    attempt: number;
+    name: string;
+    createdAt: string;
+    expiresAt: string;
+    redactionPolicy: string;
+    unavailableReason?: string;
+    exchange?: { method: string; path: string; status?: number; durationMs: number };
+  }[];
 }
 export interface CaseResult {
   id: string;

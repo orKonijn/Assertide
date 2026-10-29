@@ -1,4 +1,5 @@
-import { test, expect, type APIRequestContext } from "@playwright/test";
+import type { APIRequestContext } from "@playwright/test";
+import { test, expect } from "./api-fixture";
 import { randomUUID, createHmac } from "node:crypto";
 import { z } from "zod";
 

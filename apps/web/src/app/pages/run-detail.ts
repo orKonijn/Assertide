@@ -1,8 +1,9 @@
 import { Component, inject, signal, DestroyRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { Api, Run, errorMessage } from '../core/api';
 @Component({
-  imports: [RouterLink],
+  imports: [RouterLink, DatePipe],
   template: `
     <header class="page-header">
       <div>
@@ -88,12 +89,36 @@ import { Api, Run, errorMessage } from '../core/api';
             @if (result.error) {
               <pre>{{ result.error }}</pre>
             }
+            @for (artifact of current.artifacts ?? []; track artifact.id) {
+              @if (artifact.resultId === result.id) {
+                <div class="card">
+                  <p>Attempt {{ artifact.attempt }} · {{ artifact.createdAt | date: 'short' }}</p>
+                  @if (artifact.unavailableReason) {
+                    <p>{{ artifact.name }}: {{ artifact.unavailableReason }}</p>
+                  } @else {
+                    <a [href]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
+                      >Download {{ artifact.name }}</a
+                    >
+                  }
+                  <p class="muted">
+                    {{ artifact.redactionPolicy }} · Expires
+                    {{ artifact.expiresAt | date: 'shortDate' }}
+                  </p>
+                </div>
+              }
+            }
           </details>
         } @empty {
           <p class="empty">
             Results appear as execution finishes. No outcomes have been recorded yet.
           </p>
         }
+      </section>
+      <section class="card">
+        <h2>Worker log</h2>
+        <pre tabindex="0" aria-label="Worker log">{{
+          current.logTail || 'Waiting for worker output.'
+        }}</pre>
       </section>
       @if (current.parentRunId) {
         <p>
@@ -144,6 +169,10 @@ export class RunDetail {
       void this.load();
     };
     this.stream.onerror = () => this.disconnected.set(true);
+    this.stream.addEventListener('resync', () => {
+      this.lastSequence = 0;
+      void this.load();
+    });
     this.stream.addEventListener('update', (event: MessageEvent<string>) => {
       const sequence = Number(event.lastEventId);
       if (Number.isSafeInteger(sequence) && sequence > this.lastSequence) {
