@@ -172,5 +172,11 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
     path: "../../docs/changelog/assets/unreleased/api-evidence-mobile.png",
     fullPage: true,
   });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(
+    page.getByRole("link", { name: "Continue with SSO" }),
+  ).toBeVisible();
+  expect((await report.request.get(report.url())).status()).toBe(403);
   expect(errors).toEqual([]);
 });

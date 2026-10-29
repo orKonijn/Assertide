@@ -23,6 +23,9 @@ export async function mountReportViewer(
   await db.query(
     "CREATE TABLE IF NOT EXISTS report_tickets (digest text PRIMARY KEY, run_id text NOT NULL, subject text NOT NULL, expires_at timestamptz NOT NULL, redeemed boolean NOT NULL DEFAULT false)",
   );
+  await db.query(
+    "ALTER TABLE report_tickets ADD COLUMN IF NOT EXISTS auth_digest text, ADD COLUMN IF NOT EXISTS auth_kind text, ADD COLUMN IF NOT EXISTS report_directory text",
+  );
   app.get("/v1/runs/:id/report", async (req, res) => {
     try {
       const principal = await identity.principal(req);
@@ -37,9 +40,21 @@ export async function mountReportViewer(
         return;
       }
       const token = randomBytes(32).toString("hex");
+      const binding = identity.credential(req);
+      if (!binding) {
+        res.status(401).end();
+        return;
+      }
       await db.query(
-        "INSERT INTO report_tickets(digest,run_id,subject,expires_at) VALUES($1,$2,$3,now()+interval '60 seconds')",
-        [digest(token), id, principal.subject],
+        "INSERT INTO report_tickets(digest,run_id,subject,expires_at,auth_digest,auth_kind,report_directory) VALUES($1,$2,$3,now()+interval '60 seconds',$4,$5,$6)",
+        [
+          digest(token),
+          id,
+          principal.subject,
+          binding.digest,
+          binding.kind,
+          run["reportDirectory"],
+        ],
       );
       res
         .set("Cache-Control", "no-store")
@@ -93,19 +108,31 @@ export async function mountReportViewer(
       return;
     }
     const row = (
-      await db.query<{ body: unknown }>(
-        `SELECT m.body FROM report_tickets t JOIN memberships m ON m.subject=t.subject
+      await db.query<{
+        auth_digest: string | null;
+        auth_kind: string | null;
+        report_directory: string | null;
+      }>(
+        `SELECT t.auth_digest,t.auth_kind,t.report_directory FROM report_tickets t
       WHERE t.digest=$1 AND t.run_id=$2 AND t.redeemed AND t.expires_at>now()`,
         [digest(token), id],
       )
     ).rows[0];
-    if (!row) {
+    if (
+      !row?.auth_digest ||
+      !["session", "service"].includes(row.auth_kind ?? "")
+    ) {
       res.status(403).end();
       return;
     }
-    const membership = z
-      .object({ projectIds: z.array(z.string()), organizationId: z.string() })
-      .parse(row.body);
+    const membership = await identity.resolveCredential({
+      digest: row.auth_digest,
+      kind: row.auth_kind as "session" | "service",
+    });
+    if (!membership) {
+      res.status(403).end();
+      return;
+    }
     const run = (
       await db.query<{
         project_id: string;
@@ -124,7 +151,7 @@ export async function mountReportViewer(
       res.status(403).end();
       return;
     }
-    const directory = run.directory ?? "report";
+    const directory = row.report_directory ?? "";
     if (!/^report(?:-[a-f0-9-]{36})?$/.test(directory)) {
       res.status(404).end();
       return;

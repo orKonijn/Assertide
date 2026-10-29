@@ -57,9 +57,25 @@ export class IdentityService {
     );
   }
   async principal(req: Request): Promise<Principal | null> {
+    const binding = this.credential(req);
+    return binding ? this.resolveCredential(binding) : null;
+  }
+  credential(
+    req: Request,
+  ): { kind: "session" | "service"; digest: string } | null {
     const authorization = req.get("Authorization");
     if (authorization) {
       if (!authorization.startsWith("Bearer ")) return null;
+      return { kind: "service", digest: hash(authorization.slice(7)) };
+    }
+    const token = cookie(req, "assertide_session");
+    return token ? { kind: "session", digest: hash(token) } : null;
+  }
+  async resolveCredential(binding: {
+    kind: "session" | "service";
+    digest: string;
+  }): Promise<Principal | null> {
+    if (binding.kind === "service") {
       const account = (
         await this.db.query<{
           id: string;
@@ -68,7 +84,7 @@ export class IdentityService {
           name: string;
         }>(
           "SELECT id,organization_id,project_id,name FROM service_accounts WHERE digest=$1 AND NOT revoked AND expires_at>now()",
-          [hash(authorization.slice(7))],
+          [binding.digest],
         )
       ).rows[0];
       return account
@@ -82,12 +98,10 @@ export class IdentityService {
           }
         : null;
     }
-    const token = cookie(req, "assertide_session");
-    if (!token) return null;
     const row = (
       await this.db.query<JsonRow>(
         "SELECT m.body FROM sessions s JOIN memberships m ON m.subject=s.subject WHERE s.digest=$1 AND s.expires_at>now()",
-        [hash(token)],
+        [binding.digest],
       )
     ).rows[0];
     return row ? principalSchema.parse(row.body) : null;
