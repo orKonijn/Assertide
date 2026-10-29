@@ -10,6 +10,7 @@ export const principalSchema = z.object({
   organizationId: z.uuid(),
   role: z.enum(["viewer", "operator", "maintainer", "administrator"]),
   projectIds: z.array(z.uuid()),
+  machine: z.boolean().optional(),
 });
 export type Principal = z.infer<typeof principalSchema>;
 interface JsonRow extends Record<string, unknown> {
@@ -37,6 +38,9 @@ export class IdentityService {
   ) {}
   async initialize() {
     await this.db.query(
+      "CREATE TABLE IF NOT EXISTS service_accounts (id uuid PRIMARY KEY, digest text UNIQUE NOT NULL, organization_id uuid NOT NULL, project_id uuid NOT NULL, name text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL, revoked boolean NOT NULL DEFAULT false, version integer NOT NULL DEFAULT 1)",
+    );
+    await this.db.query(
       "CREATE TABLE IF NOT EXISTS memberships (subject text PRIMARY KEY, body jsonb NOT NULL)",
     );
     await this.db.query(
@@ -53,6 +57,31 @@ export class IdentityService {
     );
   }
   async principal(req: Request): Promise<Principal | null> {
+    const authorization = req.get("Authorization");
+    if (authorization) {
+      if (!authorization.startsWith("Bearer ")) return null;
+      const account = (
+        await this.db.query<{
+          id: string;
+          organization_id: string;
+          project_id: string;
+          name: string;
+        }>(
+          "SELECT id,organization_id,project_id,name FROM service_accounts WHERE digest=$1 AND NOT revoked AND expires_at>now()",
+          [hash(authorization.slice(7))],
+        )
+      ).rows[0];
+      return account
+        ? {
+            subject: `service:${account.id}`,
+            name: account.name,
+            organizationId: account.organization_id,
+            projectIds: [account.project_id],
+            role: "operator",
+            machine: true,
+          }
+        : null;
+    }
     const token = cookie(req, "assertide_session");
     if (!token) return null;
     const row = (
@@ -64,7 +93,10 @@ export class IdentityService {
     return row ? principalSchema.parse(row.body) : null;
   }
   sameOrigin(req: Request): boolean {
-    return req.get("Origin") === this.origin;
+    return (
+      req.get("Authorization")?.startsWith("Bearer ") === true ||
+      req.get("Origin") === this.origin
+    );
   }
   async mount(
     app: Express,

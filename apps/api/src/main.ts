@@ -14,6 +14,7 @@ import { mountLiveEvents } from "./live.ts";
 import { mountAnalytics } from "./analytics.ts";
 import { startLocalSandbox } from "./local-sandbox.ts";
 import { mountArtifacts } from "./artifacts.ts";
+import { mountServiceAccounts } from "./service-accounts.ts";
 
 @Module({})
 class AppModule {}
@@ -87,6 +88,7 @@ mountPlatform(express, platform, identity);
 mountLiveEvents(express, identity, platform);
 mountAnalytics(express, identity, platform);
 mountArtifacts(express, identity, platform);
+mountServiceAccounts(express, identity, platform);
 const reportViewer =
   process.env["LOCAL_RUNNER"] === "true"
     ? await mountReportViewer(express, db, identity, platform)

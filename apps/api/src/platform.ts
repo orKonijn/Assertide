@@ -77,6 +77,10 @@ const runInput = z
     retries: z.number().int().min(0).max(2),
     headed: z.literal(false),
     video: z.enum(["off", "retain-on-failure"]),
+    commitSha: z
+      .string()
+      .regex(/^[a-f0-9]{40}$/)
+      .optional(),
   })
   .strict();
 export type RunInput = z.infer<typeof runInput>;
@@ -628,6 +632,23 @@ export function mountPlatform(
       try {
         const principal = await identity.principal(req);
         if (!principal) throw new ApiError(401, "Authentication required");
+        if (principal.machine) {
+          const read =
+            req.method === "GET" &&
+            (/^\/v1\/runs(?:\/|$)/.test(req.path) ||
+              /^\/v1\/projects(?:$|\/[^/]+\/(catalog|environments)$)/.test(
+                req.path,
+              ));
+          const write =
+            req.method === "POST" &&
+            (/^\/v1\/projects\/[^/]+\/runs$/.test(req.path) ||
+              /^\/v1\/runs\/[^/]+\/(cancel|reruns)$/.test(req.path));
+          if (!read && !write)
+            throw new ApiError(
+              403,
+              "Service account scope does not allow this action",
+            );
+        }
         if (!["GET", "HEAD"].includes(req.method) && !identity.sameOrigin(req))
           throw new ApiError(403, "Origin rejected");
         await fn(req, res, principal);

@@ -97,10 +97,15 @@ export class Api {
       ),
     );
   }
-  post<T>(path: string, body: unknown, key?: string) {
+  post<T>(path: string, body: unknown, key?: string, version?: number) {
     return firstValueFrom(
       this.http
-        .post<T>(`/v1${path}`, body, { headers: key ? { 'Idempotency-Key': key } : {} })
+        .post<T>(`/v1${path}`, body, {
+          headers: {
+            ...(key ? { 'Idempotency-Key': key } : {}),
+            ...(version !== undefined ? { 'If-Match': `"${version}"` } : {}),
+          },
+        })
         .pipe(
           catchError((error: unknown) => {
             if (error instanceof HttpErrorResponse && error.status === 401) this.identity.set(null);
