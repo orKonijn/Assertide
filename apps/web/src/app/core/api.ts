@@ -14,6 +14,19 @@ export interface Project {
   description: string;
   version: number;
 }
+export interface Environment {
+  id: string;
+  name: string;
+  version: number;
+  enabled: boolean;
+  apiUrl: string;
+  browserUrl: string;
+  maxWorkers: number;
+  maxRetries: number;
+  browsers: string[];
+  allowVideo: boolean;
+  passwordRef?: { id: string; version: number };
+}
 export interface TestCase {
   id: string;
   title: string;
@@ -149,6 +162,8 @@ export class Api {
     retries: number,
     browser = 'chromium',
     revision?: string,
+    video: 'off' | 'retain-on-failure' = 'off',
+    environmentId = 'local-lab',
   ) {
     const catalogRevision =
       revision ??
@@ -158,12 +173,12 @@ export class Api {
       {
         catalogRevision,
         selection: { testIds },
-        environmentId: 'local-lab',
+        environmentId,
         browserProjects: testIds.some((id) => id.startsWith('UI-')) ? [browser] : [],
         workers,
         retries,
         headed: false,
-        video: 'off',
+        video,
       },
       key,
     );

@@ -14,7 +14,10 @@ export default defineConfig({
     ["json", { outputFile: path.join(output, "results.json") }],
     ["allure-playwright", { resultsDir: path.join(output, "allure-results") }],
   ],
-  use: { baseURL: "http://127.0.0.1:4010/lab/v1/", trace: "off" },
+  use: {
+    baseURL: process.env["RUN_API_URL"] ?? "http://127.0.0.1:4010/lab/v1/",
+    trace: "off",
+  },
   projects: [
     { name: "api", testMatch: "lab.spec.ts" },
     ...(["chromium", "firefox", "webkit"] as const).map((browserName) => ({
@@ -22,10 +25,14 @@ export default defineConfig({
       testMatch: "store.spec.ts",
       use: {
         browserName,
-        baseURL: "http://127.0.0.1:4013",
+        baseURL: process.env["RUN_BROWSER_URL"] ?? "http://127.0.0.1:4013",
         testIdAttribute: "data-test",
         trace: "retain-on-failure" as const,
         screenshot: "only-on-failure" as const,
+        video:
+          process.env["RUN_VIDEO"] === "retain-on-failure"
+            ? ("retain-on-failure" as const)
+            : ("off" as const),
       },
     })),
   ],

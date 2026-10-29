@@ -8,6 +8,11 @@ import type { SqlConnection } from "./database.ts";
 import { verifySource } from "./source.ts";
 import { stopProcessTree } from "./process-tree.ts";
 import {
+  environmentSchema,
+  defaultEnvironment,
+  resolveSecret,
+} from "./environments.ts";
+import {
   claimExecution,
   renewLease,
   updateOwnedRun,
@@ -29,12 +34,18 @@ const configuration = z.object({
   catalogRevision: z.string(),
   workers: z.number().int().min(1).max(4),
   retries: z.number().int().min(0).max(2),
+  video: z.enum(["off", "retain-on-failure"]).default("off"),
   browserProjects: z
     .array(z.enum(["chromium", "firefox", "webkit"]))
     .default([]),
 });
 const runSchema = z.object({
   id: z.uuid(),
+  organizationId: z.uuid(),
+  projectId: z.uuid(),
+  environment: environmentSchema
+    .extend({ version: z.number().optional() })
+    .default(defaultEnvironment),
   selection: z.object({
     testIds: z.array(z.string().regex(/^(LAB|UI)-\d{3}$/)).min(1),
   }),
@@ -108,7 +119,7 @@ const flatten = (node: SuiteNode): z.infer<typeof specSchema>[] => [
   ...node.specs,
   ...node.suites.flatMap(flatten),
 ];
-const redact = (text: string) =>
+const redactDefault = (text: string) =>
   text
     .replace(
       /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
@@ -116,6 +127,7 @@ const redact = (text: string) =>
     )
     .split(process.env["LAB_PASSWORD"] ?? "\u0000")
     .join("[REDACTED]");
+const redact = redactDefault;
 
 /** Local development runner for this repository's trusted fixtures only. Not a production isolation boundary. */
 export class LocalRunner {
@@ -250,7 +262,12 @@ export class LocalRunner {
     args: string[],
     output: string,
     id: string,
+    executionEnv: Record<string, string> = {},
   ): Promise<number> {
+    const redact = (text: string) =>
+      redactDefault(text)
+        .split(executionEnv["LAB_PASSWORD"] || "\u0000")
+        .join("[REDACTED]");
     const previous =
       (
         await this.db.query<{ log: string | null }>(
@@ -263,7 +280,7 @@ export class LocalRunner {
         cwd: automationRoot,
         windowsHide: true,
         detached: process.platform !== "win32",
-        env: { ...process.env, RUN_OUTPUT: output },
+        env: { ...process.env, ...executionEnv, RUN_OUTPUT: output },
         stdio: ["ignore", "pipe", "pipe"],
       });
       this.child = child;
@@ -327,7 +344,19 @@ export class LocalRunner {
     const output = path.join(runRoot, run.id);
     await mkdir(output, { recursive: true });
     let executionFinalized = false;
+    let password = "";
+    const redact = (text: string) =>
+      redactDefault(text)
+        .split(password || "\u0000")
+        .join("[REDACTED]");
     try {
+      if (run.environment.passwordRef)
+        password = await resolveSecret(
+          this.db,
+          run.organizationId,
+          run.projectId,
+          run.environment.passwordRef,
+        );
       await this.update(run.id, { startedAt: new Date().toISOString() });
       const snapshot = await verifySource(run.config.catalogRevision);
       const code = await this.command(
@@ -351,6 +380,12 @@ export class LocalRunner {
         ],
         output,
         run.id,
+        {
+          RUN_VIDEO: run.config.video,
+          RUN_API_URL: run.environment.apiUrl,
+          RUN_BROWSER_URL: run.environment.browserUrl,
+          ...(password ? { LAB_PASSWORD: password } : {}),
+        },
       );
       const canceled =
         (

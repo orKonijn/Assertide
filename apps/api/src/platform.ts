@@ -6,6 +6,11 @@ import { IdentityService, type Principal } from "./identity.ts";
 import { discoverApprovedSource, discoveredCase } from "./discovery.ts";
 import { initializeScheduler } from "./scheduler.ts";
 import {
+  environmentSchema,
+  initializeEnvironments,
+  listEnvironments,
+} from "./environments.ts";
+import {
   catalogRevision,
   prepareSource,
   sourceManifest,
@@ -71,7 +76,7 @@ const runInput = z
   .object({
     catalogRevision: z.string().min(1),
     selection: selectionInput,
-    environmentId: z.literal("local-lab"),
+    environmentId: z.string().regex(/^[a-z][a-z0-9-]{0,63}$/),
     browserProjects: z.array(z.enum(["chromium", "firefox", "webkit"])).max(3),
     workers: z.number().int().min(1).max(4),
     retries: z.number().int().min(0).max(2),
@@ -162,6 +167,7 @@ export class PlatformService {
       "CREATE TABLE IF NOT EXISTS run_events (sequence bigserial PRIMARY KEY, run_id text NOT NULL, body jsonb NOT NULL, occurred_at timestamptz NOT NULL DEFAULT now())",
     );
     await initializeScheduler(this.db);
+    await initializeEnvironments(this.db);
   }
   private setCatalog(items: z.infer<typeof discoveredCase>[]) {
     const smoke = new Set([
@@ -448,6 +454,23 @@ export class PlatformService {
       revision: this.revision,
       manifest: this.manifest,
     };
+    let environment = (
+      await listEnvironments(this.db, principal.organizationId, projectId)
+    ).find((item) => item.id === config.environmentId);
+    if (
+      !environment ||
+      !environment.enabled ||
+      config.workers > environment.maxWorkers ||
+      config.retries > environment.maxRetries ||
+      config.browserProjects.some(
+        (browser) => !environment?.browsers.includes(browser),
+      ) ||
+      (config.video !== "off" && !environment.allowVideo)
+    )
+      throw new ApiError(
+        422,
+        "Environment unavailable or execution exceeds its current policy; refresh configuration",
+      );
     let permittedIds = this.catalog.map((test) => test.id);
     if (parentRunId) {
       const parent = await this.get(principal, parentRunId, "run");
@@ -463,6 +486,10 @@ export class PlatformService {
         throw new ApiError(409, "Original source snapshot is unavailable");
       }
       source = parent["source"];
+      if (parent["environment"])
+        environment = environmentSchema
+          .extend({ version: z.number() })
+          .parse(parent["environment"]);
       permittedIds = parentConfig.selection.testIds;
     } else if (config.catalogRevision !== this.revision)
       throw new ApiError(
@@ -484,6 +511,7 @@ export class PlatformService {
       reportPhase: "pending",
       parentRunId: parentRunId ?? null,
       source,
+      environment,
     };
     const result = await this.db.query<Row>(
       `WITH claimed AS (
@@ -702,15 +730,11 @@ export function mountPlatform(
     handler(async (req, res, principal) => {
       service.authorize(principal, String(req.params["project"]));
       res.json({
-        items: [
-          {
-            id: "local-lab",
-            name: "Local Lab sandbox",
-            maxWorkers: 4,
-            maxRetries: 2,
-            browserProjects: [],
-          },
-        ],
+        items: await listEnvironments(
+          service.db,
+          principal.organizationId,
+          String(req.params["project"]),
+        ),
       });
     }),
   );

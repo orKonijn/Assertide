@@ -25,6 +25,12 @@ try {
 console.log(
   "Local accounts: admin, operator, viewer. Read the generated password from .local/credentials.json.",
 );
+if (!credentials.encryptionKey) {
+  credentials.encryptionKey = randomBytes(32).toString("hex");
+  await writeFile(secretsFile, JSON.stringify(credentials, null, 2), {
+    mode: 0o600,
+  });
+}
 const child = spawn(process.execPath, ["--import", "tsx", "src/main.ts"], {
   cwd: `${root}/apps/api`,
   stdio: "inherit",
@@ -39,6 +45,7 @@ const child = spawn(process.execPath, ["--import", "tsx", "src/main.ts"], {
     ENABLE_LAB: "true",
     LAB_PASSWORD: credentials.password,
     LAB_SIGNING_KEY: credentials.signingKey,
+    SECRET_ENCRYPTION_KEY: credentials.encryptionKey,
     LOCAL_DATABASE_PATH: `${root}/.local/database`,
   },
 });

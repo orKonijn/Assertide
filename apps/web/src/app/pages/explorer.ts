@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Api, TestCase, errorMessage } from '../core/api';
+import { Api, TestCase, Environment, errorMessage } from '../core/api';
 @Component({
   imports: [FormsModule],
   template: `
@@ -100,6 +100,12 @@ import { Api, TestCase, errorMessage } from '../core/api';
         <p>{{ selected().length }} tests selected</p>
         @if (hasUi()) {
           <label
+            >Video<select [(ngModel)]="video">
+              <option value="off">Off</option>
+              <option value="retain-on-failure">Retain on failure</option>
+            </select></label
+          >
+          <label
             >Browser<select [(ngModel)]="browser">
               <option>chromium</option>
               <option>firefox</option>
@@ -108,8 +114,12 @@ import { Api, TestCase, errorMessage } from '../core/api';
           >
         }
         <label
-          >Environment<select>
-            <option>Local Lab sandbox</option>
+          >Environment<select aria-label="Environment" [(ngModel)]="environmentId">
+            @for (environment of environments(); track environment.id) {
+              <option [value]="environment.id" [disabled]="!environment.enabled">
+                {{ environment.name }}
+              </option>
+            }
           </select></label
         ><label>Workers<input type="number" min="1" max="4" [(ngModel)]="workers" /></label
         ><label>Retries<input type="number" min="0" max="2" [(ngModel)]="retries" /></label>
@@ -144,6 +154,9 @@ export class Explorer {
   workers = 1;
   retries = 0;
   browser = 'chromium';
+  environmentId = 'local-lab';
+  readonly environments = signal<Environment[]>([]);
+  video: 'off' | 'retain-on-failure' = 'off';
   readonly hasUi = computed(() => this.selected().some((id) => id.startsWith('UI-')));
   private key = crypto.randomUUID();
   readonly filtered = computed(() =>
@@ -168,6 +181,13 @@ export class Explorer {
         discoveryError?: string;
       }>(`/projects/${this.api.projectId()}/catalog`);
       this.tests.set(catalog.items);
+      this.environments.set(
+        (
+          await this.api.get<{ items: Environment[] }>(
+            `/projects/${this.api.projectId()}/environments`,
+          )
+        ).items,
+      );
       this.revision.set(catalog.revision);
       this.error.set(catalog.discoveryError ?? '');
     } catch (error) {
@@ -209,6 +229,8 @@ export class Explorer {
         this.retries,
         this.browser,
         this.revision(),
+        this.video,
+        this.environmentId,
       );
       await this.router.navigate(['/runs', run.id]);
     } catch (error) {

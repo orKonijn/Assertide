@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added saved environment policies with approved destination validation, worker/retry/browser/video caps, and versioned write-only encrypted credentials. Runs freeze policy and credential references; rotation preserves earlier versions. Database tests and all nine browser journeys pass, including execution with a saved credential. See [configuration and key backup guidance](docs/environments.md).
+- Failure-video selection now reaches Playwright. A controlled blocked-target check verifies non-empty video, trace and screenshot evidence from a failed browser attempt.
 - Administrators can create/edit projects and manage organization roles and project membership with stale-edit protection. Project selection persists across reloads, access changes apply to existing sessions, and local startup preserves edited memberships. HTTP authorization tests and the desktop/mobile browser workflow pass.
 - Administrators can create, rotate and revoke project-scoped CI credentials. Tokens are displayed once, stored only as hashes and denied suite/settings administration; executions can record a commit SHA. HTTP and browser tests verify scope isolation and immediate invalidation after rotation/revocation.
 - Added serialized project/organization capacity checks (two active runs per project, four per organization and eight aggregate workers) and queued-run explanations. Concurrent-claim tests pass. History now has stable cursor pagination and URL-persisted phase, browser and UTC date filters, verified by database and browser checks.
@@ -36,6 +38,14 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - Cancellation now stops the owned worker process tree and retains completed attempts from durable checkpoints. Missing browser instances are reconciled individually, queued cancellations retain explicit canceled outcomes, and concurrent progress updates no longer discard a cancellation request. The Windows browser cancellation test and database checks pass.
 
 ### Design preview visuals
+
+![Saved environment policy and write-only credential controls](docs/changelog/assets/unreleased/environments.png)
+
+The running settings screen shows approved destinations, execution limits and the selected credential version without exposing its value.
+
+![Environment controls on mobile](docs/changelog/assets/unreleased/environments-mobile.png)
+
+Environment fields stack at 390px; the browser check confirms that the page does not overflow horizontally.
 
 ![Project membership controls in the running application](docs/changelog/assets/unreleased/project-members.png)
 

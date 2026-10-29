@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Api, errorMessage } from '../core/api';
 import { Members } from '../core/members';
+import { Environments } from '../core/environments';
 interface Audit {
   id: string;
   actor: string;
@@ -18,7 +19,7 @@ interface ServiceAccount {
   version: number;
 }
 @Component({
-  imports: [DatePipe, FormsModule, Members],
+  imports: [DatePipe, FormsModule, Members, Environments],
   template: `<header class="page-header">
       <div>
         <p class="eyebrow">WORKSPACE SETTINGS</p>
@@ -45,6 +46,7 @@ interface ServiceAccount {
     }
     @if (api.identity()?.role === 'administrator') {
       <app-members />
+      <app-environments />
       <section class="card">
         <h2>CI service accounts</h2>
         <p class="muted">

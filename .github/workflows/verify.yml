@@ -54,6 +54,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: packages/automation
       - run: node scripts/setup-sandbox.mjs
+      - run: node packages/automation/checks/video.mjs
       - run: npx playwright test --config platform.config.ts
         working-directory: packages/automation
         env:
