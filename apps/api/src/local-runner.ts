@@ -6,6 +6,7 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import type { SqlConnection } from "./database.ts";
 import { verifySource } from "./source.ts";
+import { stopProcessTree } from "./process-tree.ts";
 import {
   attachmentSchema,
   captureAttachments,
@@ -56,6 +57,45 @@ const suiteSchema: z.ZodType<SuiteNode> = z.object({
   suites: z.lazy(() => z.array(suiteSchema)).default([]),
 });
 const resultSchema = z.object({ suites: z.array(suiteSchema) });
+const checkpointSchema = z.object({
+  title: z.string(),
+  projectName: z.string(),
+  expectedStatus: z.string(),
+  result: attemptSchema,
+});
+async function readResults(output: string) {
+  try {
+    return resultSchema.parse(
+      JSON.parse(await readFile(path.join(output, "results.json"), "utf8")),
+    );
+  } catch {
+    let checkpoint = "";
+    try {
+      checkpoint = await readFile(path.join(output, "attempts.ndjson"), "utf8");
+    } catch {
+      return { suites: [] };
+    }
+    const specs = new Map<string, z.infer<typeof specSchema>>();
+    for (const line of checkpoint.split("\n").slice(0, -1)) {
+      const entry = checkpointSchema.parse(JSON.parse(line));
+      const key = `${entry.title}:${entry.projectName}`;
+      const existing = specs.get(key);
+      if (existing) existing.tests[0]!.results.push(entry.result);
+      else
+        specs.set(key, {
+          title: entry.title,
+          tests: [
+            {
+              projectName: entry.projectName,
+              expectedStatus: entry.expectedStatus,
+              results: [entry.result],
+            },
+          ],
+        });
+    }
+    return { suites: [{ specs: [...specs.values()], suites: [] }] };
+  }
+}
 const flatten = (node: SuiteNode): z.infer<typeof specSchema>[] => [
   ...node.specs,
   ...node.suites.flatMap(flatten),
@@ -97,7 +137,7 @@ export class LocalRunner {
   stop() {
     this.stopped = true;
     clearTimeout(this.timer);
-    this.child?.kill();
+    stopProcessTree(this.child);
   }
   private async tick() {
     try {
@@ -156,6 +196,7 @@ export class LocalRunner {
       const child = spawn(process.execPath, args, {
         cwd: automationRoot,
         windowsHide: true,
+        detached: process.platform !== "win32",
         env: { ...process.env, RUN_OUTPUT: output },
         stdio: ["ignore", "pipe", "pipe"],
       });
@@ -176,12 +217,16 @@ export class LocalRunner {
           pending = pending
             .then(() => this.update(id, { logTail: complete }))
             .catch(() => {
-              child.kill();
+              stopProcessTree(child);
             });
         }
       };
       const liveLog = setInterval(flush, 1000);
-      const timeout = setTimeout(() => child.kill(), 30 * 60_000);
+      let timedOut = false;
+      const timeout = setTimeout(() => {
+        timedOut = true;
+        stopProcessTree(child);
+      }, 30 * 60_000);
       const cancel = setInterval(() => {
         void this.db
           .query<{ cancel: string | null }>(
@@ -189,9 +234,9 @@ export class LocalRunner {
             [id],
           )
           .then((result) => {
-            if (result.rows[0]?.cancel === "true") child.kill();
+            if (result.rows[0]?.cancel === "true") stopProcessTree(child);
           })
-          .catch(() => child.kill());
+          .catch(() => stopProcessTree(child));
       }, 500);
       const clean = () => {
         clearTimeout(timeout);
@@ -208,7 +253,7 @@ export class LocalRunner {
         clean();
         void pending
           .then(() => writeFile(path.join(output, "worker.log"), redact(logs)))
-          .then(() => resolve(code ?? -1), reject);
+          .then(() => resolve(timedOut ? -2 : (code ?? -1)), reject);
       });
     });
   }
@@ -248,9 +293,7 @@ export class LocalRunner {
             [run.id],
           )
         ).rows[0]?.cancel === "true";
-      const data = resultSchema.parse(
-        JSON.parse(await readFile(path.join(output, "results.json"), "utf8")),
-      );
+      const data = await readResults(output);
       const artifacts: Artifact[] = [];
       for (const spec of data.suites.flatMap(flatten))
         for (const test of spec.tests) {
@@ -285,7 +328,10 @@ export class LocalRunner {
             expectedStatus: test.expectedStatus,
             expectedFailure: test.expectedStatus === "failed",
             title: spec.title,
-            status: last?.status ?? "broken",
+            status:
+              canceled && (!last || last.status === "interrupted")
+                ? "canceled"
+                : (last?.status ?? "broken"),
             duration: attempts.reduce((sum, item) => sum + item.duration, 0),
             error: redact(last?.error?.message ?? ""),
             attempts: attempts.map((attempt) => ({
@@ -296,26 +342,33 @@ export class LocalRunner {
           };
         }),
       );
-      for (const id of run.selection.testIds)
-        if (!results.some((result) => result.caseId === id))
-          results.push({
-            id,
-            caseId: id,
-            browser: null,
-            expectedStatus: "passed",
-            expectedFailure: false,
-            title: id,
-            status: canceled ? "canceled" : "broken",
-            duration: 0,
-            error: "No terminal result received",
-            attempts: [],
-          });
+      for (const caseId of run.selection.testIds)
+        for (const project of caseId.startsWith("UI-")
+          ? run.config.browserProjects
+          : ["api"]) {
+          const id = project === "api" ? caseId : `${caseId}:${project}`;
+          if (!results.some((result) => result.id === id))
+            results.push({
+              id,
+              caseId,
+              browser: project === "api" ? null : project,
+              expectedStatus: "passed",
+              expectedFailure: false,
+              title: id,
+              status: canceled ? "canceled" : "broken",
+              duration: 0,
+              error: "No terminal result received",
+              attempts: [],
+            });
+        }
       await this.update(run.id, {
         phase: canceled
           ? "canceled"
-          : code === -1
-            ? "infrastructure_error"
-            : "completed",
+          : code === -2
+            ? "timed_out"
+            : code === -1
+              ? "infrastructure_error"
+              : "completed",
         endedAt: new Date().toISOString(),
         results,
         artifacts,

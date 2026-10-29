@@ -426,9 +426,31 @@ export class PlatformService {
       );
     if (!["queued", "running", "provisioning"].includes(String(run["phase"])))
       return run;
+    const config = runInput.parse(run["config"]);
+    const pending = config.selection.testIds.flatMap((caseId) =>
+      (caseId.startsWith("UI-") ? config.browserProjects : ["api"]).map(
+        (project) => ({
+          id: project === "api" ? caseId : `${caseId}:${project}`,
+          caseId,
+          title: caseId,
+          browser: project === "api" ? null : project,
+          status: "canceled",
+          duration: 0,
+          attempts: [],
+        }),
+      ),
+    );
     await this.db.query(
-      `UPDATE platform_documents SET body=body || jsonb_build_object('cancelRequested',true,'phase',CASE WHEN body->>'phase'='queued' THEN 'canceled' ELSE body->>'phase' END),version=version+1 WHERE id=$1 AND body->>'phase' IN ('queued','running','provisioning')`,
-      [id],
+      `WITH updated AS (UPDATE platform_documents SET body=body || '{"cancelRequested":true}'::jsonb || CASE WHEN body->>'phase'='queued' THEN $2::jsonb ELSE '{}'::jsonb END,version=version+1 WHERE id=$1 AND body->>'phase' IN ('queued','running','provisioning') RETURNING id,body) INSERT INTO run_events(run_id,body) SELECT id,jsonb_build_object('phase',body->>'phase','cancelRequested',true) FROM updated`,
+      [
+        id,
+        JSON.stringify({
+          phase: "canceled",
+          endedAt: new Date().toISOString(),
+          reportPhase: "failed",
+          results: pending,
+        }),
+      ],
     );
     await this.audit(
       principal,

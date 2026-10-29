@@ -20,6 +20,7 @@ function files(directory: string): string[] {
 const entries = [
   ...files("tests"),
   "playwright.config.ts",
+  "checkpoint-reporter.ts",
   "package.json",
   "package-lock.json",
 ]
@@ -60,7 +61,31 @@ export async function prepareSource(): Promise<void> {
     path.join(staging, "node_modules"),
     process.platform === "win32" ? "junction" : "dir",
   );
-  await rename(staging, destination);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await rename(staging, destination);
+      return;
+    } catch (error) {
+      // A concurrent initializer may have published the same complete snapshot.
+      try {
+        await verifySource(catalogRevision);
+        return;
+      } catch {
+        /* Not published yet. */
+      }
+      if (
+        attempt >= 4 ||
+        !(
+          error &&
+          typeof error === "object" &&
+          "code" in error &&
+          ["EPERM", "EACCES"].includes(String(error.code))
+        )
+      )
+        throw error;
+      await new Promise((resolve) => setTimeout(resolve, 50 * 2 ** attempt));
+    }
+  }
 }
 export async function verifySource(revision: string): Promise<string> {
   if (!/^[a-f0-9]{64}$/.test(revision))

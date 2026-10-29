@@ -9,6 +9,7 @@ export default defineConfig({
   workers: 1,
   outputDir: path.join(output, "evidence"),
   reporter: [
+    ["./checkpoint-reporter.ts"],
     ["list"],
     ["json", { outputFile: path.join(output, "results.json") }],
     ["allure-playwright", { resultsDir: path.join(output, "allure-results") }],

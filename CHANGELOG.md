@@ -24,6 +24,10 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - Added a local design-review prototype covering 12 main screens and supporting states, light/dark themes, mobile layouts and linked journeys. Values and controls are illustrative; this is not a running automation platform.
 - Added an offline Figma development plugin intended to create editable screens, components, styles, variables and prototype links. Native Figma execution and visual validation remain blocked by the connected provider quota.
 
+### Fixed
+
+- Cancellation now stops the owned worker process tree and retains completed attempts from durable checkpoints. Missing browser instances are reconciled individually, queued cancellations retain explicit canceled outcomes, and concurrent progress updates no longer discard a cancellation request. The Windows browser cancellation test and database checks pass.
+
 ### Design preview visuals
 
 These screenshots were captured from the running local HTML design preview. They are not screenshots of a deployed platform or the Figma canvas.
