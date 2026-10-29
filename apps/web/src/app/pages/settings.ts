@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Api, errorMessage } from '../core/api';
+import { Members } from '../core/members';
 interface Audit {
   id: string;
   actor: string;
@@ -17,7 +18,7 @@ interface ServiceAccount {
   version: number;
 }
 @Component({
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, Members],
   template: `<header class="page-header">
       <div>
         <p class="eyebrow">WORKSPACE SETTINGS</p>
@@ -43,6 +44,7 @@ interface ServiceAccount {
       <p class="error" role="alert">{{ error() }}</p>
     }
     @if (api.identity()?.role === 'administrator') {
+      <app-members />
       <section class="card">
         <h2>CI service accounts</h2>
         <p class="muted">

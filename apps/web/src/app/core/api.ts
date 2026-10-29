@@ -12,6 +12,7 @@ export interface Project {
   id: string;
   name: string;
   description: string;
+  version: number;
 }
 export interface TestCase {
   id: string;
@@ -81,11 +82,23 @@ export function errorMessage(error: unknown): string {
 export class Api {
   private readonly http = inject(HttpClient);
   readonly identity = signal<Identity | null>(null);
+  readonly projects = signal<Project[]>([]);
   readonly projectId = signal('00000000-0000-4000-8000-000000000010');
   async loadIdentity() {
     const identity = await firstValueFrom(this.http.get<Identity>('/v1/me'));
     this.identity.set(identity);
-    if (identity.projectIds[0]) this.projectId.set(identity.projectIds[0]);
+    const selected = localStorage.getItem('assertide-project');
+    this.projectId.set(
+      selected && identity.projectIds.includes(selected)
+        ? selected
+        : (identity.projectIds[0] ?? ''),
+    );
+    this.projects.set((await this.get<{ items: Project[] }>('/projects')).items);
+  }
+  selectProject(id: string) {
+    if (!this.identity()?.projectIds.includes(id)) return;
+    localStorage.setItem('assertide-project', id);
+    this.projectId.set(id);
   }
   get<T>(path: string) {
     return firstValueFrom(

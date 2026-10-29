@@ -44,15 +44,18 @@ export class IdentityService {
       "CREATE TABLE IF NOT EXISTS memberships (subject text PRIMARY KEY, body jsonb NOT NULL)",
     );
     await this.db.query(
+      "ALTER TABLE memberships ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1",
+    );
+    await this.db.query(
       "CREATE TABLE IF NOT EXISTS sessions (digest text PRIMARY KEY, subject text NOT NULL REFERENCES memberships(subject), expires_at timestamptz NOT NULL)",
     );
     await this.db.query(
       "CREATE TABLE IF NOT EXISTS login_requests (digest text PRIMARY KEY, body jsonb NOT NULL, expires_at timestamptz NOT NULL)",
     );
   }
-  async provision(principal: Principal) {
+  async provision(principal: Principal, replace = true) {
     await this.db.query(
-      "INSERT INTO memberships(subject,body) VALUES($1,$2) ON CONFLICT(subject) DO UPDATE SET body=excluded.body",
+      `INSERT INTO memberships(subject,body) VALUES($1,$2) ON CONFLICT(subject) ${replace ? "DO UPDATE SET body=excluded.body" : "DO NOTHING"}`,
       [principal.subject, JSON.stringify(principalSchema.parse(principal))],
     );
   }

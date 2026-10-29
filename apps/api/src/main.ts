@@ -15,6 +15,7 @@ import { mountAnalytics } from "./analytics.ts";
 import { startLocalSandbox } from "./local-sandbox.ts";
 import { mountArtifacts } from "./artifacts.ts";
 import { mountServiceAccounts } from "./service-accounts.ts";
+import { mountAdministration } from "./administration.ts";
 
 @Module({})
 class AppModule {}
@@ -58,13 +59,16 @@ if (process.env["LOCAL_IDENTITY"] === "true") {
     ["operator", "operator"],
     ["viewer", "viewer"],
   ] as const) {
-    await identity.provision({
-      subject,
-      name: subject,
-      role,
-      organizationId: "00000000-0000-4000-8000-000000000001",
-      projectIds: ["00000000-0000-4000-8000-000000000010"],
-    });
+    await identity.provision(
+      {
+        subject,
+        name: subject,
+        role,
+        organizationId: "00000000-0000-4000-8000-000000000001",
+        projectIds: ["00000000-0000-4000-8000-000000000010"],
+      },
+      false,
+    );
   }
   await identity.mount(
     express,
@@ -85,6 +89,7 @@ if (process.env["LOCAL_IDENTITY"] === "true") {
   );
 }
 mountPlatform(express, platform, identity);
+mountAdministration(express, identity, platform);
 mountLiveEvents(express, identity, platform);
 mountAnalytics(express, identity, platform);
 mountArtifacts(express, identity, platform);

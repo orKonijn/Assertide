@@ -3,9 +3,10 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { Api } from './core/api';
 import { HttpErrorResponse } from '@angular/common/http';
 import { errorMessage } from './core/api';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
@@ -48,6 +49,10 @@ export class App {
   }
   toggleMenu() {
     this.menu.update((value) => !value);
+  }
+  changeProject(id: string) {
+    this.api.selectProject(id);
+    location.assign('/');
   }
   toggleTheme() {
     this.dark.update((value) => !value);

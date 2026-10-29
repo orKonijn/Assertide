@@ -6,6 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Administrators can create/edit projects and manage organization roles and project membership with stale-edit protection. Project selection persists across reloads, access changes apply to existing sessions, and local startup preserves edited memberships. HTTP authorization tests and the desktop/mobile browser workflow pass.
 - Administrators can create, rotate and revoke project-scoped CI credentials. Tokens are displayed once, stored only as hashes and denied suite/settings administration; executions can record a commit SHA. HTTP and browser tests verify scope isolation and immediate invalidation after rotation/revocation.
 - Added serialized project/organization capacity checks (two active runs per project, four per organization and eight aggregate workers) and queued-run explanations. Concurrent-claim tests pass. History now has stable cursor pagination and URL-persisted phase, browser and UTC date filters, verified by database and browser checks.
 - Catalog discovery now reads Playwright's actual test list from the saved source snapshot, including file locations and browser projects. Failed discovery preserves the previous catalog; duplicate stable IDs are rejected. Explorer search includes tags and URL-persisted kind/priority filters.
@@ -35,6 +36,14 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - Cancellation now stops the owned worker process tree and retains completed attempts from durable checkpoints. Missing browser instances are reconciled individually, queued cancellations retain explicit canceled outcomes, and concurrent progress updates no longer discard a cancellation request. The Windows browser cancellation test and database checks pass.
 
 ### Design preview visuals
+
+![Project membership controls in the running application](docs/changelog/assets/unreleased/project-members.png)
+
+Administrators assign a role and explicit project access; changing their own access requires another administrator.
+
+![Membership controls at mobile width](docs/changelog/assets/unreleased/project-members-mobile.png)
+
+The same controls stack at 390px, with the member table horizontally scrollable.
 
 These screenshots were captured from the running local HTML design preview. They are not screenshots of a deployed platform or the Figma canvas.
 

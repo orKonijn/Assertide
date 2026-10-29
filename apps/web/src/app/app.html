@@ -28,6 +28,14 @@
       ><img src="/brand/logo-mark.svg" width="36" height="36" alt="" />Assertide</a
     >
     <p class="workspace">QUALITY WORKSPACE</p>
+    <label
+      >Active project
+      <select [ngModel]="api.projectId()" (ngModelChange)="changeProject($event)">
+        @for (project of api.projects(); track project.id) {
+          <option [value]="project.id">{{ project.name }}</option>
+        }
+      </select>
+    </label>
     <nav aria-label="Main navigation">
       @for (link of links; track link[0]) {
         <a
