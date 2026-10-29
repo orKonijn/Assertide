@@ -27,6 +27,8 @@ export interface Suite {
   description: string;
   testIds: string[];
   version: number;
+  owner: string;
+  tags: string[];
 }
 export interface Run {
   id: string;
@@ -38,6 +40,7 @@ export interface Run {
   results?: CaseResult[];
   parentRunId?: string;
   cancelRequested?: boolean;
+  source?: { revision: string };
 }
 export interface CaseResult {
   id: string;
@@ -80,7 +83,24 @@ export class Api {
   }
   post<T>(path: string, body: unknown, key?: string) {
     return firstValueFrom(
-      this.http.post<T>(`/v1${path}`, body, { headers: key ? { 'Idempotency-Key': key } : {} }),
+      this.http
+        .post<T>(`/v1${path}`, body, { headers: key ? { 'Idempotency-Key': key } : {} })
+        .pipe(
+          catchError((error: unknown) => {
+            if (error instanceof HttpErrorResponse && error.status === 401) this.identity.set(null);
+            return throwError(() => error);
+          }),
+        ),
+    );
+  }
+  patch<T>(path: string, body: unknown, version: number) {
+    return firstValueFrom(
+      this.http.patch<T>(`/v1${path}`, body, { headers: { 'If-Match': `"${version}"` } }).pipe(
+        catchError((error: unknown) => {
+          if (error instanceof HttpErrorResponse && error.status === 401) this.identity.set(null);
+          return throwError(() => error);
+        }),
+      ),
     );
   }
   async logout() {
@@ -88,11 +108,21 @@ export class Api {
     this.identity.set(null);
     location.assign('/');
   }
-  launch(testIds: string[], key: string, workers: number, retries: number, browser = 'chromium') {
+  async launch(
+    testIds: string[],
+    key: string,
+    workers: number,
+    retries: number,
+    browser = 'chromium',
+    revision?: string,
+  ) {
+    const catalogRevision =
+      revision ??
+      (await this.get<{ revision: string }>(`/projects/${this.projectId()}/catalog`)).revision;
     return this.post<Run>(
       `/projects/${this.projectId()}/runs`,
       {
-        catalogRevision: 'local-lab-v1',
+        catalogRevision,
         selection: { testIds },
         environmentId: 'local-lab',
         browserProjects: testIds.some((id) => id.startsWith('UI-')) ? [browser] : [],

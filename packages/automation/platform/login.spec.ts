@@ -113,5 +113,26 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
   const after = await (await page.request.get(endpoint)).json();
   expect(after.results).toEqual(before.results);
   expect(after.reportDirectory).not.toBe(before.reportDirectory);
+  expect(after.source.revision).toMatch(/^[a-f0-9]{64}$/);
+  await page.getByText("LAB-001 · passed", { exact: false }).click();
+  await page
+    .getByRole("checkbox", { name: "Select LAB-001 for rerun", exact: true })
+    .check();
+  await page
+    .getByRole("button", { name: "Rerun checked tests", exact: true })
+    .click();
+  await expect(page).not.toHaveURL(runUrl);
+  await expect(page).toHaveURL(/\/runs\/[a-f0-9-]+$/);
+  await expect(page.getByRole("status")).toHaveText("completed", {
+    timeout: 20000,
+  });
+  const child = await (
+    await page.request.get(
+      new URL(page.url()).pathname.replace("/runs/", "/v1/runs/"),
+    )
+  ).json();
+  expect(child.parentRunId).toBe(before.id);
+  expect(child.selection.testIds).toEqual(["LAB-001"]);
+  expect(child.source.revision).toBe(before.source.revision);
   expect(errors).toEqual([]);
 });

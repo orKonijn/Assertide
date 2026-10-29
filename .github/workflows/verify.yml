@@ -8,6 +8,17 @@ permissions:
 jobs:
   foundation:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: assertide_test
+          POSTGRES_PASSWORD: local_ci_only
+          POSTGRES_DB: assertide_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U assertide_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,6 +40,10 @@ jobs:
         working-directory: apps/api
       - run: npm test
         working-directory: apps/api
+      - run: npm test
+        working-directory: apps/api
+        env:
+          TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
       - run: npm ci
         working-directory: packages/automation
       - run: npx playwright install --with-deps chromium

@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
-import { connectDatabase } from "../src/database.ts";
+import { testDatabase } from "./database.ts";
 import { LabService } from "../src/lab.ts";
 
 test("Lab persists CRUD, rejects stale writes, deduplicates starts and isolates tenants", async () => {
-  const db = await connectDatabase();
+  const db = await testDatabase();
   const password = randomBytes(20).toString("hex");
   const lab = new LabService(db, password, randomBytes(32).toString("hex"));
   try {

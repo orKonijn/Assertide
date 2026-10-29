@@ -107,6 +107,7 @@ export class Explorer {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   readonly tests = signal<TestCase[]>([]);
+  private revision = '';
   readonly query = signal(this.route.snapshot.queryParamMap.get('query') ?? '');
   readonly selected = signal<string[]>([]);
   readonly loading = signal(true);
@@ -128,10 +129,11 @@ export class Explorer {
   async load() {
     this.loading.set(true);
     try {
-      this.tests.set(
-        (await this.api.get<{ items: TestCase[] }>(`/projects/${this.api.projectId()}/catalog`))
-          .items,
+      const catalog = await this.api.get<{ items: TestCase[]; revision: string }>(
+        `/projects/${this.api.projectId()}/catalog`,
       );
+      this.tests.set(catalog.items);
+      this.revision = catalog.revision;
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -166,6 +168,7 @@ export class Explorer {
         this.workers,
         this.retries,
         this.browser,
+        this.revision,
       );
       await this.router.navigate(['/runs', run.id]);
     } catch (error) {

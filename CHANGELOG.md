@@ -6,6 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Executions now save and verify content-addressed test-source snapshots. Added editable suite owners/tags/membership and linked reruns for failed or selected tests. Strict compilation, database tests and four browser journeys pass; suite editing was captured from the running app.
 - Completed all 15 controlled Lab cases, including invalid/expired tokens, boundaries, pagination, signed fault injection, bounded transport timeout, a 20-request rate window and local latency evidence. All pass locally and in the browser-launched mixed run; unsigned fixture controls are rejected.
 - Added browser execution against a pinned local Sauce Labs sandbox, with telemetry disabled. All 12 catalog browser cases pass in Chromium, Firefox and WebKit; mixed browser/API launch and Allure viewing pass through the Angular UI.
 - Added authenticated live execution events, seven-day server-calculated metrics with denominator explanations, and report rebuilding that preserves test outcomes. Browser checks cover viewer launch denial, anonymous evidence denial, rejected cross-origin logout and session invalidation.
@@ -40,3 +41,8 @@ The 390px preview stacks metrics and turns execution rows into labeled details.
 ### Known issues
 
 - The editable Figma design is incomplete: the file was created, but Figma's Starter-plan tool limit blocked further access before screens could be added. The local generator is provided for recovery, but its output has not been executed or inspected in Figma.
+
+![Suite metadata and membership saved and edited in the running application](docs/changelog/assets/unreleased/suite-editing.png)
+
+Suite edits retain a revision and reject stale saves.
+

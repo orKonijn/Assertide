@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import express from "express";
 import { z } from "zod";
-import { connectDatabase } from "../src/database.ts";
+import { testDatabase } from "./database.ts";
 import { LabService, mountLab } from "../src/lab.ts";
 
 test("HTTP contract: auth, CRUD, ETags, malformed payloads and media types", async () => {
-  const db = await connectDatabase();
+  const db = await testDatabase();
   const password = randomBytes(20).toString("hex");
   const lab = new LabService(db, password, randomBytes(32).toString("hex"));
   await lab.initialize();

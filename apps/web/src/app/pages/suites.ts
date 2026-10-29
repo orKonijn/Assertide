@@ -21,6 +21,12 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
             <h2>{{ suite.name }}</h2>
             <p>{{ suite.description }}</p>
             <p>{{ suite.testIds.length }} tests · revision {{ suite.version }}</p>
+            <p class="muted">
+              {{ suite.owner || 'No owner assigned' }} · {{ suite.tags.join(', ') }}
+            </p>
+            @if (canEdit()) {
+              <button [disabled]="busy()" (click)="edit(suite)">Edit {{ suite.name }}</button>
+            }
             <button
               [disabled]="busy() || !suite.testIds.length || api.identity()?.role === 'viewer'"
               (click)="run(suite)"
@@ -33,7 +39,10 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
         }
       </section>
       <form class="card" (ngSubmit)="save()">
-        <h2>Create suite</h2>
+        <h2>{{ editing() ? 'Edit suite' : 'Create suite' }}</h2>
+        @if (editing()) {
+          <button type="button" (click)="reset()">Cancel editing</button>
+        }
         <label>Name<input name="name" [(ngModel)]="name" required maxlength="120" /></label
         ><label
           >Description<textarea
@@ -42,6 +51,10 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
             maxlength="2000"
           ></textarea>
         </label>
+        <label>Owner<input name="owner" [(ngModel)]="owner" maxlength="120" /></label>
+        <label
+          >Tags (comma separated)<input name="tags" [(ngModel)]="tags" maxlength="1000"
+        /></label>
         <fieldset>
           <legend>Membership</legend>
           @for (test of tests(); track test.id) {
@@ -77,8 +90,31 @@ export class Suites {
   readonly selected = signal<string[]>([]);
   readonly error = signal('');
   readonly busy = signal(false);
+  readonly editing = signal<Suite | null>(null);
   name = '';
   description = '';
+  owner = '';
+  tags = '';
+  canEdit() {
+    return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');
+  }
+  edit(suite: Suite) {
+    this.editing.set(suite);
+    this.name = suite.name;
+    this.description = suite.description;
+    this.owner = suite.owner;
+    this.tags = suite.tags.join(', ');
+    this.selected.set([...suite.testIds]);
+    this.error.set('');
+  }
+  reset() {
+    this.editing.set(null);
+    this.name = '';
+    this.description = '';
+    this.owner = '';
+    this.tags = '';
+    this.selected.set([]);
+  }
   constructor() {
     void this.load();
   }
@@ -103,14 +139,20 @@ export class Suites {
     this.busy.set(true);
     this.error.set('');
     try {
-      await this.api.post(`/projects/${this.api.projectId()}/suites`, {
+      const body = {
         name: this.name,
         description: this.description,
         testIds: this.selected(),
-      });
-      this.name = '';
-      this.description = '';
-      this.selected.set([]);
+        owner: this.owner,
+        tags: this.tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      };
+      const current = this.editing();
+      if (current) await this.api.patch(`/suites/${current.id}`, body, current.version);
+      else await this.api.post(`/projects/${this.api.projectId()}/suites`, body);
+      this.reset();
       await this.load();
     } catch (error) {
       this.error.set(errorMessage(error));

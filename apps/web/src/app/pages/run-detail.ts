@@ -12,7 +12,10 @@ import { Api, Run, errorMessage } from '../core/api';
       </div>
       <div class="actions">
         <button (click)="load()">Refresh</button
-        ><button [disabled]="busy()" (click)="rerun()">Rerun selection</button>
+        ><button [disabled]="busy() || !canRerun()" (click)="rerun()">Rerun selection</button>
+        <button [disabled]="busy() || !canRerun() || !hasFailures()" (click)="rerun('failed')">
+          Rerun failed tests
+        </button>
       </div>
     </header>
     @if (error()) {
@@ -39,6 +42,9 @@ import { Api, Run, errorMessage } from '../core/api';
           <h2>Frozen selection</h2>
           <p class="metric">{{ current.selection.testIds.length }}</p>
           <p>{{ current.selection.testIds.join(', ') }}</p>
+          @if (current.source) {
+            <p class="muted">Source revision {{ current.source.revision.slice(0, 12) }}</p>
+          }
         </section>
         <section class="card">
           <h2>Allure report</h2>
@@ -53,10 +59,26 @@ import { Api, Run, errorMessage } from '../core/api';
       </div>
       <section class="card">
         <h2>Test results</h2>
+        @if (current.results?.length) {
+          <button
+            [disabled]="busy() || !canRerun() || !selected().length"
+            (click)="rerun('selected')"
+          >
+            Rerun checked tests
+          </button>
+        }
         @for (result of current.results ?? []; track result.id) {
           <details>
             <summary>{{ result.id }} · {{ result.status }} · {{ result.duration }}ms</summary>
             <p>{{ result.title }}</p>
+            <label
+              ><input
+                type="checkbox"
+                [checked]="selected().includes(result.id.split(':')[0])"
+                (change)="toggle(result.id.split(':')[0])"
+              />
+              Select {{ result.id }} for rerun</label
+            >
             @for (attempt of result.attempts ?? []; track $index) {
               <p>Attempt {{ $index + 1 }} · {{ attempt.status }} · {{ attempt.duration }}ms</p>
               @if (attempt.error) {
@@ -90,6 +112,27 @@ export class RunDetail {
   readonly error = signal('');
   readonly busy = signal(false);
   readonly disconnected = signal(false);
+  readonly selected = signal<string[]>([]);
+  canRerun() {
+    return (
+      this.api.identity()?.role !== 'viewer' &&
+      ['completed', 'canceled', 'infrastructure_error', 'timed_out'].includes(
+        this.run()?.phase ?? '',
+      )
+    );
+  }
+  hasFailures() {
+    return (
+      this.run()?.results?.some((result) =>
+        ['failed', 'timedOut', 'broken', 'interrupted'].includes(result.status),
+      ) ?? false
+    );
+  }
+  toggle(id: string) {
+    this.selected.update((ids) =>
+      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
+    );
+  }
   private readonly stream = new EventSource(`/v1/runs/${this.id}/events`);
   private lastSequence = 0;
   constructor() {
@@ -139,10 +182,14 @@ export class RunDetail {
       this.busy.set(false);
     }
   }
-  async rerun() {
+  async rerun(mode: 'all' | 'failed' | 'selected' = 'all') {
     this.busy.set(true);
     try {
-      const run = await this.api.post<Run>(`/runs/${this.id}/reruns`, {}, crypto.randomUUID());
+      const run = await this.api.post<Run>(
+        `/runs/${this.id}/reruns`,
+        { mode, ...(mode === 'selected' ? { testIds: this.selected() } : {}) },
+        crypto.randomUUID(),
+      );
       await this.router.navigateByUrl('/runs');
       await this.router.navigate(['/runs', run.id]);
     } catch (error) {

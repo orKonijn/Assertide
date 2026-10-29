@@ -5,11 +5,13 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import type { SqlConnection } from "./database.ts";
+import { verifySource } from "./source.ts";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 export const runRoot = path.join(root, ".local", "runs");
 const automationRoot = path.join(root, "packages", "automation");
 const configuration = z.object({
+  catalogRevision: z.string(),
   workers: z.number().int().min(1).max(4),
   retries: z.number().int().min(0).max(2),
   browserProjects: z
@@ -183,10 +185,13 @@ export class LocalRunner {
     let executionFinalized = false;
     try {
       await this.update(run.id, { startedAt: new Date().toISOString() });
+      const snapshot = await verifySource(run.config.catalogRevision);
       const code = await this.command(
         [
           "node_modules/@playwright/test/cli.js",
           "test",
+          "--config",
+          path.join(snapshot, "playwright.config.ts"),
           "--grep",
           `(${run.selection.testIds.join("|")}) `,
           "--workers",

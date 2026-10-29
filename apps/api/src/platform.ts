@@ -3,6 +3,12 @@ import { z } from "zod";
 import type { Express, Request, Response } from "express";
 import type { SqlConnection } from "./database.ts";
 import { IdentityService, type Principal } from "./identity.ts";
+import {
+  catalogRevision,
+  prepareSource,
+  sourceManifest,
+  verifySource,
+} from "./source.ts";
 
 export const localProjectId = "00000000-0000-4000-8000-000000000010";
 const localOrg = "00000000-0000-4000-8000-000000000001";
@@ -61,7 +67,7 @@ const selectionInput = z
   .strict();
 const runInput = z
   .object({
-    catalogRevision: z.literal("local-lab-v1"),
+    catalogRevision: z.string().min(1),
     selection: selectionInput,
     environmentId: z.literal("local-lab"),
     browserProjects: z.array(z.enum(["chromium", "firefox", "webkit"])).max(3),
@@ -95,6 +101,7 @@ const roles = ["viewer", "operator", "maintainer", "administrator"];
 export class PlatformService {
   constructor(readonly db: SqlConnection) {}
   async initialize() {
+    await prepareSource();
     await this.db.query(
       "CREATE TABLE IF NOT EXISTS platform_documents (id text PRIMARY KEY, organization_id uuid NOT NULL, project_id uuid NOT NULL, kind text NOT NULL, version integer NOT NULL DEFAULT 1, body jsonb NOT NULL)",
     );
@@ -120,7 +127,7 @@ export class PlatformService {
           name: "Assertide Lab",
           description: "Controlled API contract sandbox",
           owner: "QA Platform",
-          catalogRevision: "local-lab-v1",
+          catalogRevision,
         }),
       ],
     );
@@ -250,12 +257,6 @@ export class PlatformService {
         422,
         "Invalid execution policy, selection or idempotency key",
       );
-    if (
-      parsed.data.selection.testIds.some(
-        (id) => !localCatalog.some((test) => test.id === id),
-      )
-    )
-      throw new ApiError(422, "Unknown test selection");
     const config = {
       ...parsed.data,
       selection: {
@@ -287,6 +288,33 @@ export class PlatformService {
         );
       return this.get(principal, existing.run_id, "run");
     }
+    let source: unknown = {
+      revision: catalogRevision,
+      manifest: sourceManifest,
+    };
+    let permittedIds = localCatalog.map((test) => test.id);
+    if (parentRunId) {
+      const parent = await this.get(principal, parentRunId, "run");
+      const parentConfig = runInput.parse(parent["config"]);
+      if (
+        parentConfig.catalogRevision !== config.catalogRevision ||
+        parent["projectId"] !== projectId
+      )
+        throw new ApiError(409, "Rerun source differs from its parent");
+      try {
+        await verifySource(config.catalogRevision);
+      } catch {
+        throw new ApiError(409, "Original source snapshot is unavailable");
+      }
+      source = parent["source"];
+      permittedIds = parentConfig.selection.testIds;
+    } else if (config.catalogRevision !== catalogRevision)
+      throw new ApiError(
+        409,
+        "Catalog changed; refresh the selection before launching",
+      );
+    if (config.selection.testIds.some((id) => !permittedIds.includes(id)))
+      throw new ApiError(422, "Unknown test selection");
     const id = randomUUID();
     const run: RunRecord = {
       id,
@@ -299,6 +327,7 @@ export class PlatformService {
       config,
       reportPhase: "pending",
       parentRunId: parentRunId ?? null,
+      source,
     };
     const result = await this.db.query<Row>(
       `WITH claimed AS (
@@ -318,6 +347,71 @@ export class PlatformService {
       return this.launch(principal, projectId, input, key, parentRunId);
     await this.audit(principal, projectId, "run.queued", id);
     return { ...run, version: 1 };
+  }
+  async rerun(
+    principal: Principal,
+    id: string,
+    input: unknown,
+    key: string | undefined,
+  ) {
+    const run = await this.get(principal, id, "run");
+    const parsed = z
+      .object({
+        mode: z.enum(["all", "failed", "selected"]).default("all"),
+        testIds: z.array(z.string()).optional(),
+      })
+      .strict()
+      .safeParse(input);
+    if (!parsed.success) throw new ApiError(422, "Invalid rerun selection");
+    if (
+      !["completed", "canceled", "infrastructure_error", "timed_out"].includes(
+        String(run["phase"]),
+      )
+    )
+      throw new ApiError(409, "Wait for the original execution to finish");
+    const config = runInput.parse(run["config"]);
+    let ids = config.selection.testIds;
+    if (parsed.data.mode === "failed") {
+      const results = z
+        .array(
+          z.object({
+            id: z.string(),
+            caseId: z.string().optional(),
+            status: z.string(),
+          }),
+        )
+        .parse(run["results"] ?? []);
+      ids = [
+        ...new Set(
+          results
+            .filter((result) =>
+              ["failed", "timedOut", "broken", "interrupted"].includes(
+                result.status,
+              ),
+            )
+            .map((result) => result.caseId ?? result.id.split(":")[0]!),
+        ),
+      ];
+    } else if (parsed.data.mode === "selected")
+      ids = [...new Set(parsed.data.testIds ?? [])];
+    if (
+      !ids.length ||
+      ids.some((testId) => !config.selection.testIds.includes(testId))
+    )
+      throw new ApiError(422, "Select tests from the original execution");
+    return this.launch(
+      principal,
+      String(run["projectId"]),
+      {
+        ...config,
+        selection: { testIds: ids },
+        browserProjects: ids.some((testId) => testId.startsWith("UI-"))
+          ? config.browserProjects
+          : [],
+      },
+      key,
+      id,
+    );
   }
   async cancel(principal: Principal, id: string) {
     const run = await this.get(principal, id, "run");
@@ -400,7 +494,7 @@ export function mountPlatform(
       service.authorize(principal, projectId);
       const query = String(req.query["query"] ?? "").toLowerCase();
       res.json({
-        revision: "local-lab-v1",
+        revision: catalogRevision,
         items: localCatalog.filter((item) =>
           `${item.id} ${item.title} ${item.feature}`
             .toLowerCase()
@@ -536,16 +630,14 @@ export function mountPlatform(
   app.post(
     "/v1/runs/:id/reruns",
     handler(async (req, res, principal) => {
-      const run = await service.get(principal, String(req.params["id"]), "run");
       res
         .status(202)
         .json(
-          await service.launch(
+          await service.rerun(
             principal,
-            String(run["projectId"]),
-            run["config"],
+            String(req.params["id"]),
+            req.body as unknown,
             req.get("Idempotency-Key"),
-            String(run["id"]),
           ),
         );
     }),
