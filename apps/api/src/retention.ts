@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import type { SqlConnection } from "./database.ts";
 import { objectStore } from "./object-store.ts";
+import { removeShortLivedFiles } from "./evidence-files.ts";
 const root = fileURLToPath(new URL("../../../.local/runs/", import.meta.url));
 function runPath(id: string) {
   z.uuid().parse(id);
@@ -13,7 +14,22 @@ function runPath(id: string) {
   return target;
 }
 export async function expireRunData(db: SqlConnection, now = new Date()) {
-  const cutoff = new Date(now.getTime() - 14 * 86400000).toISOString();
+  const shorter = (
+    await db.query<{ id: string }>(
+      "SELECT id FROM platform_documents WHERE kind='run' AND body->>'phase' IN ('completed','canceled','timed_out','infrastructure_error') AND body->>'endedAt'<$1 AND NOT body ? 'shortEvidenceExpiredAt' LIMIT 100",
+      [new Date(now.getTime() - 14 * 86400000).toISOString()],
+    )
+  ).rows;
+  for (const row of shorter) {
+    const directory = runPath(row.id);
+    await removeShortLivedFiles(path.join(directory, "allure-results"));
+    await removeShortLivedFiles(path.join(directory, "evidence"));
+    await db.query(
+      "UPDATE platform_documents SET body=body || $2::jsonb,version=version+1 WHERE id=$1",
+      [row.id, JSON.stringify({ shortEvidenceExpiredAt: now.toISOString() })],
+    );
+  }
+  const cutoff = new Date(now.getTime() - 30 * 86400000).toISOString();
   const rows = (
     await db.query<{ id: string }>(
       "SELECT id FROM platform_documents WHERE kind='run' AND body->>'phase' IN ('completed','canceled','timed_out','infrastructure_error') AND body->>'endedAt'<$1 AND NOT body ? 'rawExpiredAt' LIMIT 100",
@@ -41,7 +57,7 @@ export async function expireRunData(db: SqlConnection, now = new Date()) {
         JSON.stringify({
           rawExpiredAt: now.toISOString(),
           rawUnavailableReason:
-            "Raw evidence expired after 14 days; report rebuilding is unavailable",
+            "Raw evidence expired after 30 days; report rebuilding is unavailable",
         }),
       ],
     );

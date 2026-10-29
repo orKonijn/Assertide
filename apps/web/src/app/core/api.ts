@@ -58,6 +58,10 @@ export interface Run {
   phase: string;
   createdAt: string;
   reportPhase: string;
+  reportExpiresAt?: string;
+  reportDiagnostic?: string;
+  rawExpiredAt?: string;
+  rawUnavailableReason?: string;
   selection: { testIds: string[] };
   results?: CaseResult[];
   parentRunId?: string;

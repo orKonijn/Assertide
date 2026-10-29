@@ -19,6 +19,10 @@ test("retention removes expired raw evidence, then history, without removing rec
   try {
     await mkdir(path.join(directory, "allure-results"), { recursive: true });
     await writeFile(path.join(directory, "allure-results", "data.json"), "{}");
+    await writeFile(
+      path.join(directory, "allure-results", "trace.zip"),
+      Buffer.from("504b0304", "hex"),
+    );
     await db.query(
       "INSERT INTO platform_documents(id,organization_id,project_id,kind,body) VALUES($1,$2,$3,'run',$4)",
       [
@@ -36,6 +40,14 @@ test("retention removes expired raw evidence, then history, without removing rec
     );
     assert.deepEqual(
       await expireRunData(db, new Date(Date.now() + 15 * 86400000)),
+      { rawRuns: 0, historyRuns: 0 },
+    );
+    await assert.rejects(
+      access(path.join(directory, "allure-results", "trace.zip")),
+    );
+    await access(path.join(directory, "allure-results", "data.json"));
+    assert.deepEqual(
+      await expireRunData(db, new Date(Date.now() + 31 * 86400000)),
       { rawRuns: 1, historyRuns: 0 },
     );
     await assert.rejects(access(path.join(directory, "allure-results")));

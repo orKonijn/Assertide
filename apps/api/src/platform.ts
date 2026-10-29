@@ -932,7 +932,7 @@ export function mountPlatform(
       if (
         run["rawExpiredAt"] ||
         (typeof run["endedAt"] === "string" &&
-          new Date(run["endedAt"]).getTime() + 14 * 86400000 <= Date.now())
+          new Date(run["endedAt"]).getTime() + 30 * 86400000 <= Date.now())
       )
         throw new ApiError(
           410,

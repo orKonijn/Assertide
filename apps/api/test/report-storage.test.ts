@@ -24,6 +24,14 @@ test("immutable report builds publish complete manifests and expire without dele
   try {
     await mkdir(target, { recursive: true });
     await writeFile(path.join(target, "index.html"), "<html>Report</html>");
+    await writeFile(
+      path.join(target, "trace.zip"),
+      Buffer.from("504b0304", "hex"),
+    );
+    await writeFile(
+      path.join(target, "video.webm"),
+      Buffer.from("1a45dfa3", "hex"),
+    );
     await db.query(
       "INSERT INTO platform_documents(id,organization_id,project_id,kind,body) VALUES($1,$2,$3,'run',$4)",
       [
@@ -58,6 +66,20 @@ test("immutable report builds publish complete manifests and expire without dele
       await assert.rejects(access(target));
     }
     await expireReports(db, new Date(Date.now() + 15 * 86400000));
+    assert.equal(manifest.shortLived.length, 2);
+    if (objectStore && manifest.files) {
+      await assert.rejects(objectStore.get(manifest.files["trace.zip"]!));
+      await assert.rejects(objectStore.get(manifest.files["video.webm"]!));
+      assert.equal(
+        (await objectStore.get(manifest.files["index.html"]!)).toString(),
+        "<html>Report</html>",
+      );
+    } else {
+      await assert.rejects(access(path.join(target, "trace.zip")));
+      await assert.rejects(access(path.join(target, "video.webm")));
+      await access(path.join(target, "index.html"));
+    }
+    await expireReports(db, new Date(Date.now() + 31 * 86400000));
     await assert.rejects(access(target));
     const run = (
       await db.query<{

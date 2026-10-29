@@ -1,8 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { Api, Run, errorMessage } from '../core/api';
 @Component({
-  imports: [RouterLink],
+  imports: [RouterLink, DatePipe],
   template: `<header class="page-header">
       <div>
         <p class="eyebrow">EXECUTION EVIDENCE</p>
@@ -30,7 +31,12 @@ import { Api, Run, errorMessage } from '../core/api';
                 <td>
                   <a [routerLink]="['/runs', run.id]">{{ run.id.slice(0, 8) }}</a>
                 </td>
-                <td>{{ run.reportPhase }}</td>
+                <td>
+                  {{ run.reportPhase }}
+                  @if (run.reportExpiresAt) {
+                    <p class="muted">Expires {{ run.reportExpiresAt | date: 'short' }}</p>
+                  }
+                </td>
                 <td>
                   @if (run.reportPhase === 'ready') {
                     <a [href]="'/v1/runs/' + run.id + '/report'" target="_blank" rel="noopener"
@@ -38,7 +44,11 @@ import { Api, Run, errorMessage } from '../core/api';
                     >
                   } @else {
                     <span class="muted">{{
-                      run.reportPhase === 'failed' ? 'Generation failed' : 'Not ready'
+                      run.reportPhase === 'expired'
+                        ? 'Expired under retention policy'
+                        : run.reportPhase === 'failed'
+                          ? 'Generation failed'
+                          : 'Not ready'
                     }}</span>
                   }
                 </td>

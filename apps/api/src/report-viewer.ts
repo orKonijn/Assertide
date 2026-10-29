@@ -182,6 +182,19 @@ export async function mountReportViewer(
         return;
       }
       const manifest = reportManifest.parse(build.body);
+      const assetName =
+        decodeURIComponent(req.path).replace(/^\//, "") || "index.html";
+      if (
+        manifest.shortLived.includes(assetName) &&
+        manifest.shortExpiresAt &&
+        new Date(manifest.shortExpiresAt) <= new Date()
+      ) {
+        res
+          .status(410)
+          .type("text/plain")
+          .send("Trace or video expired after 14 days");
+        return;
+      }
       if (manifest.files) {
         const name =
           decodeURIComponent(req.path).replace(/^\//, "") || "index.html";

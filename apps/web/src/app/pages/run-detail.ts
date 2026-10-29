@@ -53,8 +53,29 @@ import { Api, Run, errorMessage } from '../core/api';
         <section class="card">
           <h2>Allure report</h2>
           <p>{{ current.reportPhase }}</p>
+          @if (current.reportExpiresAt) {
+            <p class="muted">
+              Report expires {{ current.reportExpiresAt | date: 'medium' }}. Traces and videos
+              expire after 14 days.
+            </p>
+          }
+          @if (current.reportDiagnostic && current.reportPhase === 'failed') {
+            <p role="alert">{{ current.reportDiagnostic }}</p>
+          }
+          @if (current.rawUnavailableReason) {
+            <p>{{ current.rawUnavailableReason }}</p>
+          }
           @if (current.phase === 'completed' && ['ready', 'failed'].includes(current.reportPhase)) {
-            <button [disabled]="busy()" (click)="rebuild()">Rebuild report</button>
+            <button
+              [disabled]="
+                busy() ||
+                !!current.rawExpiredAt ||
+                !['maintainer', 'administrator'].includes(api.identity()?.role ?? '')
+              "
+              (click)="rebuild()"
+            >
+              Rebuild report
+            </button>
           }
           @if (current.reportPhase === 'ready') {
             <a [href]="'/v1/runs/' + id + '/report'" target="_blank" rel="noopener">Open report</a>
@@ -133,7 +154,7 @@ import { Api, Run, errorMessage } from '../core/api';
   `,
 })
 export class RunDetail {
-  private readonly api = inject(Api);
+  readonly api = inject(Api);
   private readonly router = inject(Router);
   readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
   readonly run = signal<Run | null>(null);
