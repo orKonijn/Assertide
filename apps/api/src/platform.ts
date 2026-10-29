@@ -67,10 +67,21 @@ const suiteInput = z
     testIds: z.array(z.string()).max(10000),
     owner: z.string().max(120).default(""),
     tags: z.array(z.string().max(50)).max(20).default([]),
+    priority: z.enum(["P0", "P1", "P2"]).default("P1"),
   })
   .strict();
 const selectionInput = z
   .object({ testIds: z.array(z.string()).min(1).max(10000) })
+  .strict();
+const metadataInput = z
+  .object({
+    feature: z.string().trim().min(1).max(120),
+    module: z.string().trim().max(120).default(""),
+    owner: z.string().trim().max(120).default(""),
+    priority: z.enum(["P0", "P1", "P2"]),
+    enabled: z.boolean(),
+    tags: z.array(z.string().trim().min(1).max(50)).max(20),
+  })
   .strict();
 const runInput = z
   .object({
@@ -350,6 +361,65 @@ export class PlatformService {
       ],
     );
   }
+  async projectCatalog(principal: Principal, projectId: string) {
+    this.authorize(principal, projectId);
+    const rows = (
+      await this.db.query<Row>(
+        "SELECT body,version FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind='metadata'",
+        [principal.organizationId, projectId],
+      )
+    ).rows;
+    const overrides = new Map(
+      rows.map((row) => [String(row.body["caseId"]), row]),
+    );
+    return this.catalog.map((item) => {
+      const override = overrides.get(item.id);
+      return {
+        ...item,
+        module: "",
+        owner: "",
+        ...(override ? metadataInput.parse(override.body["metadata"]) : {}),
+        version: override?.version ?? 0,
+      };
+    });
+  }
+  async saveMetadata(
+    principal: Principal,
+    projectId: string,
+    caseId: string,
+    input: unknown,
+    match?: string,
+  ) {
+    this.authorize(principal, projectId, "maintainer");
+    if (!this.catalog.some((item) => item.id === caseId))
+      throw new ApiError(404, "Test not found");
+    const parsed = metadataInput.safeParse(input);
+    if (!parsed.success) throw new ApiError(422, "Invalid test metadata");
+    const version = /^"(\d+)"$/.exec(match ?? "");
+    if (!version) throw new ApiError(412, "Reload the catalog before saving");
+    const id = `${projectId}:metadata:${caseId}`;
+    const body = { id, projectId, caseId, metadata: parsed.data };
+    const rows =
+      Number(version[1]) === 0
+        ? await this.db.query<Row>(
+            "INSERT INTO platform_documents(id,organization_id,project_id,kind,body) VALUES($1,$2,$3,'metadata',$4) ON CONFLICT DO NOTHING RETURNING body,version",
+            [id, principal.organizationId, projectId, JSON.stringify(body)],
+          )
+        : await this.db.query<Row>(
+            "UPDATE platform_documents SET body=$4,version=version+1 WHERE id=$1 AND organization_id=$2 AND project_id=$3 AND version=$5 RETURNING body,version",
+            [
+              id,
+              principal.organizationId,
+              projectId,
+              JSON.stringify(body),
+              Number(version[1]),
+            ],
+          );
+    if (!rows.rows[0])
+      throw new ApiError(412, "Test metadata changed; reload before saving");
+    await this.audit(principal, projectId, "catalog.metadata_updated", caseId);
+    return { ...parsed.data, version: rows.rows[0].version };
+  }
   async saveSuite(
     principal: Principal,
     projectId: string,
@@ -471,7 +541,12 @@ export class PlatformService {
         422,
         "Environment unavailable or execution exceeds its current policy; refresh configuration",
       );
-    let permittedIds = this.catalog.map((test) => test.id);
+    let metadata = (await this.projectCatalog(principal, projectId)).filter(
+      (item) => config.selection.testIds.includes(item.id),
+    );
+    let permittedIds = metadata
+      .filter((test) => test.enabled)
+      .map((test) => test.id);
     if (parentRunId) {
       const parent = await this.get(principal, parentRunId, "run");
       const parentConfig = runInput.parse(parent["config"]);
@@ -486,6 +561,10 @@ export class PlatformService {
         throw new ApiError(409, "Original source snapshot is unavailable");
       }
       source = parent["source"];
+      if (Array.isArray(parent["metadata"]))
+        metadata = parent["metadata"].filter((item: { id: string }) =>
+          config.selection.testIds.includes(item.id),
+        );
       if (parent["environment"])
         environment = environmentSchema
           .extend({ version: z.number() })
@@ -497,7 +576,7 @@ export class PlatformService {
         "Catalog changed; refresh the selection before launching",
       );
     if (config.selection.testIds.some((id) => !permittedIds.includes(id)))
-      throw new ApiError(422, "Unknown test selection");
+      throw new ApiError(422, "Unknown or disabled test selection");
     const id = randomUUID();
     const run: RunRecord = {
       id,
@@ -511,6 +590,7 @@ export class PlatformService {
       reportPhase: "pending",
       parentRunId: parentRunId ?? null,
       source,
+      metadata,
       environment,
     };
     const result = await this.db.query<Row>(
@@ -717,10 +797,11 @@ export function mountPlatform(
       res.json({
         revision: service.revision,
         discoveryError: service.discoveryError,
-        items: service.catalog.filter((item) =>
-          `${item.id} ${item.title} ${item.feature} ${item.tags.join(" ")}`
-            .toLowerCase()
-            .includes(query),
+        items: (await service.projectCatalog(principal, projectId)).filter(
+          (item) =>
+            `${item.id} ${item.title} ${item.feature} ${item.module} ${item.owner} ${item.tags.join(" ")}`
+              .toLowerCase()
+              .includes(query),
         ),
       });
     }),
@@ -736,6 +817,20 @@ export function mountPlatform(
           String(req.params["project"]),
         ),
       });
+    }),
+  );
+  app.patch(
+    "/v1/projects/:project/catalog/:id",
+    handler(async (req, res, principal) => {
+      res.json(
+        await service.saveMetadata(
+          principal,
+          String(req.params["project"]),
+          String(req.params["id"]),
+          req.body,
+          req.get("If-Match"),
+        ),
+      );
     }),
   );
   app.get(

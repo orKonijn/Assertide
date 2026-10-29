@@ -33,6 +33,10 @@ export interface TestCase {
   feature: string;
   kind: string;
   priority: string;
+  enabled: boolean;
+  version: number;
+  owner: string;
+  module: string;
   tags: string[];
   file?: string;
   line?: number;
@@ -46,6 +50,7 @@ export interface Suite {
   version: number;
   owner: string;
   tags: string[];
+  priority?: string;
 }
 export interface Run {
   id: string;

@@ -21,6 +21,7 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
             <h2>{{ suite.name }}</h2>
             <p>{{ suite.description }}</p>
             <p>{{ suite.testIds.length }} tests · revision {{ suite.version }}</p>
+            <p>Priority {{ suite.priority || 'P1' }}</p>
             <p class="muted">
               {{ suite.owner || 'No owner assigned' }} · {{ suite.tags.join(', ') }}
             </p>
@@ -53,6 +54,13 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
         </label>
         <label>Owner<input name="owner" [(ngModel)]="owner" maxlength="120" /></label>
         <label
+          >Suite priority<select name="priority" [(ngModel)]="priority">
+            <option>P0</option>
+            <option>P1</option>
+            <option>P2</option>
+          </select></label
+        >
+        <label
           >Tags (comma separated)<input name="tags" [(ngModel)]="tags" maxlength="1000"
         /></label>
         <fieldset>
@@ -62,6 +70,7 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
               ><input
                 type="checkbox"
                 [checked]="selected().includes(test.id)"
+                [disabled]="!test.enabled"
                 (change)="toggle(test.id)"
               />
               {{ test.id }} {{ test.title }}</label
@@ -94,6 +103,7 @@ export class Suites {
   name = '';
   description = '';
   owner = '';
+  priority = 'P1';
   tags = '';
   canEdit() {
     return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');
@@ -103,6 +113,7 @@ export class Suites {
     this.name = suite.name;
     this.description = suite.description;
     this.owner = suite.owner;
+    this.priority = suite.priority ?? 'P1';
     this.tags = suite.tags.join(', ');
     this.selected.set([...suite.testIds]);
     this.error.set('');
@@ -112,6 +123,7 @@ export class Suites {
     this.name = '';
     this.description = '';
     this.owner = '';
+    this.priority = 'P1';
     this.tags = '';
     this.selected.set([]);
   }
@@ -144,6 +156,7 @@ export class Suites {
         description: this.description,
         testIds: this.selected(),
         owner: this.owner,
+        priority: this.priority,
         tags: this.tags
           .split(',')
           .map((tag) => tag.trim())

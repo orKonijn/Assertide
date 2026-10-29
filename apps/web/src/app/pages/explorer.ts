@@ -16,6 +16,32 @@ import { Api, TestCase, Environment, errorMessage } from '../core/api';
     @if (error()) {
       <p class="error" role="alert">{{ error() }} <button (click)="load()">Retry</button></p>
     }
+    @if (editing(); as test) {
+      <section class="card">
+        <h2>Edit {{ test.id }} metadata</h2>
+        <form (ngSubmit)="saveMetadata()" class="toolbar">
+          <label
+            >Feature<input name="feature" [(ngModel)]="feature" required maxlength="120"
+          /></label>
+          <label>Module<input name="module" [(ngModel)]="module" maxlength="120" /></label>
+          <label>Test owner<input name="owner" [(ngModel)]="owner" maxlength="120" /></label>
+          <label>Test tags<input name="tags" [(ngModel)]="tags" maxlength="1000" /></label>
+          <label
+            >Test priority<select name="priority" [(ngModel)]="editPriority">
+              <option>P0</option>
+              <option>P1</option>
+              <option>P2</option>
+            </select></label
+          >
+          <label
+            ><input name="enabled" type="checkbox" [(ngModel)]="enabled" />Enabled for future
+            selections</label
+          >
+          <button [disabled]="saving()">Save test metadata</button
+          ><button type="button" (click)="editing.set(null)">Cancel metadata edit</button>
+        </form>
+      </section>
+    }
     <div class="split">
       <section class="card">
         <div class="toolbar">
@@ -69,6 +95,7 @@ import { Api, TestCase, Environment, errorMessage } from '../core/api';
                       <input
                         type="checkbox"
                         [checked]="selected().includes(test.id)"
+                        [disabled]="!test.enabled"
                         (change)="toggle(test.id)"
                         [attr.aria-label]="'Select ' + test.id"
                       />
@@ -79,6 +106,12 @@ import { Api, TestCase, Environment, errorMessage } from '../core/api';
                       <p class="muted">
                         {{ test.file }}:{{ test.line }} · {{ test.tags.join(', ') }}
                       </p>
+                      @if (!test.enabled) {
+                        <span class="badge">Disabled</span>
+                      }
+                      @if (canEdit()) {
+                        <button (click)="edit(test)">Edit {{ test.id }}</button>
+                      }
                     </td>
                     <td class="hide-mobile">{{ test.feature }}</td>
                     <td>
@@ -151,6 +184,55 @@ export class Explorer {
   readonly loading = signal(true);
   readonly starting = signal(false);
   readonly error = signal('');
+  readonly editing = signal<TestCase | null>(null);
+  readonly saving = signal(false);
+  feature = '';
+  module = '';
+  owner = '';
+  tags = '';
+  editPriority = 'P1';
+  enabled = true;
+  canEdit() {
+    return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');
+  }
+  edit(test: TestCase) {
+    this.editing.set(test);
+    this.feature = test.feature;
+    this.module = test.module;
+    this.owner = test.owner;
+    this.tags = test.tags.join(', ');
+    this.editPriority = test.priority;
+    this.enabled = test.enabled;
+  }
+  async saveMetadata() {
+    const current = this.editing();
+    if (!current) return;
+    this.saving.set(true);
+    this.error.set('');
+    try {
+      await this.api.patch(
+        `/projects/${this.api.projectId()}/catalog/${current.id}`,
+        {
+          feature: this.feature,
+          module: this.module,
+          owner: this.owner,
+          tags: this.tags
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean),
+          priority: this.editPriority,
+          enabled: this.enabled,
+        },
+        current.version,
+      );
+      this.editing.set(null);
+      await this.load();
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    } finally {
+      this.saving.set(false);
+    }
+  }
   workers = 1;
   retries = 0;
   browser = 'chromium';
@@ -162,7 +244,7 @@ export class Explorer {
   readonly filtered = computed(() =>
     this.tests().filter(
       (test) =>
-        `${test.id} ${test.title} ${test.feature} ${test.tags.join(' ')}`
+        `${test.id} ${test.title} ${test.feature} ${test.module} ${test.owner} ${test.tags.join(' ')}`
           .toLowerCase()
           .includes(this.query().toLowerCase()) &&
         (this.kind() === 'all' || test.kind === this.kind()) &&
@@ -181,6 +263,9 @@ export class Explorer {
         discoveryError?: string;
       }>(`/projects/${this.api.projectId()}/catalog`);
       this.tests.set(catalog.items);
+      this.selected.update((ids) =>
+        ids.filter((id) => catalog.items.some((item) => item.id === id && item.enabled)),
+      );
       this.environments.set(
         (
           await this.api.get<{ items: Environment[] }>(
@@ -215,7 +300,11 @@ export class Explorer {
     this.key = crypto.randomUUID();
   }
   selectAll() {
-    this.selected.set(this.filtered().map((test) => test.id));
+    this.selected.set(
+      this.filtered()
+        .filter((test) => test.enabled)
+        .map((test) => test.id),
+    );
     this.key = crypto.randomUUID();
   }
   async start() {

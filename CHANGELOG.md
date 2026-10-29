@@ -6,6 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Maintainers can edit project-scoped test owners, modules, features, tags, priorities and enabled status, with stale-edit rejection. Disabled tests are excluded from new selections; earlier runs retain their metadata snapshots. Suite priority is editable. Database checks and browser editing/reload checks pass.
 - Added saved environment policies with approved destination validation, worker/retry/browser/video caps, and versioned write-only encrypted credentials. Runs freeze policy and credential references; rotation preserves earlier versions. Database tests and all nine browser journeys pass, including execution with a saved credential. See [configuration and key backup guidance](docs/environments.md).
 - Failure-video selection now reaches Playwright. A controlled blocked-target check verifies non-empty video, trace and screenshot evidence from a failed browser attempt.
 - Administrators can create/edit projects and manage organization roles and project membership with stale-edit protection. Project selection persists across reloads, access changes apply to existing sessions, and local startup preserves edited memberships. HTTP authorization tests and the desktop/mobile browser workflow pass.
@@ -38,6 +39,14 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - Cancellation now stops the owned worker process tree and retains completed attempts from durable checkpoints. Missing browser instances are reconciled individually, queued cancellations retain explicit canceled outcomes, and concurrent progress updates no longer discard a cancellation request. The Windows browser cancellation test and database checks pass.
 
 ### Design preview visuals
+
+![Catalog metadata editing in the running application](docs/changelog/assets/unreleased/catalog-metadata.png)
+
+Disabled cases remain discoverable and editable, while their selection checkbox is disabled.
+
+![Catalog metadata editing on mobile](docs/changelog/assets/unreleased/catalog-metadata-mobile.png)
+
+The metadata form remains available at mobile width.
 
 ![Saved environment policy and write-only credential controls](docs/changelog/assets/unreleased/environments.png)
 
