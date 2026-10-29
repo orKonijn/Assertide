@@ -9,7 +9,12 @@
     <p class="eyebrow">CONFIDENCE, ONE RUN AT A TIME</p>
     <h1>Your quality workspace.</h1>
     <p>Discover tests, follow executions, and investigate the evidence in one place.</p>
-    <a class="button" href="/auth/login">Continue with SSO</a>
+    @if (identityError()) {
+      <p role="alert">{{ identityError() }}</p>
+      <button (click)="connect()">Retry connection</button>
+    } @else {
+      <a class="button" [href]="loginUrl()">Continue with SSO</a>
+    }
     <p class="muted">Sign in with your organization account.</p>
   </main>
 } @else {

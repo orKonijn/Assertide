@@ -3,6 +3,8 @@ import { z } from "zod";
 import type { Express, Request, Response } from "express";
 import type { SqlConnection } from "./database.ts";
 import { IdentityService, type Principal } from "./identity.ts";
+import { discoverApprovedSource, discoveredCase } from "./discovery.ts";
+import { initializeScheduler } from "./scheduler.ts";
 import {
   catalogRevision,
   prepareSource,
@@ -99,9 +101,50 @@ class ApiError extends Error {
 }
 const roles = ["viewer", "operator", "maintainer", "administrator"];
 export class PlatformService {
-  constructor(readonly db: SqlConnection) {}
+  revision = catalogRevision;
+  manifest = sourceManifest;
+  catalog: (z.infer<typeof discoveredCase> & {
+    feature: string;
+    kind: string;
+    priority: string;
+    enabled: boolean;
+  })[] = [];
+  discoveryError: string | null = null;
+  constructor(
+    readonly db: SqlConnection,
+    private readonly discover = discoverApprovedSource,
+  ) {}
   async initialize() {
     await prepareSource();
+    await this.db.query(
+      "CREATE TABLE IF NOT EXISTS catalog_revisions (revision text PRIMARY KEY, body jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now())",
+    );
+    try {
+      const items = await this.discover();
+      await this.db.query(
+        "INSERT INTO catalog_revisions(revision,body) VALUES($1,$2) ON CONFLICT DO NOTHING",
+        [catalogRevision, JSON.stringify({ items, manifest: sourceManifest })],
+      );
+      this.setCatalog(items);
+    } catch {
+      this.discoveryError =
+        "Source discovery failed; the previous successful catalog remains active";
+      const previous = (
+        await this.db.query<{
+          revision: string;
+          body: { items: unknown; manifest: typeof sourceManifest };
+        }>(
+          "SELECT revision,body FROM catalog_revisions ORDER BY created_at DESC LIMIT 1",
+        )
+      ).rows[0];
+      if (!previous)
+        throw new Error(
+          "No successful catalog is available; install automation dependencies and fix discovery",
+        );
+      this.revision = previous.revision;
+      this.manifest = previous.body.manifest;
+      this.setCatalog(z.array(discoveredCase).parse(previous.body.items));
+    }
     await this.db.query(
       "CREATE TABLE IF NOT EXISTS platform_documents (id text PRIMARY KEY, organization_id uuid NOT NULL, project_id uuid NOT NULL, kind text NOT NULL, version integer NOT NULL DEFAULT 1, body jsonb NOT NULL)",
     );
@@ -114,6 +157,38 @@ export class PlatformService {
     await this.db.query(
       "CREATE TABLE IF NOT EXISTS run_events (sequence bigserial PRIMARY KEY, run_id text NOT NULL, body jsonb NOT NULL, occurred_at timestamptz NOT NULL DEFAULT now())",
     );
+    await initializeScheduler(this.db);
+  }
+  private setCatalog(items: z.infer<typeof discoveredCase>[]) {
+    const smoke = new Set([
+      "LAB-001",
+      "LAB-002",
+      "LAB-003",
+      "LAB-004",
+      "LAB-005",
+      "LAB-008",
+      "LAB-009",
+      "UI-001",
+      "UI-005",
+      "UI-008",
+      "UI-009",
+      "UI-012",
+    ]);
+    this.catalog = items.map((item) => ({
+      ...item,
+      feature:
+        localCatalog.find((meta) => meta.id === item.id)?.feature ?? "Other",
+      kind: item.projects.includes("api") ? "api" : "ui",
+      tags: [
+        ...new Set([
+          ...item.tags,
+          smoke.has(item.id) ? "smoke" : "regression",
+          item.id.startsWith("UI-") ? "ui" : "api",
+        ]),
+      ],
+      priority: item.id === "LAB-014" ? "P2" : smoke.has(item.id) ? "P0" : "P1",
+      enabled: true,
+    }));
   }
   async seedLocal() {
     await this.db.query(
@@ -127,7 +202,7 @@ export class PlatformService {
           name: "Assertide Lab",
           description: "Controlled API contract sandbox",
           owner: "QA Platform",
-          catalogRevision,
+          catalogRevision: this.revision,
         }),
       ],
     );
@@ -200,7 +275,7 @@ export class PlatformService {
     if (!parsed.success) throw new ApiError(422, "Invalid suite fields");
     if (
       parsed.data.testIds.some(
-        (testId) => !localCatalog.some((test) => test.id === testId),
+        (testId) => !this.catalog.some((test) => test.id === testId),
       )
     )
       throw new ApiError(422, "Unknown test selection");
@@ -289,10 +364,10 @@ export class PlatformService {
       return this.get(principal, existing.run_id, "run");
     }
     let source: unknown = {
-      revision: catalogRevision,
-      manifest: sourceManifest,
+      revision: this.revision,
+      manifest: this.manifest,
     };
-    let permittedIds = localCatalog.map((test) => test.id);
+    let permittedIds = this.catalog.map((test) => test.id);
     if (parentRunId) {
       const parent = await this.get(principal, parentRunId, "run");
       const parentConfig = runInput.parse(parent["config"]);
@@ -308,7 +383,7 @@ export class PlatformService {
       }
       source = parent["source"];
       permittedIds = parentConfig.selection.testIds;
-    } else if (config.catalogRevision !== catalogRevision)
+    } else if (config.catalogRevision !== this.revision)
       throw new ApiError(
         409,
         "Catalog changed; refresh the selection before launching",
@@ -332,8 +407,8 @@ export class PlatformService {
     const result = await this.db.query<Row>(
       `WITH claimed AS (
       INSERT INTO launch_keys(scope,payload,run_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING run_id
-    ) INSERT INTO platform_documents(id,organization_id,project_id,kind,body)
-    SELECT run_id,$4,$5,'run',$6 FROM claimed RETURNING body,version`,
+    ), created AS (INSERT INTO platform_documents(id,organization_id,project_id,kind,body)
+    SELECT run_id,$4,$5,'run',$6 FROM claimed RETURNING id,body,version), enqueued AS (INSERT INTO run_outbox(run_id) SELECT id FROM created RETURNING run_id) SELECT body,version FROM created`,
       [
         scope,
         payload,
@@ -514,9 +589,10 @@ export function mountPlatform(
       service.authorize(principal, projectId);
       const query = String(req.query["query"] ?? "").toLowerCase();
       res.json({
-        revision: catalogRevision,
-        items: localCatalog.filter((item) =>
-          `${item.id} ${item.title} ${item.feature}`
+        revision: service.revision,
+        discoveryError: service.discoveryError,
+        items: service.catalog.filter((item) =>
+          `${item.id} ${item.title} ${item.feature} ${item.tags.join(" ")}`
             .toLowerCase()
             .includes(query),
         ),

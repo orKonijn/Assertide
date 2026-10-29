@@ -20,6 +20,9 @@ export interface TestCase {
   kind: string;
   priority: string;
   tags: string[];
+  file?: string;
+  line?: number;
+  projects?: string[];
 }
 export interface Suite {
   id: string;

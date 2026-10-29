@@ -115,9 +115,10 @@ const sandbox =
     : undefined;
 for (const signal of ["SIGINT", "SIGTERM"] as const)
   process.once(signal, () => {
-    runner?.stop();
     sandbox?.close();
     reportViewer?.close();
     localIdentity?.close();
-    void app.close().then(() => db.close());
+    void (runner?.stop() ?? Promise.resolve())
+      .then(() => app.close())
+      .then(() => db.close());
   });

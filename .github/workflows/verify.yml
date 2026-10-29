@@ -9,6 +9,10 @@ jobs:
   foundation:
     runs-on: ubuntu-latest
     services:
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
       postgres:
         image: postgres:17
         env:
@@ -38,19 +42,23 @@ jobs:
         working-directory: apps/api
       - run: npm run typecheck
         working-directory: apps/api
+      - run: npm ci
+        working-directory: packages/automation
       - run: npm test
         working-directory: apps/api
       - run: npm test
         working-directory: apps/api
         env:
           TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
-      - run: npm ci
-        working-directory: packages/automation
+          TEST_REDIS_URL: redis://127.0.0.1:6379
       - run: npx playwright install --with-deps chromium
         working-directory: packages/automation
       - run: node scripts/setup-sandbox.mjs
       - run: npx playwright test --config platform.config.ts
         working-directory: packages/automation
+        env:
+          DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+          REDIS_URL: redis://127.0.0.1:6379
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

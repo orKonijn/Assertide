@@ -1,6 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { Api } from './core/api';
+import { HttpErrorResponse } from '@angular/common/http';
+import { errorMessage } from './core/api';
 
 @Component({
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
@@ -11,6 +13,7 @@ import { Api } from './core/api';
 export class App {
   readonly api = inject(Api);
   readonly loading = signal(true);
+  readonly identityError = signal('');
   readonly dark = signal(localStorage.getItem('assertide-theme') === 'dark');
   readonly menu = signal(false);
   readonly links = [
@@ -25,10 +28,23 @@ export class App {
   ];
   constructor() {
     this.applyTheme();
-    void this.api
-      .loadIdentity()
-      .catch(() => this.api.identity.set(null))
-      .finally(() => this.loading.set(false));
+    void this.connect();
+  }
+  loginUrl() {
+    return `/auth/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`;
+  }
+  async connect() {
+    this.loading.set(true);
+    this.identityError.set('');
+    try {
+      await this.api.loadIdentity();
+    } catch (error) {
+      this.api.identity.set(null);
+      if (!(error instanceof HttpErrorResponse && error.status === 401))
+        this.identityError.set(errorMessage(error));
+    } finally {
+      this.loading.set(false);
+    }
   }
   toggleMenu() {
     this.menu.update((value) => !value);

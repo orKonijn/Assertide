@@ -8,6 +8,13 @@ import type { SqlConnection } from "./database.ts";
 import { verifySource } from "./source.ts";
 import { stopProcessTree } from "./process-tree.ts";
 import {
+  claimExecution,
+  renewLease,
+  updateOwnedRun,
+  recoverExpiredLeases,
+  RedisTransport,
+} from "./scheduler.ts";
+import {
   attachmentSchema,
   captureAttachments,
   expireArtifacts,
@@ -115,32 +122,82 @@ export class LocalRunner {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private child: ChildProcess | undefined;
   private nextRetentionSweep = 0;
+  private readonly owner = randomUUID();
+  private epoch = 0;
+  private active = false;
+  private operation: Promise<void> = Promise.resolve();
+  private transport?: RedisTransport;
   constructor(private readonly db: SqlConnection) {
     if (process.env["NODE_ENV"] === "production")
       throw new Error("Local runner is forbidden in production");
   }
   async start() {
     await mkdir(runRoot, { recursive: true });
-    // An interrupted process is diagnosed, never silently replayed.
-    await this.db.query(
-      "UPDATE platform_documents SET body=body || $1::jsonb,version=version+1 WHERE kind='run' AND body->>'phase' IN ('running','provisioning','finalizing')",
-      [
-        JSON.stringify({
-          phase: "infrastructure_error",
-          reportPhase: "failed",
-          diagnostic: "Development worker restarted before terminal manifest",
-        }),
-      ],
-    );
-    void this.tick();
+    await recoverExpiredLeases(this.db);
+    const redis = process.env["REDIS_URL"];
+    if (redis) {
+      this.transport = new RedisTransport(this.db, redis, async (id) => {
+        while (this.active && !this.stopped)
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        if (this.stopped) throw new Error("Worker stopping");
+        this.active = true;
+        try {
+          const body = await claimExecution(this.db, this.owner, id);
+          if (body)
+            await this.withLease(body, () =>
+              this.execute(runSchema.parse(body)),
+            );
+        } finally {
+          this.active = false;
+        }
+      });
+      await this.transport.start();
+    }
+    this.operation = this.tick();
   }
-  stop() {
+  async stop() {
     this.stopped = true;
     clearTimeout(this.timer);
     stopProcessTree(this.child);
+    await this.transport?.close();
+    await this.operation;
+  }
+  private scheduleTick() {
+    if (!this.stopped)
+      this.timer = setTimeout(() => {
+        this.operation = this.tick();
+      }, 500);
+  }
+  private async withLease(
+    body: Record<string, unknown>,
+    work: () => Promise<void>,
+  ) {
+    const id = z.uuid().parse(body["id"]);
+    this.epoch = z.number().int().positive().parse(body["leaseEpoch"]);
+    const epoch = this.epoch;
+    let renewal = Promise.resolve();
+    const heartbeat = setInterval(() => {
+      renewal = renewal
+        .then(() => renewLease(this.db, id, this.owner, epoch))
+        .catch(() => {
+          stopProcessTree(this.child);
+        });
+    }, 5000);
+    try {
+      await work();
+    } finally {
+      clearInterval(heartbeat);
+      await renewal;
+    }
   }
   private async tick() {
+    if (this.active) {
+      this.scheduleTick();
+      return;
+    }
+    this.active = true;
     try {
+      await recoverExpiredLeases(this.db);
       if (Date.now() >= this.nextRetentionSweep) {
         await expireArtifacts(this.db);
         await this.db.query(
@@ -149,36 +206,34 @@ export class LocalRunner {
         this.nextRetentionSweep = Date.now() + 60_000;
       }
       const rebuild = (
-        await this.db.query<{ id: string }>(
-          `UPDATE platform_documents SET body=jsonb_set(body,'{reportPhase}','"generating"'),version=version+1 WHERE id=(SELECT id FROM platform_documents WHERE kind='run' AND body->>'reportPhase'='rebuild_requested' LIMIT 1) AND body->>'reportPhase'='rebuild_requested' RETURNING id`,
+        await this.db.query<{ body: Record<string, unknown> }>(
+          `UPDATE platform_documents SET body=body || jsonb_build_object('reportPhase','generating','leaseOwner',$1::text,'leaseEpoch',COALESCE((body->>'leaseEpoch')::int,0)+1,'leaseExpires',now()+interval '30 seconds'),version=version+1 WHERE id=(SELECT id FROM platform_documents WHERE kind='run' AND body->>'reportPhase'='rebuild_requested' LIMIT 1) AND body->>'reportPhase'='rebuild_requested' RETURNING body`,
+          [this.owner],
         )
       ).rows[0];
       if (rebuild) {
-        await this.generateReport(rebuild.id);
+        await this.withLease(rebuild.body, () =>
+          this.generateReport(String(rebuild.body["id"])),
+        );
         return;
       }
-      const row = (
-        await this.db.query<{
-          body: unknown;
-        }>(`UPDATE platform_documents SET body=jsonb_set(body,'{phase}','"running"'),version=version+1
-        WHERE id=(SELECT id FROM platform_documents WHERE kind='run' AND body->>'phase'='queued' ORDER BY body->>'createdAt' LIMIT 1)
-        AND body->>'phase'='queued' RETURNING body`)
-      ).rows[0];
-      if (row) await this.execute(runSchema.parse(row.body));
+      if (!this.transport) {
+        const body = await claimExecution(this.db, this.owner);
+        if (body)
+          await this.withLease(body, () => this.execute(runSchema.parse(body)));
+      }
     } catch (error) {
       console.error(
         "Local runner failed:",
         error instanceof Error ? error.message : "Unknown failure",
       );
     } finally {
-      if (!this.stopped) this.timer = setTimeout(() => void this.tick(), 500);
+      this.active = false;
+      this.scheduleTick();
     }
   }
   private async update(id: string, patch: Record<string, unknown>) {
-    await this.db.query(
-      `WITH updated AS (UPDATE platform_documents SET body=body || $1::jsonb || CASE WHEN body->>'cancelRequested'='true' AND $1::jsonb->>'phase'='completed' THEN '{"phase":"canceled","reportPhase":"failed"}'::jsonb ELSE '{}'::jsonb END,version=version+1 WHERE id=$2 RETURNING id) INSERT INTO run_events(run_id,body) SELECT id,$1::jsonb FROM updated`,
-      [JSON.stringify(patch), id],
-    );
+    await updateOwnedRun(this.db, id, this.owner, this.epoch, patch);
   }
   private async command(
     args: string[],

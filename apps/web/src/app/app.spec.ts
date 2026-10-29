@@ -29,6 +29,6 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Your quality workspace');
-    expect(compiled.querySelector('a')?.getAttribute('href')).toBe('/auth/login');
+    expect(compiled.querySelector('a')?.getAttribute('href')).toContain('/auth/login?returnTo=');
   });
 });

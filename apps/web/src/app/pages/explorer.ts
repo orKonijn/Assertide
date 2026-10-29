@@ -11,7 +11,7 @@ import { Api, TestCase, errorMessage } from '../core/api';
         <h1>Test explorer</h1>
         <p class="muted">Select approved tests from the local Lab catalog.</p>
       </div>
-      <span class="badge">local-lab-v1</span>
+      <span class="badge">{{ revision().slice(0, 12) || 'Loading revision' }}</span>
     </header>
     @if (error()) {
       <p class="error" role="alert">{{ error() }} <button (click)="load()">Retry</button></p>
@@ -25,6 +25,29 @@ import { Api, TestCase, errorMessage } from '../core/api';
               (ngModelChange)="search($event)"
               placeholder="Case ID, title or feature" /></label
           ><button (click)="selectAll()">Select visible</button>
+          <label
+            >Kind<select
+              aria-label="Test kind"
+              [ngModel]="kind()"
+              (ngModelChange)="kind.set($event); search(query())"
+            >
+              <option value="all">All tests</option>
+              <option value="api">API</option>
+              <option value="ui">Browser</option>
+            </select></label
+          >
+          <label
+            >Priority<select
+              aria-label="Priority"
+              [ngModel]="priority()"
+              (ngModelChange)="priority.set($event); search(query())"
+            >
+              <option value="all">All priorities</option>
+              <option>P0</option>
+              <option>P1</option>
+              <option>P2</option>
+            </select></label
+          >
         </div>
         @if (loading()) {
           <p role="status">Discovering catalog…</p>
@@ -53,6 +76,9 @@ import { Api, TestCase, errorMessage } from '../core/api';
                     <td>
                       <strong>{{ test.id }}</strong
                       ><br />{{ test.title }}
+                      <p class="muted">
+                        {{ test.file }}:{{ test.line }} · {{ test.tags.join(', ') }}
+                      </p>
                     </td>
                     <td class="hide-mobile">{{ test.feature }}</td>
                     <td>
@@ -107,7 +133,9 @@ export class Explorer {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   readonly tests = signal<TestCase[]>([]);
-  private revision = '';
+  readonly revision = signal('');
+  readonly kind = signal(this.route.snapshot.queryParamMap.get('kind') ?? 'all');
+  readonly priority = signal(this.route.snapshot.queryParamMap.get('priority') ?? 'all');
   readonly query = signal(this.route.snapshot.queryParamMap.get('query') ?? '');
   readonly selected = signal<string[]>([]);
   readonly loading = signal(true);
@@ -119,8 +147,13 @@ export class Explorer {
   readonly hasUi = computed(() => this.selected().some((id) => id.startsWith('UI-')));
   private key = crypto.randomUUID();
   readonly filtered = computed(() =>
-    this.tests().filter((test) =>
-      `${test.id} ${test.title} ${test.feature}`.toLowerCase().includes(this.query().toLowerCase()),
+    this.tests().filter(
+      (test) =>
+        `${test.id} ${test.title} ${test.feature} ${test.tags.join(' ')}`
+          .toLowerCase()
+          .includes(this.query().toLowerCase()) &&
+        (this.kind() === 'all' || test.kind === this.kind()) &&
+        (this.priority() === 'all' || test.priority === this.priority()),
     ),
   );
   constructor() {
@@ -129,11 +162,14 @@ export class Explorer {
   async load() {
     this.loading.set(true);
     try {
-      const catalog = await this.api.get<{ items: TestCase[]; revision: string }>(
-        `/projects/${this.api.projectId()}/catalog`,
-      );
+      const catalog = await this.api.get<{
+        items: TestCase[];
+        revision: string;
+        discoveryError?: string;
+      }>(`/projects/${this.api.projectId()}/catalog`);
       this.tests.set(catalog.items);
-      this.revision = catalog.revision;
+      this.revision.set(catalog.revision);
+      this.error.set(catalog.discoveryError ?? '');
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {
@@ -144,7 +180,11 @@ export class Explorer {
     this.query.set(value);
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { query: value || null },
+      queryParams: {
+        query: value || null,
+        kind: this.kind() === 'all' ? null : this.kind(),
+        priority: this.priority() === 'all' ? null : this.priority(),
+      },
       replaceUrl: true,
     });
   }
@@ -168,7 +208,7 @@ export class Explorer {
         this.workers,
         this.retries,
         this.browser,
-        this.revision,
+        this.revision(),
       );
       await this.router.navigate(['/runs', run.id]);
     } catch (error) {
