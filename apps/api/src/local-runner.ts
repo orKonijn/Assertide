@@ -7,6 +7,8 @@ import { randomUUID } from "node:crypto";
 import type { SqlConnection } from "./database.ts";
 import { verifySource } from "./source.ts";
 import { stopProcessTree } from "./process-tree.ts";
+import { archiveReport, expireReports } from "./report-storage.ts";
+import { expireRunData } from "./retention.ts";
 import {
   environmentSchema,
   defaultEnvironment,
@@ -223,6 +225,8 @@ export class LocalRunner {
       await recoverExpiredLeases(this.db);
       if (Date.now() >= this.nextRetentionSweep) {
         await expireArtifacts(this.db);
+        await expireReports(this.db);
+        await expireRunData(this.db);
         await this.db.query(
           "DELETE FROM run_events WHERE occurred_at < now()-interval '24 hours'",
         );
@@ -522,10 +526,16 @@ export class LocalRunner {
         output,
         id,
       );
+      const expiresAt =
+        code === 0 ? await archiveReport(this.db, id, directory) : undefined;
       await this.update(
         id,
         code === 0
-          ? { reportPhase: "ready", reportDirectory: directory }
+          ? {
+              reportPhase: "ready",
+              reportDirectory: directory,
+              reportExpiresAt: expiresAt,
+            }
           : { reportPhase: "failed" },
       );
     } catch (error) {

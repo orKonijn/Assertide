@@ -30,6 +30,30 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+      - uses: actions/cache@v4
+        id: minio-cache
+        with:
+          path: .local/tools/minio
+          key: minio-linux-7aac2a2c5b7c882e68c1ce017d8256be2feea27f
+      - uses: actions/setup-go@v5
+        if: steps.minio-cache.outputs.cache-hit != 'true'
+        with:
+          go-version: '1.27.3'
+          cache: false
+      - run: node scripts/setup-object-store.mjs
+        if: steps.minio-cache.outputs.cache-hit != 'true'
+      - name: Start private object-store fixture
+        run: |
+          .local/tools/minio server "$RUNNER_TEMP/assertide-objects" --address 127.0.0.1:9000 >/dev/null 2>&1 &
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:9000/minio/health/live >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+        env:
+          MINIO_ROOT_USER: assertide_test
+          MINIO_ROOT_PASSWORD: local_ci_object_store_only
+          MINIO_BROWSER: 'off'
       - run: npm ci
         working-directory: apps/web
       - run: node --test packages/domain/execution.test.ts
@@ -42,6 +66,13 @@ jobs:
         working-directory: apps/api
       - run: npm run typecheck
         working-directory: apps/api
+      - run: npx tsx scripts/setup-bucket.ts
+        working-directory: apps/api
+        env:
+          S3_BUCKET: assertide-test
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_ACCESS_KEY_ID: assertide_test
+          AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
       - run: npm ci
         working-directory: packages/automation
       - run: npm test
@@ -51,6 +82,10 @@ jobs:
         env:
           TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
           TEST_REDIS_URL: redis://127.0.0.1:6379
+          S3_BUCKET: assertide-test
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_ACCESS_KEY_ID: assertide_test
+          AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
       - run: npx playwright install --with-deps chromium
         working-directory: packages/automation
       - run: node scripts/setup-sandbox.mjs
@@ -60,6 +95,10 @@ jobs:
         env:
           DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
           REDIS_URL: redis://127.0.0.1:6379
+          S3_BUCKET: assertide-test
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_ACCESS_KEY_ID: assertide_test
+          AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

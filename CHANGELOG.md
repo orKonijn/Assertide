@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added private S3-compatible evidence and report storage with version-pinned, integrity-checked downloads. Complete report uploads publish immutable manifests; viewer access remains bound to the issuing credential. Real local MinIO tests verify privacy, object-version/delete-marker removal and interrupted multipart cleanup, and the browser report/rebuild journey passes against object storage.
+- Added report/raw-data expiration and 365-day result/audit cleanup without changing retained test outcomes. Reports and raw files currently use a conservative 14-day lifetime because they may embed shorter-lived evidence; see [storage setup and remaining retention limitation](docs/object-storage.md).
 - Maintainers can edit project-scoped test owners, modules, features, tags, priorities and enabled status, with stale-edit rejection. Disabled tests are excluded from new selections; earlier runs retain their metadata snapshots. Suite priority is editable. Database checks and browser editing/reload checks pass.
 - Added saved environment policies with approved destination validation, worker/retry/browser/video caps, and versioned write-only encrypted credentials. Runs freeze policy and credential references; rotation preserves earlier versions. Database tests and all nine browser journeys pass, including execution with a saved credential. See [configuration and key backup guidance](docs/environments.md).
 - Failure-video selection now reaches Playwright. A controlled blocked-target check verifies non-empty video, trace and screenshot evidence from a failed browser attempt.

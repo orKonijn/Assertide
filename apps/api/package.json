@@ -9,6 +9,7 @@
     "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1160.0",
     "@electric-sql/pglite": "0.5.13",
     "@nestjs/common": "12.3.2",
     "@nestjs/core": "12.3.2",

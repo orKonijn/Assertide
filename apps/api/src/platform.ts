@@ -5,6 +5,7 @@ import type { SqlConnection } from "./database.ts";
 import { IdentityService, type Principal } from "./identity.ts";
 import { discoverApprovedSource, discoveredCase } from "./discovery.ts";
 import { initializeScheduler } from "./scheduler.ts";
+import { initializeReports } from "./report-storage.ts";
 import {
   environmentSchema,
   initializeEnvironments,
@@ -178,6 +179,7 @@ export class PlatformService {
       "CREATE TABLE IF NOT EXISTS run_events (sequence bigserial PRIMARY KEY, run_id text NOT NULL, body jsonb NOT NULL, occurred_at timestamptz NOT NULL DEFAULT now())",
     );
     await initializeScheduler(this.db);
+    await initializeReports(this.db);
     await initializeEnvironments(this.db);
   }
   private setCatalog(items: z.infer<typeof discoveredCase>[]) {
@@ -927,6 +929,15 @@ export function mountPlatform(
       service.authorize(principal, String(run["projectId"]), "maintainer");
       if (run["phase"] !== "completed")
         throw new ApiError(409, "Only completed runs have rebuildable reports");
+      if (
+        run["rawExpiredAt"] ||
+        (typeof run["endedAt"] === "string" &&
+          new Date(run["endedAt"]).getTime() + 14 * 86400000 <= Date.now())
+      )
+        throw new ApiError(
+          410,
+          "Raw evidence expired; this report can no longer be rebuilt",
+        );
       await service.db.query(
         `UPDATE platform_documents SET body=jsonb_set(body,'{reportPhase}','"rebuild_requested"'),version=version+1 WHERE id=$1 AND body->>'reportPhase' IN ('ready','failed')`,
         [id],

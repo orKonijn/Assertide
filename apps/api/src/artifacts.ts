@@ -14,6 +14,7 @@ import type { Express } from "express";
 import type { IdentityService } from "./identity.ts";
 import type { PlatformService } from "./platform.ts";
 import type { SqlConnection } from "./database.ts";
+import { objectStore, objectReference } from "./object-store.ts";
 
 const runs = fileURLToPath(new URL("../../../.local/runs/", import.meta.url));
 export const attachmentSchema = z.object({
@@ -33,6 +34,7 @@ export const artifactSchema = z.object({
   expiresAt: z.iso.datetime(),
   redactionPolicy: z.string(),
   unavailableReason: z.string().optional(),
+  object: objectReference.optional(),
   exchange: z
     .object({
       method: z.string(),
@@ -127,6 +129,14 @@ export async function captureAttachments(
         flag: "wx",
       });
       item.size = bytes.length;
+      if (objectStore) {
+        item.object = await objectStore.put(
+          `runs/${runId}/artifacts/${id}`,
+          bytes,
+          item.contentType,
+        );
+        await unlink(path.join(directory, "artifacts", id));
+      }
     } catch {
       item.unavailableReason =
         "Attachment missing or rejected by storage policy";
@@ -147,6 +157,11 @@ export async function expireArtifacts(db: SqlConnection, now = new Date()) {
     const artifacts = z.array(artifactSchema).parse(row.artifacts);
     for (const item of artifacts)
       if (!item.unavailableReason && new Date(item.expiresAt) <= now) {
+        if (item.object) {
+          if (!objectStore)
+            throw new Error("Object store required to expire remote evidence");
+          await objectStore.deleteVersions(item.object.key, true);
+        }
         try {
           await unlink(path.join(runs, row.id, "artifacts", item.id));
         } catch (error) {
@@ -203,13 +218,22 @@ export function mountArtifacts(
         return;
       }
       const file = path.join(runs, id, "artifacts", artifact.id);
-      await stat(file);
+      const remote = artifact.object
+        ? await objectStore?.get(artifact.object)
+        : undefined;
+      if (artifact.object && !remote)
+        throw new Error("Object store unavailable");
+      if (!remote) await stat(file);
       await platform.audit(
         principal,
         String(run["projectId"]),
         "artifact.downloaded",
         artifact.id,
       );
+      if (remote) {
+        res.attachment(artifact.name).type(artifact.contentType).send(remote);
+        return;
+      }
       res
         .attachment(artifact.name)
         .type(artifact.contentType)

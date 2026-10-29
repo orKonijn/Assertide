@@ -11,6 +11,8 @@ import { runRoot } from "./local-runner.ts";
 import { PlatformService } from "./platform.ts";
 import { IdentityService } from "./identity.ts";
 import type { SqlConnection } from "./database.ts";
+import { objectStore } from "./object-store.ts";
+import { reportManifest } from "./report-storage.ts";
 
 const digest = (token: string) =>
   createHash("sha256").update(token).digest("hex");
@@ -35,6 +37,14 @@ export async function mountReportViewer(
       }
       const id = String(req.params["id"]);
       const run = await platform.get(principal, id, "run");
+      if (
+        run["reportPhase"] === "expired" ||
+        (typeof run["reportExpiresAt"] === "string" &&
+          new Date(run["reportExpiresAt"]) <= new Date())
+      ) {
+        res.status(410).json({ title: "Report expired" });
+        return;
+      }
       if (run["reportPhase"] !== "ready") {
         res.status(409).json({ title: "Report not ready" });
         return;
@@ -160,6 +170,31 @@ export async function mountReportViewer(
       "Content-Security-Policy",
       "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
     );
+    const build = (
+      await db.query<{ body: unknown; expired: boolean; expires_at: string }>(
+        "SELECT body,expired,expires_at FROM report_builds WHERE run_id=$1 AND directory=$2",
+        [id, directory],
+      )
+    ).rows[0];
+    if (build) {
+      if (build.expired || new Date(build.expires_at) <= new Date()) {
+        res.status(410).send("Report expired");
+        return;
+      }
+      const manifest = reportManifest.parse(build.body);
+      if (manifest.files) {
+        const name =
+          decodeURIComponent(req.path).replace(/^\//, "") || "index.html";
+        const reference = manifest.files[name];
+        if (!reference || !objectStore) {
+          res.status(404).end();
+          return;
+        }
+        const bytes = await objectStore.get(reference);
+        res.type(path.extname(name)).send(bytes);
+        return;
+      }
+    }
     express.static(path.join(runRoot, id, directory), {
       dotfiles: "deny",
       index: "index.html",
