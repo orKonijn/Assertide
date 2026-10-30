@@ -76,6 +76,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Overview date filters now retain explicit accessible names while analytics labels update. Light/dark desktop and mobile accessibility checks pass locally; the visible layout is unchanged.
+
 - Private report tickets now remain bound to the exact report build and issuing login session or CI credential. Logout, session expiry and credential rotation/revocation invalidate subsequent report asset requests. The browser journey verifies denial after logout.
 - Cancellation now stops the owned worker process tree and retains completed attempts from durable checkpoints. Missing browser instances are reconciled individually, queued cancellations retain explicit canceled outcomes, and concurrent progress updates no longer discard a cancellation request. The Windows browser cancellation test and database checks pass.
 

@@ -115,12 +115,14 @@ interface Analytics {
         >From ({{ analytics()?.timeZone ?? 'UTC' }})<input
           type="date"
           name="from"
+          aria-label="From date"
           [(ngModel)]="from"
       /></label>
       <label
         >Through ({{ analytics()?.timeZone ?? 'UTC' }})<input
           type="date"
           name="to"
+          aria-label="Through date"
           [(ngModel)]="to"
       /></label>
       <label

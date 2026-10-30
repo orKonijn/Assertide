@@ -170,6 +170,12 @@ jobs:
           AWS_REGION: us-east-1
           AWS_ACCESS_KEY_ID: assertide_test
           AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cluster-browser-failure-evidence
+          path: packages/automation/test-results
+          if-no-files-found: ignore
       - name: Build and scan service, web and worker images
         if: ${{ !cancelled() }}
         run: bash scripts/verify-images.sh
