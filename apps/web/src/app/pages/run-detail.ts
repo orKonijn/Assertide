@@ -103,11 +103,11 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
             <p class="muted">Source revision {{ current.source.revision.slice(0, 12) }}</p>
           }
         </section>
-        <section class="card">
-          <h2>Allure report</h2>
-          <p>
+        <section class="card execution-report">
+          <div class="execution-report-heading">
+            <h2>Allure report</h2>
             <span class="badge">{{ current.reportPhase }}</span>
-          </p>
+          </div>
           @if (current.reportExpiresAt) {
             <p class="muted">
               Report expires {{ current.reportExpiresAt | date: 'medium' }}. Traces and videos
@@ -120,22 +120,28 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
           @if (current.rawUnavailableReason) {
             <p>{{ current.rawUnavailableReason }}</p>
           }
-          @if (current.phase === 'completed' && ['ready', 'failed'].includes(current.reportPhase)) {
-            <button
-              [disabled]="
-                busy() ||
-                !!current.rawExpiredAt ||
-                !['maintainer', 'administrator'].includes(api.identity()?.role ?? '')
-              "
-              (click)="rebuild()"
-            >
-              Rebuild report
-            </button>
-          }
-          @if (current.reportPhase === 'ready') {
-            <a [href]="'/v1/runs/' + id + '/report'" target="_blank" rel="noopener">Open report</a>
-            <a [href]="'/v1/runs/' + id + '/report-download'">Download report ZIP</a>
-          }
+          <div class="execution-report-actions">
+            @if (
+              current.phase === 'completed' && ['ready', 'failed'].includes(current.reportPhase)
+            ) {
+              <button
+                [disabled]="
+                  busy() ||
+                  !!current.rawExpiredAt ||
+                  !['maintainer', 'administrator'].includes(api.identity()?.role ?? '')
+                "
+                (click)="rebuild()"
+              >
+                Rebuild report
+              </button>
+            }
+            @if (current.reportPhase === 'ready') {
+              <a [href]="'/v1/runs/' + id + '/report'" target="_blank" rel="noopener"
+                >Open report</a
+              >
+              <a [href]="'/v1/runs/' + id + '/report-download'">Download report ZIP</a>
+            }
+          </div>
         </section>
       </div>
       @if (current.toolchain; as tools) {

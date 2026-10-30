@@ -214,7 +214,6 @@ Actual 390px captures after saving a sample project:
 
 Verification: `npm run verify:quick` passed, including eight web unit tests; eight infrastructure checks are skipped on Windows. Six browser tests passed, covering the 64-state light/dark accessibility matrix, notification unread/history behavior, outside/Escape dismissal, and mobile navigation. Open notification panels also passed automated accessibility scans in both themes. Report refresh and overflow checks passed at 320/390/768/1280px. Page Object architecture and reporting/redaction checks passed. No product version is assigned; these are Unreleased development changes.
 
-
 ## Execution summaries, filters, and button links
 
 Execution summaries use compact status text and independent card heights. Frozen selections keep the count visible and put the complete test identifiers in a keyboard-accessible disclosure with bounded scrolling. Report actions wrap as buttons without changing their destinations or download behavior.
@@ -240,7 +239,6 @@ Verification: local lint, type checks, API tests, eight web unit tests, and prod
 
 Twelve browser tests passed, including the 64-state accessibility matrix, filter/sort behavior, cancellation, execution, mobile evidence viewing, reruns, authenticated report downloads, and report-history/investigation workflows.
 
-
 ## Notification panel refinement
 
 The activity panel uses a compact title and session subtitle, a quiet icon-only close control with a 44px target, and notification rows with a small confirmation icon and timestamp. The bell has a subtle active state while the panel is open. Opening and closing use a short slide/fade; reduced-motion preferences disable transitions. Unread counting, keyboard focus, outside-click dismissal, and session history behavior are preserved.
@@ -254,3 +252,21 @@ Actual running interface at 390px after saving a sample project:
 Local verification passes, including lint, type checks, API tests, eight web unit tests, and production build. Eight infrastructure checks remain skipped on Windows. Open-panel accessibility scans pass in light and dark mode. No product version is assigned; this remains an Unreleased UI refinement.
 
 Three browser tests passed, including 64 accessibility states and notification unread/history dismissal behavior. The first attempt was interrupted by the local server becoming unavailable; the rerun passed once the server was available.
+
+## Balanced execution summary
+
+Execution phase and frozen selection now share an aligned two-column row. The Allure report spans the full width below them, with its status beside the heading and actions grouped in a wrapping row. Phones use a single column. This replaces the uneven three-column layout where report buttons made one card much taller than its neighbors.
+
+Actual running dark interface at 1280px (sample execution data can change between captures):
+
+![Uneven execution cards before rebalancing](changelog/assets/unreleased/balanced-summary-before.png)
+![Aligned summary cards and full-width report actions](changelog/assets/unreleased/balanced-summary-after.png)
+
+Actual 390px mobile layouts:
+
+![Balanced execution cards in light mode on mobile](changelog/assets/unreleased/balanced-summary-mobile-light.png)
+![Balanced execution cards in dark mode on mobile](changelog/assets/unreleased/balanced-summary-mobile-dark.png)
+
+Layout and selection-expansion checks pass at 320/390/768/1280px in both themes. No product version is assigned; this is an Unreleased layout correction.
+
+Local verification passes (lint, type checks, API tests, eight web unit tests, production build; eight Windows infrastructure skips). Six browser tests passed, including 64 accessibility states, execution, mobile evidence viewing, reruns, and evidence downloads.

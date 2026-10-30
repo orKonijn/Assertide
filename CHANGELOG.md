@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Rebalanced execution summaries into aligned phase/selection cards and a full-width report card, so report actions no longer form a tall narrow column. Buttons wrap on phones and report status sits beside its heading. Local verification, six browser tests including 64 accessibility states, and light/dark checks at 320/390/768/1280px pass. See [balanced summary comparisons](docs/ui-refresh.md#balanced-execution-summary).
+
 - Refined notification history with a compact header, subtle close icon, activity icons, smaller timestamps, and a clearer empty state. The panel opens and closes smoothly, respecting reduced-motion preferences. Local verification, three browser tests including 64 accessibility states, and open-panel scans in both themes pass. See [notification panel comparisons](docs/ui-refresh.md#notification-panel-refinement).
 
 - Compacted execution summaries with an expandable frozen-test selection, aligned history filters in a responsive grid, and grouped filter actions. Content links now look like clickable buttons while preserving navigation and evidence downloads. Local verification, 12 browser tests including 64 accessibility states, and light/dark layout checks at 320/390/768/1280px pass. See [execution layout and link comparisons](docs/ui-refresh.md#execution-summaries-filters-and-button-links).

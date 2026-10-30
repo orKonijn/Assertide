@@ -1938,6 +1938,56 @@ th[aria-sort='descending'] .sort-indicator::before {
   }
 }
 
+/* Give report actions the full summary width instead of a narrow third column. */
+.grid.execution-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.execution-summary > .card {
+  margin: 0;
+  padding: 20px;
+}
+.execution-summary .execution-report {
+  grid-column: 1 / -1;
+}
+.execution-report-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.execution-summary .execution-report-heading h2 {
+  margin: 0;
+}
+.execution-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.execution-report-actions:empty {
+  display: none;
+}
+.execution-summary .execution-report-actions > * {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .grid.execution-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .execution-summary > .card {
+    padding: 16px;
+  }
+  .execution-report-actions > * {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
