@@ -117,17 +117,26 @@ test(
           0,
         );
         assert.equal(await deleteWorkerJob(cancelId), true);
-        assert.equal(
-          (
-            await kube([
-              "wait",
-              "--for=delete",
-              `job/${jobName(cancelId)}`,
-              "--timeout=30s",
-            ])
-          ).code,
-          0,
+        const deleted = await kube([
+          "wait",
+          "--for=delete",
+          `job/${jobName(cancelId)}`,
+          "--timeout=30s",
+        ]);
+        assert.ok(
+          deleted.code === 0 || /NotFound|not found/.test(deleted.log),
+          deleted.log,
         );
+        const absent = await kube([
+          "get",
+          "job",
+          jobName(cancelId),
+          "--ignore-not-found",
+          "-o",
+          "name",
+        ]);
+        assert.equal(absent.code, 0, absent.log);
+        assert.equal(absent.log.trim(), "");
       } finally {
         await deleteWorkerJob(cancelId);
       }
