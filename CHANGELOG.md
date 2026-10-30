@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Redesigned the explorer header and toolbar with a compact launch action, secondary revision text, a wider search field, aligned filters, and grouped selection/pagination controls. The launch button no longer stretches across tablet/mobile layouts. Four browser tests including 64 accessibility states, local verification, and light/dark layout checks at 320/390/768/1280px pass. See [explorer redesign screenshots](docs/ui-refresh.md#explorer-toolbar-redesign).
+
 - Explorer Select all now switches to Deselect all when every matching enabled test is selected. The header shows the selected count beside Start execution, and numbered pagination is above the test list so it is visible without scrolling through ten cards. Four browser tests including 64 accessibility states, local verification, and architecture/reporting checks pass. See [selection controls](docs/ui-refresh.md#explorer-selection-toggle-and-visible-pagination).
 
 - Added Start execution to the Test explorer header, ten-test numbered pagination, and Select all across every page of matching enabled tests. Selections persist between pages and filters reset pagination. Catalog checkboxes now have themed checked, disabled, and focus states. Nine browser tests including 64 accessibility states, local verification, and architecture/reporting checks pass. See [explorer pagination and controls](docs/ui-refresh.md#explorer-pagination-and-launch-controls).

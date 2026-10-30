@@ -298,3 +298,17 @@ Actual running application captures:
 ![Numbered pages displayed above the catalog](changelog/assets/unreleased/explorer-selection-pagination-dark.png)
 
 Verification: four browser tests passed, including select/deselect across pages and 64 accessibility states. Local lint, formatting, type checks, API and web unit tests, and production build pass; eight infrastructure checks are skipped on Windows. Page Object architecture and reporting checks pass. This is an Unreleased development change with no assigned product version.
+
+## Explorer toolbar redesign
+
+The explorer separates page identity from catalog controls. The revision is secondary text beside the catalog label, while the selected count sits beside a compact, fixed-content-width Start execution button. Search receives more width; Kind and Priority align in a consistent grid. Select/Deselect all now sits with the result count, and quieter numbered pagination shares that row. On phones search spans the row, filters sit side by side, and pagination wraps without horizontal overflow.
+
+Actual running interface:
+
+![Redesigned explorer on a dark desktop](changelog/assets/unreleased/explorer-redesign-1280-dark.png)
+![Redesigned explorer on a dark phone](changelog/assets/unreleased/explorer-redesign-390-dark.png)
+![Redesigned explorer on a light phone](changelog/assets/unreleased/explorer-redesign-390-light.png)
+
+The previous header and pagination are preserved in [selection-control captures](#explorer-selection-toggle-and-visible-pagination). Layout checks pass at 320/390/768/1280px in light and dark themes. Local lint, format, type checks, API/web unit tests, and production build pass; eight infrastructure checks remain skipped on Windows. No product version is assigned; this remains Unreleased.
+
+Four browser tests passed, including the 64-state accessibility matrix, catalog editing, pagination, and select/deselect behavior.

@@ -8,14 +8,16 @@ import { LoadingState } from '../core/loading-state';
 @Component({
   imports: [FormsModule, LoadingState],
   template: `
-    <header class="page-header">
+    <header class="page-header explorer-heading">
       <div>
-        <p class="eyebrow">VERSIONED CATALOG</p>
+        <p class="eyebrow">
+          TEST CATALOG
+          <span class="catalog-revision">{{ revision().slice(0, 12) || 'Loading revision' }}</span>
+        </p>
         <h1>Test explorer</h1>
         <p class="muted">Select approved tests from the local Lab catalog.</p>
       </div>
-      <div class="actions explorer-header-actions">
-        <span class="badge">{{ revision().slice(0, 12) || 'Loading revision' }}</span>
+      <div class="explorer-header-actions">
         <span class="selection-count" role="status">{{ selected().length }} selected</span>
         <button
           class="primary"
@@ -60,24 +62,14 @@ import { LoadingState } from '../core/loading-state';
       </section>
     }
     <div class="split">
-      <section class="card">
-        <div class="toolbar">
+      <section class="card explorer-catalog">
+        <div class="toolbar catalog-filters">
           <label
             >Search tests<input
               [ngModel]="query()"
               (ngModelChange)="search($event)"
-              placeholder="Case ID, title or feature" /></label
-          ><button
-            (click)="selectAll()"
-            [disabled]="loading() || !filtered().length"
-            [title]="
-              allSelected()
-                ? 'Deselect all matching tests'
-                : 'Select all enabled matching tests across every page'
-            "
-          >
-            {{ allSelected() ? 'Deselect all' : 'Select all' }}
-          </button>
+              placeholder="Case ID, title or feature"
+          /></label>
           <label
             >Kind<select
               aria-label="Test kind"
@@ -106,9 +98,22 @@ import { LoadingState } from '../core/loading-state';
           <app-loading-state label="Discovering catalog…" />
         } @else {
           <nav class="catalog-pagination" aria-label="Test pages">
-            <span class="muted" role="status"
-              >{{ filtered().length }} tests · Page {{ currentPage() }} of {{ pageCount() }}</span
-            >
+            <div class="catalog-selection-tools">
+              <button
+                (click)="selectAll()"
+                [disabled]="loading() || !filtered().length"
+                [title]="
+                  allSelected()
+                    ? 'Deselect all matching tests'
+                    : 'Select all enabled matching tests across every page'
+                "
+              >
+                {{ allSelected() ? 'Deselect all' : 'Select all' }}
+              </button>
+              <span class="muted" role="status"
+                >{{ filtered().length }} tests · Page {{ currentPage() }} of {{ pageCount() }}</span
+              >
+            </div>
             <div class="catalog-page-buttons">
               <button
                 (click)="page.set(currentPage() - 1)"
