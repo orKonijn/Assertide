@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { readFile, rm, readdir } from "node:fs/promises";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { z } from "zod";
 test("compatible reports retain history and authenticated links without duplicate rebuild entries", async ({
   page,
@@ -49,6 +49,25 @@ test("compatible reports retain history and authenticated links without duplicat
     return await (await page.request.get(`/v1/runs/${created.id}`)).json();
   };
   const first = await create();
+  const download = await page.request.get(
+    `/v1/runs/${first.id}/report-download`,
+  );
+  expect(download.status()).toBe(200);
+  const archive = await download.body();
+  expect(archive.subarray(0, 4).toString("hex")).toBe("504b0304");
+  expect(createHash("sha256").update(archive).digest("hex")).toBe(
+    download.headers()["x-checksum-sha256"],
+  );
+  expect(download.headers()["x-report-generation"]).toBe(first.reportDirectory);
+  const anonymous = await page.context().browser()!.newContext();
+  expect(
+    (
+      await anonymous.request.get(
+        `http://127.0.0.1:4200/v1/runs/${first.id}/report-download`,
+      )
+    ).status(),
+  ).toBe(401);
+  await anonymous.close();
   expect(first.toolchain.playwright).toBe("1.64.1");
   const firstRaw = path.resolve(
     "../../.local/runs",
@@ -121,6 +140,22 @@ test("compatible reports retain history and authenticated links without duplicat
     report.getByRole("button", { name: "Expand all", exact: true }),
   ).toBeVisible();
   await report.close();
+  const reportCard = page
+    .locator("section")
+    .filter({
+      has: page.getByRole("heading", { name: "Allure report", exact: true }),
+    });
+  await expect(
+    reportCard.getByRole("link", { name: "Download report ZIP" }),
+  ).toBeVisible();
+  await reportCard.screenshot({
+    path: "../../docs/changelog/assets/unreleased/report-download.png",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await reportCard.screenshot({
+    path: "../../docs/changelog/assets/unreleased/report-download-mobile.png",
+  });
+  await page.setViewportSize({ width: 1280, height: 720 });
   await expect(
     page.getByRole("heading", { name: "Execution environment", exact: true }),
   ).toBeVisible();

@@ -80,6 +80,7 @@ import { Api, Run, errorMessage } from '../core/api';
           }
           @if (current.reportPhase === 'ready') {
             <a [href]="'/v1/runs/' + id + '/report'" target="_blank" rel="noopener">Open report</a>
+            <a [href]="'/v1/runs/' + id + '/report-download'">Download report ZIP</a>
           }
         </section>
       </div>

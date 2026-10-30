@@ -9,6 +9,7 @@ import {
 } from "./object-store.ts";
 import type { SqlConnection } from "./database.ts";
 import { isShortLivedEvidence } from "./evidence-files.ts";
+import { buildReportBundles, reportBundleName } from "./report-bundle.ts";
 
 const root = fileURLToPath(new URL("../../../.local/runs/", import.meta.url));
 export const reportManifest = z.object({
@@ -17,6 +18,9 @@ export const reportManifest = z.object({
   shortLived: z.array(z.string()).default([]),
   shortExpiresAt: z.iso.datetime().optional(),
   shortExpired: z.boolean().default(false),
+  downloads: z
+    .record(z.string(), z.object({ sha256: z.string(), bytes: z.number() }))
+    .optional(),
 });
 export async function initializeReports(db: SqlConnection) {
   await db.query(
@@ -88,12 +92,29 @@ export async function archiveReport(
       }
     };
     await walk(base);
+    const bundles = await buildReportBundles(
+      base,
+      pending,
+      id,
+      directory,
+      new Date(manifest.shortExpiresAt!) > new Date(),
+    );
+    manifest.downloads = Object.fromEntries(
+      bundles.map((bundle) => [
+        bundle.name,
+        { sha256: bundle.sha256, bytes: bundle.bytes },
+      ]),
+    );
+    pending.push(...bundles);
     for (let offset = 0; offset < pending.length; offset += 8) {
       const batch = await Promise.allSettled(
         pending.slice(offset, offset + 8).map(async (item) => {
           try {
             const bytes = await readFile(item.filename);
-            if (isShortLivedEvidence(item.name, bytes)) {
+            if (
+              item.name !== reportBundleName &&
+              isShortLivedEvidence(item.name, bytes)
+            ) {
               manifest.shortLived.push(item.name);
               if (new Date(manifest.shortExpiresAt!) <= new Date()) {
                 await rm(item.filename, { force: true });

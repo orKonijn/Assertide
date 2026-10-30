@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile, access } from "node:fs/promises";
+import { mkdir, writeFile, access, readFile } from "node:fs/promises";
+import { unzipSync } from "fflate";
+import { reportBundleName, mediaBundleName } from "../src/report-bundle.ts";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { testDatabase } from "./database.ts";
@@ -65,8 +67,26 @@ test("immutable report builds publish complete manifests and expire without dele
       );
       await assert.rejects(access(target));
     }
+    const bundle = async (name: string) =>
+      objectStore
+        ? objectStore.get(manifest.files![name]!)
+        : readFile(path.join(target, name));
+    const full = unzipSync(await bundle(mediaBundleName));
+    const reduced = unzipSync(await bundle(reportBundleName));
+    assert.ok(full["trace.zip"]);
+    assert.ok(full["video.webm"]);
+    assert.ok(full["index.html"]);
+    assert.equal(reduced["trace.zip"], undefined);
+    assert.ok(reduced["index.html"]);
+    assert.equal(
+      JSON.parse(Buffer.from(full["assertide-build.json"]!).toString())
+        .generation,
+      directory,
+    );
     await expireReports(db, new Date(Date.now() + 15 * 86400000));
-    assert.equal(manifest.shortLived.length, 2);
+    assert.equal(manifest.shortLived.length, 3);
+    await assert.rejects(bundle(mediaBundleName));
+    await bundle(reportBundleName);
     if (objectStore && manifest.files) {
       await assert.rejects(objectStore.get(manifest.files["trace.zip"]!));
       await assert.rejects(objectStore.get(manifest.files["video.webm"]!));

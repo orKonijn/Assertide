@@ -6,6 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Ready reports now offer immutable ZIP downloads with SHA-256 and generation headers. Media-inclusive archives expire after 14 days; a report archive without trace/video remains available for 30 days. Real-store tests verify ZIP contents and expiration, and browser checks verify checksums and anonymous denial.
 - Administrators can inspect dependency health, queue age, failed reports, capacity and retention in Settings. Added bounded database/Redis/object-store readiness probes and configurable deployment capacity limits. Database failure, scope, quota and desktop/mobile browser checks pass; see [operations guidance](docs/operations.md).
 - Added opt-in Linux OCI workers with immutable image selection, non-root execution, read-only source/root filesystems, resource caps and no external network. CI verifies the isolation boundaries, mixed fixture execution, container cleanup and the connected app workflow. See [worker setup and scope](docs/isolated-workers.md).
 - Execution details and Allure now record Node, Playwright, Allure/integration and bundled browser versions. Reports use the run's frozen feature, owner, module, priority and tags. Browser checks verify recorded versions, generated labels and report rebuilding.

@@ -13,6 +13,8 @@ import { IdentityService } from "./identity.ts";
 import type { SqlConnection } from "./database.ts";
 import { objectStore } from "./object-store.ts";
 import { reportManifest } from "./report-storage.ts";
+import { readFile } from "node:fs/promises";
+import { reportBundleName, mediaBundleName } from "./report-bundle.ts";
 
 const digest = (token: string) =>
   createHash("sha256").update(token).digest("hex");
@@ -28,6 +30,81 @@ export async function mountReportViewer(
   await db.query(
     "ALTER TABLE report_tickets ADD COLUMN IF NOT EXISTS auth_digest text, ADD COLUMN IF NOT EXISTS auth_kind text, ADD COLUMN IF NOT EXISTS report_directory text",
   );
+  app.get("/v1/runs/:id/report-download", async (req, res) => {
+    res.set({
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; sandbox",
+    });
+    try {
+      const principal = await identity.principal(req);
+      if (!principal) {
+        res.status(401).end();
+        return;
+      }
+      const id = z.uuid().parse(req.params["id"]);
+      const run = await platform.get(principal, id, "run");
+      const directory = z
+        .string()
+        .regex(/^report-[a-f0-9-]{36}$/)
+        .parse(run["reportDirectory"]);
+      const build = (
+        await db.query<{ body: unknown; expired: boolean; expires_at: string }>(
+          "SELECT body,expired,expires_at FROM report_builds WHERE run_id=$1 AND directory=$2",
+          [id, directory],
+        )
+      ).rows[0];
+      if (!build) {
+        res.status(409).json({ title: "Report download is not ready" });
+        return;
+      }
+      if (build.expired || new Date(build.expires_at) <= new Date()) {
+        res.status(410).json({ title: "Report expired" });
+        return;
+      }
+      const manifest = reportManifest.parse(build.body);
+      const name =
+        manifest.downloads?.[mediaBundleName] &&
+        !manifest.shortExpired &&
+        manifest.shortExpiresAt &&
+        new Date(manifest.shortExpiresAt) > new Date()
+          ? mediaBundleName
+          : reportBundleName;
+      const download = manifest.downloads?.[name];
+      if (!download) {
+        res
+          .status(409)
+          .json({ title: "Rebuild this older report to enable ZIP export" });
+        return;
+      }
+      const reference = manifest.files?.[name];
+      const bytes = reference
+        ? await objectStore?.get(reference)
+        : await readFile(path.join(runRoot, id, directory, name));
+      if (
+        !bytes ||
+        createHash("sha256").update(bytes).digest("hex") !== download.sha256
+      )
+        throw new Error("Report export integrity mismatch");
+      await platform.audit(
+        principal,
+        String(run["projectId"]),
+        "report.downloaded",
+        id,
+      );
+      res
+        .set({
+          "X-Checksum-SHA256": download.sha256,
+          "X-Report-Generation": directory,
+          "X-Includes-Trace-Video": String(name === mediaBundleName),
+        })
+        .attachment(`assertide-${id}-${directory}.zip`)
+        .type("application/zip")
+        .send(bytes);
+    } catch {
+      res.status(404).json({ title: "Report download unavailable" });
+    }
+  });
   app.get(
     ["/v1/runs/:id/report", "/v1/runs/:id/report/{*asset}"],
     async (req, res) => {

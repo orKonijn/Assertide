@@ -25,9 +25,9 @@ test("saved environment resolves a write-only credential during execution", asyn
   await expect(
     page.getByLabel("Credential value", { exact: true }),
   ).toHaveValue("");
-  await expect(page.getByRole("status")).toHaveText(
-    "Credential version saved. Its value cannot be read back.",
-  );
+  await expect(
+    page.getByRole("status").filter({ hasText: "Credential version saved." }),
+  ).toHaveText("Credential version saved. Its value cannot be read back.");
   await page
     .getByLabel("Environment ID", { exact: true })
     .fill(`policy-${suffix}`);
@@ -40,17 +40,23 @@ test("saved environment resolves a write-only credential during execution", asyn
   await page
     .getByRole("button", { name: "Save environment", exact: true })
     .click();
-  await expect(page.getByRole("status")).toHaveText(
-    "Environment saved. Future launches use this policy.",
-  );
+  await expect(
+    page.getByRole("status").filter({ hasText: "Environment saved." }),
+  ).toHaveText("Environment saved. Future launches use this policy.");
+  await page.locator("app-environments").screenshot({
+    path: "../../docs/changelog/assets/unreleased/environments.png",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
   await page
     .locator("app-environments")
     .screenshot({
-      path: "../../docs/changelog/assets/unreleased/environments.png",
+      path: "../../docs/changelog/assets/unreleased/environments-mobile.png",
     });
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.locator("app-environments").screenshot({ path: "../../docs/changelog/assets/unreleased/environments-mobile.png" });
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/explorer");
   await page.getByLabel("Select LAB-001", { exact: true }).check();
