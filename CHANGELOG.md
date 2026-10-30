@@ -6,8 +6,6 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
-- Local object-storage startup now checks MinIO readiness and explains how to restore the service before launching the app, preventing sessions that immediately fail report generation with `ECONNREFUSED 127.0.0.1:9000`. Verified offline/unhealthy startup checks, real MinIO raw-evidence/report storage tests, and rebuilding/downloading five affected reports. Keep MinIO running throughout the session; see [recovery instructions](docs/object-storage.md#local-real-service-verification).
-
 - Spaced report headings across a shared toolbar and moved Refresh to a labeled icon beside Action. Notification history now opens from a bottom-right bell; a red unread count clears when opened, and new actions restore it. Visual toast popups are replaced by the badge, while screen-reader announcements remain. Six browser tests, the 64-state accessibility matrix, open-panel accessibility checks, and local verification pass. See [report toolbar and notification evidence](docs/ui-refresh.md#report-toolbar-and-notification-bell).
 
 - Compacted test and report cards by grouping metadata, priority, and actions; report links now match workspace styling. Moved the mobile theme control beside Menu as a labeled sun/moon icon, with an icon control retained on desktop. Six browser tests including 64 accessibility states and light/dark layout checks at 320/390/768/1280px pass. See [card and header comparisons](docs/ui-refresh.md#compact-test-and-report-cards).
