@@ -66,12 +66,26 @@ export function ociCommand(
 }
 export async function stopContainer(id: string) {
   const name = workerName(id);
-  await new Promise<void>((resolve) => {
+  return await new Promise<boolean>((resolve) => {
     const child = spawn("docker", ["rm", "--force", name], {
-      stdio: "ignore",
+      stdio: ["ignore", "ignore", "pipe"],
       windowsHide: true,
     });
-    child.once("error", () => resolve());
-    child.once("exit", () => resolve());
+    let diagnostic = "";
+    child.stderr.on("data", (chunk) => {
+      diagnostic = (diagnostic + String(chunk)).slice(-4096);
+    });
+    const timeout = setTimeout(() => {
+      child.kill();
+      resolve(false);
+    }, 20000);
+    child.once("error", () => {
+      clearTimeout(timeout);
+      resolve(false);
+    });
+    child.once("exit", (code) => {
+      clearTimeout(timeout);
+      resolve(code === 0 || /No such container/.test(diagnostic));
+    });
   });
 }

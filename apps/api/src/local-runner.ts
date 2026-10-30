@@ -6,6 +6,7 @@ import { z } from "zod";
 import { randomUUID, randomBytes } from "node:crypto";
 import { ociCommand, stopContainer } from "./oci-worker.ts";
 import { hostname } from "node:os";
+import { archiveRaw, restoreRaw, rawManifest } from "./raw-storage.ts";
 import type { SqlConnection } from "./database.ts";
 import { verifySource } from "./source.ts";
 import { stopProcessTree } from "./process-tree.ts";
@@ -61,6 +62,7 @@ const runSchema = z.object({
   endedAt: z.iso.datetime().optional(),
   historyFamily: z.array(z.string()).optional(),
   workerImage: z.string().optional(),
+  rawArchive: rawManifest.optional(),
   environment: environmentSchema
     .extend({ version: z.number().optional() })
     .default(defaultEnvironment),
@@ -253,7 +255,7 @@ export class LocalRunner {
           [hostname()],
         );
         for (const run of orphaned.rows) {
-          await stopContainer(run.id);
+          if (!(await stopContainer(run.id))) continue;
           await this.db.query(
             "UPDATE platform_documents SET body=body || '{\"containerCleaned\":true}'::jsonb WHERE id=$1",
             [run.id],
@@ -583,13 +585,15 @@ export class LocalRunner {
           [run.id],
         )
       ).rows[0];
-      if (canceled || terminal?.phase === "canceled") return;
       const raw = path.join(output, "allure-results");
       for (const entry of await readdir(raw))
         if (entry.endsWith(".json")) {
           const file = path.join(raw, entry);
           await writeFile(file, redact(await readFile(file, "utf8")));
         }
+      const rawArchive = await archiveRaw(run.id, raw);
+      if (rawArchive) await this.update(run.id, { rawArchive });
+      if (canceled || terminal?.phase === "canceled") return;
       await this.generateReport(run.id);
     } catch (error) {
       const diagnostic = redact(
@@ -622,6 +626,13 @@ export class LocalRunner {
         )
       ).rows[0];
       const run = runSchema.parse(row?.body);
+      if (run.rawArchive)
+        await restoreRaw(
+          id,
+          path.join(output, "allure-results"),
+          run.rawArchive,
+          run.endedAt!,
+        );
       stream = historyStream(run);
       let lease = await claimHistory(this.db, stream, historyOwner);
       const deadline = Date.now() + 30000;

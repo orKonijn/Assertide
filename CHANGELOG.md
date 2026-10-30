@@ -6,6 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Raw Allure inputs now have immutable, checksum-verified object-store archives. Report rebuilding restores them when a worker's local staging files are missing. Real-store tests cover cross-run and path rejection, integrity failures and 14/30-day retention; the browser rebuild passes after deleting local raw inputs.
 - Added Allure 3 JSONL history partitioned by project, environment, selection family and browsers. SQL leases and version checks protect concurrent history writers; report history and the ready pointer publish atomically. Rebuilds replace their point, expired links are cleared in new reports, and execution pages link to compatible runs. Database and browser checks pass.
 - Added private S3-compatible evidence and report storage with version-pinned, integrity-checked downloads. Complete report uploads publish immutable manifests; viewer access remains bound to the issuing credential. Real local MinIO tests verify privacy, object-version/delete-marker removal and interrupted multipart cleanup, and the browser report/rebuild journey passes against object storage.
 - Added 30-day report/raw-data expiration and 365-day result/audit cleanup without changing retained test outcomes. Trace/video copies expire independently after 14 days, including embedded report assets and original raw files. Real-store tests and an Allure rebuild after attachment expiry pass; see [storage setup and retention details](docs/object-storage.md).

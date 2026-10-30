@@ -21,6 +21,8 @@ export async function expireRunData(db: SqlConnection, now = new Date()) {
     )
   ).rows;
   for (const row of shorter) {
+    if (objectStore)
+      await objectStore.deleteVersions(`runs/${row.id}/raw/short/`);
     const directory = runPath(row.id);
     await removeShortLivedFiles(path.join(directory, "allure-results"));
     await removeShortLivedFiles(path.join(directory, "evidence"));
@@ -37,6 +39,7 @@ export async function expireRunData(db: SqlConnection, now = new Date()) {
     )
   ).rows;
   for (const row of rows) {
+    if (objectStore) await objectStore.deleteVersions(`runs/${row.id}/raw/`);
     const directory = runPath(row.id);
     for (const name of [
       "allure-results",

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
+import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 test("compatible reports retain history and authenticated links without duplicate rebuild entries", async ({
@@ -68,6 +69,14 @@ test("compatible reports retain history and authenticated links without duplicat
       exact: true,
     }),
   ).toBeVisible();
+  if (first.rawArchive) {
+    const runId = z.uuid().parse(first.id);
+    const runDirectory = path.resolve("../../.local/runs", runId);
+    const rawDirectory = path.resolve(runDirectory, "allure-results");
+    if (path.dirname(rawDirectory) !== runDirectory)
+      throw new Error("Unsafe evidence cleanup");
+    await rm(rawDirectory, { recursive: true, force: true });
+  }
   const rebuild = await page.request.post(
     `/v1/runs/${first.id}/report-rebuilds`,
     { headers: { Origin: "http://127.0.0.1:4200" }, data: {} },

@@ -8,6 +8,8 @@ The deletion worker removes every object version and delete marker, aborts unfin
 
 ## Local real-service verification
 
+Raw Allure inputs are archived before report generation. Their version-pinned manifest is attached to the run through the worker lease, so another worker can restore the files and rebuild the report. Only complete manifests are published. Raw trace/video objects use a separate 14-day prefix; remaining raw inputs expire after 30 days, including incomplete uploads. Restoration rejects cross-run references, path traversal, symbolic links and checksum mismatches. The browser history test deletes local raw inputs before rebuilding to exercise recovery from the object store. This covers report-input recovery, not PostgreSQL disaster recovery.
+
 MinIO is a development test fixture, not a managed production storage deployment. Its source revision and AGPL license are retained in the ignored checkout. Go 1.27.3 was used to build it; on Windows, place a checksum-verified Go distribution under `.local/tools/go` or set `GO_BINARY`.
 
 1. Run `node scripts/setup-object-store.mjs` to build the pinned source.
