@@ -935,6 +935,51 @@ export function mountPlatform(
     }),
   );
   app.get(
+    "/v1/runs/:id/results/:result/previous",
+    handler(async (req, res, principal) => {
+      const run = await service.get(principal, String(req.params["id"]), "run");
+      const resultId = String(req.params["result"]);
+      if (
+        !z
+          .array(z.object({ id: z.string() }))
+          .parse(run["results"] ?? [])
+          .some((result) => result.id === resultId)
+      )
+        throw new ApiError(404, "Result not found");
+      const config = z
+        .object({ catalogRevision: z.string(), environmentId: z.string() })
+        .parse(run["config"]);
+      const previous = (
+        await service.db.query<{ body: Record<string, unknown> }>(
+          "SELECT body FROM platform_documents WHERE kind='run' AND organization_id=$1 AND project_id=$2 AND body->>'phase'='completed' AND body->>'endedAt'<$3 AND body->'config'->>'catalogRevision'=$4 AND body->'config'->>'environmentId'=$5 AND EXISTS(SELECT 1 FROM jsonb_array_elements(body->'results') result WHERE result->>'id'=$6) ORDER BY body->>'endedAt' DESC,id DESC LIMIT 1",
+          [
+            principal.organizationId,
+            run["projectId"],
+            run["endedAt"] ?? run["createdAt"],
+            config.catalogRevision,
+            config.environmentId,
+            resultId,
+          ],
+        )
+      ).rows[0]?.body;
+      res.json({
+        comparison:
+          "Same source revision, environment and case/browser identity",
+        previous: previous
+          ? {
+              runId: previous["id"],
+              endedAt: previous["endedAt"],
+              result: z
+                .array(z.object({ id: z.string() }).passthrough())
+                .parse(previous["results"])
+                .find((result) => result.id === resultId),
+              config: previous["config"],
+            }
+          : null,
+      });
+    }),
+  );
+  app.get(
     "/v1/runs/:id/history",
     handler(async (req, res, principal) => {
       const run = await service.get(principal, String(req.params["id"]), "run");
@@ -951,6 +996,64 @@ export function mountPlatform(
             reportAvailable: new Date(entry.reportExpiresAt) > new Date(),
           })),
       });
+    }),
+  );
+  app.get(
+    "/v1/runs/:id/annotations",
+    handler(async (req, res, principal) => {
+      const run = await service.get(principal, String(req.params["id"]), "run");
+      const rows = await service.db.query<Row>(
+        "SELECT body,version FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind='annotation' AND body->>'runId'=$3 ORDER BY body->>'createdAt',id LIMIT 200",
+        [principal.organizationId, run["projectId"], run["id"]],
+      );
+      res.json({ items: rows.rows.map((row) => row.body) });
+    }),
+  );
+  app.post(
+    "/v1/runs/:id/annotations",
+    handler(async (req, res, principal) => {
+      const run = await service.get(principal, String(req.params["id"]), "run");
+      service.authorize(principal, String(run["projectId"]), "operator");
+      const parsed = z
+        .object({
+          resultId: z.string().min(1).max(120),
+          text: z.string().trim().min(1).max(4000),
+        })
+        .strict()
+        .safeParse(req.body);
+      if (!parsed.success)
+        throw new ApiError(422, "A result and diagnosis text are required");
+      const results = z
+        .array(z.object({ id: z.string() }))
+        .parse(run["results"] ?? []);
+      if (!results.some((result) => result.id === parsed.data.resultId))
+        throw new ApiError(404, "Result not found");
+      const note = {
+        id: randomUUID(),
+        runId: run["id"],
+        projectId: run["projectId"],
+        resultId: parsed.data.resultId,
+        text: parsed.data.text,
+        author: principal.name,
+        subject: principal.subject,
+        createdAt: new Date().toISOString(),
+      };
+      await service.db.query(
+        "INSERT INTO platform_documents(id,organization_id,project_id,kind,body) VALUES($1,$2,$3,'annotation',$4)",
+        [
+          note.id,
+          principal.organizationId,
+          note.projectId,
+          JSON.stringify(note),
+        ],
+      );
+      await service.audit(
+        principal,
+        String(note.projectId),
+        "result.annotated",
+        note.id,
+      );
+      res.status(201).json(note);
     }),
   );
   app.post(

@@ -10,6 +10,7 @@ import type {
   Reporter,
   TestCase,
   TestResult,
+  TestStep,
   FullConfig,
 } from "@playwright/test/reporter";
 
@@ -60,6 +61,22 @@ export default class CheckpointReporter implements Reporter {
     const output = process.env["RUN_OUTPUT"];
     if (!output) return;
     mkdirSync(output, { recursive: true });
+    let remaining = 2000;
+    const steps = (items: TestStep[], depth = 0): unknown[] =>
+      depth > 8
+        ? []
+        : items.flatMap((step) => {
+            if (remaining-- <= 0) return [];
+            return [
+              {
+                title: step.title.slice(0, 2000),
+                category: step.category,
+                duration: step.duration,
+                error: step.error?.message?.slice(0, 16000),
+                steps: steps(step.steps, depth + 1),
+              },
+            ];
+          });
     appendFileSync(
       path.join(output, "attempts.ndjson"),
       JSON.stringify({
@@ -70,6 +87,7 @@ export default class CheckpointReporter implements Reporter {
           status: result.status,
           duration: result.duration,
           error: result.error,
+          steps: steps(result.steps),
           attachments: result.attachments.map((attachment) => ({
             ...attachment,
             body: attachment.body?.toString("base64"),

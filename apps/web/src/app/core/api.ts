@@ -98,7 +98,18 @@ export interface CaseResult {
   status: string;
   duration: number;
   error?: string;
-  attempts?: { status: string; duration: number; error: string }[];
+  expectedFailure?: boolean;
+  category?: string;
+  categoryRuleVersion?: number;
+  assertion?: { expected: string; actual: string };
+  attempts?: { status: string; duration: number; error: string; steps?: ResultStep[] }[];
+}
+export interface ResultStep {
+  title: string;
+  category: string;
+  duration: number;
+  error?: string;
+  steps: ResultStep[];
 }
 export function errorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {

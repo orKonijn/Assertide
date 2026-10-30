@@ -3,8 +3,9 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Api, Run, errorMessage } from '../core/api';
+import { ResultSteps, ResultNotes } from '../core/result-investigation';
 @Component({
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, ResultSteps, ResultNotes],
   template: `
     <header class="page-header">
       <div>
@@ -114,9 +115,39 @@ import { Api, Run, errorMessage } from '../core/api';
           </button>
         }
         @for (result of current.results ?? []; track result.id) {
-          <details>
+          <details
+            [open]="focusedResult() === result.id"
+            (toggle)="toggleResult(result.id, $event)"
+          >
             <summary>{{ result.id }} · {{ result.status }} · {{ result.duration }}ms</summary>
+            <a [routerLink]="['/runs', id]" [queryParams]="{ result: result.id }"
+              >Link to this result</a
+            >
             <p>{{ result.title }}</p>
+            @if (result.assertion; as values) {
+              <dl>
+                <dt>Expected</dt>
+                <dd>
+                  <pre>{{ values.expected }}</pre>
+                </dd>
+                <dt>Actual</dt>
+                <dd>
+                  <pre>{{ values.actual }}</pre>
+                </dd>
+              </dl>
+            }
+            @if (result.expectedFailure) {
+              <p class="badge">Expected failure</p>
+            }
+            @if (result.status === 'passed' && (result.attempts?.length ?? 0) > 1) {
+              <p class="badge">Passed after retry</p>
+            }
+            @if (result.category && result.category !== 'none') {
+              <p>
+                Failure category: {{ result.category }} · rules {{ result.categoryRuleVersion }}.
+                This classification is a starting point for investigation.
+              </p>
+            }
             <label
               ><input
                 type="checkbox"
@@ -127,6 +158,9 @@ import { Api, Run, errorMessage } from '../core/api';
             >
             @for (attempt of result.attempts ?? []; track $index) {
               <p>Attempt {{ $index + 1 }} · {{ attempt.status }} · {{ attempt.duration }}ms</p>
+              @if (attempt.steps?.length) {
+                <app-result-steps [steps]="attempt.steps" />
+              }
               @if (attempt.error) {
                 <pre>{{ attempt.error }}</pre>
               }
@@ -159,6 +193,9 @@ import { Api, Run, errorMessage } from '../core/api';
                   </p>
                 </div>
               }
+            }
+            @if (expanded().includes(result.id)) {
+              <app-result-notes [runId]="id" [resultId]="result.id" />
             }
           </details>
         } @empty {
@@ -207,6 +244,14 @@ export class RunDetail {
   readonly busy = signal(false);
   readonly disconnected = signal(false);
   readonly selected = signal<string[]>([]);
+  readonly focusedResult = signal('');
+  readonly expanded = signal<string[]>([]);
+  toggleResult(id: string, event: Event) {
+    const open = (event.target as HTMLDetailsElement).open;
+    this.expanded.update((items) =>
+      open ? [...new Set([...items, id])] : items.filter((item) => item !== id),
+    );
+  }
   canRerun() {
     return (
       this.api.identity()?.role !== 'viewer' &&
@@ -230,6 +275,9 @@ export class RunDetail {
   private stream: EventSource | undefined;
   private lastSequence = 0;
   constructor() {
+    inject(ActivatedRoute)
+      .queryParamMap.pipe(takeUntilDestroyed())
+      .subscribe((params) => this.focusedResult.set(params.get('result') ?? ''));
     inject(DestroyRef).onDestroy(() => {
       this.stream?.close();
     });
@@ -240,6 +288,7 @@ export class RunDetail {
         this.run.set(null);
         this.history.set([]);
         this.selected.set([]);
+        this.expanded.set([]);
         this.lastSequence = 0;
         this.connect();
       });

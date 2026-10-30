@@ -6,6 +6,9 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Results now retain nested attempt steps, versioned failure categories, supported expected/actual assertion values, comparable prior-result links and authored investigation notes. Notes are scoped, audited and separate from immutable outcomes. Database and browser checks pass, including note persistence and desktop/mobile investigation views.
+- Added a guarded PostgreSQL backup/restore command with checksum and encryption-key verification, empty-target protection and a successful CI recovery drill. See [recovery setup and measured scope](docs/database-recovery.md).
+- Catalog discovery supports 10,000 stable case identifiers. The reference control-plane check passed with 50 authenticated clients, 100,000 result instances and 20 worker leases across five projects; [measurement details](docs/operations.md#reference-control-plane-measurement) explain the workload and limits.
 - Trace evidence now opens in a privately hosted Playwright viewer with credential-bound access, artifact expiry checks and session-revocation clearing. A real Chromium trace test verifies actions and DOM snapshots under CSP, anonymous denial and revocation. See [trace viewing and screenshot](docs/private-traces.md).
 - Ready reports now offer immutable ZIP downloads with SHA-256 and generation headers. Media-inclusive archives expire after 14 days; a report archive without trace/video remains available for 30 days. Real-store tests verify ZIP contents and expiration, and browser checks verify checksums and anonymous denial.
 - Administrators can inspect dependency health, queue age, failed reports, capacity and retention in Settings. Added bounded database/Redis/object-store readiness probes and configurable deployment capacity limits. Database failure, scope, quota and desktop/mobile browser checks pass; see [operations guidance](docs/operations.md).

@@ -6,6 +6,11 @@ import { z } from "zod";
 import { randomUUID, randomBytes } from "node:crypto";
 import { ociCommand, stopContainer } from "./oci-worker.ts";
 import { hostname } from "node:os";
+import {
+  stepSchema,
+  classifyResult,
+  assertionValues,
+} from "./result-details.ts";
 import { archiveRaw, restoreRaw, rawManifest } from "./raw-storage.ts";
 import {
   enrichReport,
@@ -78,6 +83,7 @@ const runSchema = z.object({
   config: configuration,
 });
 const attemptSchema = z.object({
+  steps: z.array(stepSchema).default([]),
   attachments: z.array(attachmentSchema).default([]),
   status: z.string(),
   duration: z.number(),
@@ -109,16 +115,20 @@ const checkpointSchema = z.object({
   result: attemptSchema,
 });
 async function readResults(output: string) {
+  let finalResults: z.infer<typeof resultSchema> | undefined;
   try {
-    return resultSchema.parse(
+    finalResults = resultSchema.parse(
       JSON.parse(await readFile(path.join(output, "results.json"), "utf8")),
     );
   } catch {
+    /* Interrupted workers may have only checkpoints. */
+  }
+  {
     let checkpoint = "";
     try {
       checkpoint = await readFile(path.join(output, "attempts.ndjson"), "utf8");
     } catch {
-      return { suites: [] };
+      return finalResults ?? { suites: [] };
     }
     const specs = new Map<string, z.infer<typeof specSchema>>();
     for (const line of checkpoint.split("\n").slice(0, -1)) {
@@ -137,6 +147,17 @@ async function readResults(output: string) {
             },
           ],
         });
+    }
+    if (finalResults) {
+      for (const spec of finalResults.suites.flatMap(flatten))
+        for (const test of spec.tests) {
+          const checkpoint = specs.get(`${spec.title}:${test.projectName}`);
+          test.results.forEach((result, index) => {
+            result.steps =
+              checkpoint?.tests[0]?.results[index]?.steps ?? result.steps;
+          });
+        }
+      return finalResults;
     }
     return { suites: [{ specs: [...specs.values()], suites: [] }] };
   }
@@ -544,10 +565,22 @@ export class LocalRunner {
                 : (last?.status ?? "broken"),
             duration: attempts.reduce((sum, item) => sum + item.duration, 0),
             error: redact(last?.error?.message ?? ""),
+            assertion: assertionValues(redact(last?.error?.message ?? "")),
+            category: classifyResult(
+              canceled && (!last || last.status === "interrupted")
+                ? "canceled"
+                : (last?.status ?? "broken"),
+              last?.error?.message ?? "",
+              code !== 0 && code !== 1,
+            ),
+            categoryRuleVersion: 1,
             attempts: attempts.map((attempt) => ({
               status: attempt.status,
               duration: attempt.duration,
               error: redact(attempt.error?.message ?? ""),
+              steps: z
+                .array(stepSchema)
+                .parse(JSON.parse(redact(JSON.stringify(attempt.steps)))),
             })),
           };
         }),
@@ -568,6 +601,9 @@ export class LocalRunner {
               status: canceled ? "canceled" : "broken",
               duration: 0,
               error: "No terminal result received",
+              assertion: undefined,
+              category: canceled ? "canceled" : "infrastructure",
+              categoryRuleVersion: 1,
               attempts: [],
             });
         }

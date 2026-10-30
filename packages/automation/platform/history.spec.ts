@@ -69,6 +69,7 @@ test("compatible reports retain history and authenticated links without duplicat
   ).toBe(401);
   await anonymous.close();
   expect(first.toolchain.playwright).toBe("1.64.1");
+  expect(first.results[0].attempts[0].steps.length).toBeGreaterThan(0);
   const firstRaw = path.resolve(
     "../../.local/runs",
     z.uuid().parse(first.id),
@@ -89,6 +90,12 @@ test("compatible reports retain history and authenticated links without duplicat
     ),
   ).toBe(true);
   const second = await create();
+  const comparison = await (
+    await page.request.get(
+      `/v1/runs/${second.id}/results/${second.results[0].id}/previous`,
+    )
+  ).json();
+  expect(comparison.previous.runId).toBe(first.id);
   expect(second.historyStream).toBe(first.historyStream);
   expect(second.historyEntries).toBe(first.historyEntries + 1);
   const lineage = await (
@@ -140,11 +147,39 @@ test("compatible reports retain history and authenticated links without duplicat
     report.getByRole("button", { name: "Expand all", exact: true }),
   ).toBeVisible();
   await report.close();
-  const reportCard = page
+  const resultId = first.results[0].id;
+  await page.goto(`/runs/${first.id}?result=${encodeURIComponent(resultId)}`);
+  const note = `Investigation ${randomUUID().slice(0, 8)}: verified the recorded request contract.`;
+  await page.getByLabel("Diagnosis", { exact: true }).fill(note);
+  await page
+    .getByRole("button", { name: "Add investigation note", exact: true })
+    .click();
+  await expect(page.getByText(note, { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(note, { exact: true })).toBeVisible();
+  await page
     .locator("section")
     .filter({
-      has: page.getByRole("heading", { name: "Allure report", exact: true }),
+      has: page.getByRole("heading", { name: "Test results", exact: true }),
+    })
+    .screenshot({
+      path: "../../docs/changelog/assets/unreleased/result-investigation.png",
     });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    fullPage: true,
+    path: "../../docs/changelog/assets/unreleased/result-investigation-mobile.png",
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const reportCard = page.locator("section").filter({
+    has: page.getByRole("heading", { name: "Allure report", exact: true }),
+  });
   await expect(
     reportCard.getByRole("link", { name: "Download report ZIP" }),
   ).toBeVisible();

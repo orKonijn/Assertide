@@ -84,6 +84,10 @@ export async function expireRunData(db: SqlConnection, now = new Date()) {
       await tx.query("DELETE FROM run_outbox WHERE run_id=$1", [row.id]);
       await tx.query("DELETE FROM launch_keys WHERE run_id=$1", [row.id]);
       await tx.query("DELETE FROM report_builds WHERE run_id=$1", [row.id]);
+      await tx.query(
+        "DELETE FROM platform_documents WHERE kind='annotation' AND body->>'runId'=$1",
+        [row.id],
+      );
       // Report tickets are created only when the viewer is mounted.
       if (
         (await tx.query("SELECT to_regclass('report_tickets') AS table_name"))
