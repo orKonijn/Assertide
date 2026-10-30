@@ -547,3 +547,13 @@ Production build, lint, and ten web tests pass. With representative intercepted 
 ![Desktop evidence inspector in light mode](changelog/assets/unreleased/evidence-inspector-1280-light.png)
 
 ![Mobile evidence inspector in light mode](changelog/assets/unreleased/evidence-inspector-390-light.png)
+
+## Softer light theme
+
+Light mode now uses gray page and card surfaces instead of near-white backgrounds, with muted purple accents and neutral borders. Main text/canvas contrast is 10.81:1; muted text/soft surface is 4.88:1; accent/tint is 4.86:1; primary button text/background is 5.58:1. These are targeted palette checks, not a complete accessibility audit. Dark theme tokens are unchanged.
+
+Production build and fixture-based project search, pagination, edit/cancel, and horizontal overflow checks pass at 320, 390, 768, and 1280 pixels in both themes. Screenshots show the production UI with sample API data. Changelog remains Unreleased; no version assigned.
+
+![Softer light mode on desktop](changelog/assets/unreleased/soft-light-projects-1280-light.png)
+
+![Softer light mode on mobile](changelog/assets/unreleased/soft-light-projects-390-light.png)

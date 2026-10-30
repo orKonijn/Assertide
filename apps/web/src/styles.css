@@ -6,14 +6,14 @@
 :root {
   font-family: Inter, system-ui, sans-serif;
   color-scheme: light;
-  --canvas: #f5f6fa;
-  --surface: #fff;
-  --soft: #eef0f7;
-  --text: #182237;
-  --muted: #58657b;
-  --border: #d8dfea;
-  --brand: #5145cd;
-  --tint: #eeebff;
+  --canvas: #e8e9ed;
+  --surface: #f0f0f3;
+  --soft: #e2e4eb;
+  --text: #293044;
+  --muted: #596174;
+  --border: #cbd0da;
+  --brand: #6253a6;
+  --tint: #e3dff0;
   --danger: #b92f49;
 }
 :root[data-theme='dark'] {
@@ -506,8 +506,8 @@ pre {
 }
 /* Shared workspace surfaces and restrained motion. */
 :root {
-  --canvas: #f6f7fb;
-  --border: #e0e4ee;
+  --canvas: #e8e9ed;
+  --border: #cbd0da;
   --shadow: 0 3px 16px #18223706;
 }
 :root[data-theme='dark'] {

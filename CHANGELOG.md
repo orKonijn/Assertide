@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Softened light mode with gray page and card backgrounds, quieter borders, and a muted purple accent. Checked text/accent combinations retain at least 4.5:1 contrast. Production build and responsive fixture-based checks pass. See [light theme screenshots](docs/ui-refresh.md#softer-light-theme).
+
 - Redesigned recorded evidence with Overview/Request/Response controls, a single JSON viewer, a compact download action, and expandable pointer lookup. JSON expands with the page instead of scrolling internally; the sidebar uses tighter spacing in short windows without its own scrolling area. Build, lint, ten web tests, and fixture-based interaction checks pass. See [evidence screenshots](docs/ui-refresh.md#recorded-evidence-inspector).
 
 - Redesigned the sidebar with grouped Workspace, Testing, and Manage navigation, a compact project switcher, a subtle selected-page indicator, and a contained account area while preserving the existing icons. Build, lint, and fixture-based desktop/mobile picker checks pass. See [sidebar screenshots](docs/ui-refresh.md#grouped-workspace-sidebar).
