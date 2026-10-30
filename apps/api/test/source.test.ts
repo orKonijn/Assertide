@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile, rm, readdir } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  writeFile,
+  rm,
+  readdir,
+  readFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
@@ -19,6 +26,12 @@ test("independent API and execution storage prepare current sources and retain h
       await verifySource(catalogRevision, worker),
       path.join(worker, catalogRevision),
     );
+    const helper = path.join(worker, catalogRevision, "ui/pages/store.page.ts");
+    const original = await readFile(helper);
+    await writeFile(helper, "tampered Page Object");
+    await assert.rejects(verifySource(catalogRevision, worker), /integrity/);
+    await writeFile(helper, original);
+    await verifySource(catalogRevision, worker);
     const body = "historical approved source";
     const manifest = [
       {

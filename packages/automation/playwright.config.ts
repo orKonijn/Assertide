@@ -1,3 +1,6 @@
+import { reportOptions } from "./ui/utils/reporting.config";
+// Suppress automatic DOM snapshots: form values can include one-time credentials.
+process.env["PLAYWRIGHT_NO_COPY_PROMPT"] = "1";
 import { defineConfig } from "@playwright/test";
 import path from "node:path";
 const output = process.env["RUN_OUTPUT"] ?? "../../.local/automation-results";
@@ -12,7 +15,7 @@ export default defineConfig({
     ["./checkpoint-reporter.ts"],
     ["list"],
     ["json", { outputFile: path.join(output, "results.json") }],
-    ["allure-playwright", { resultsDir: path.join(output, "allure-results") }],
+    ["allure-playwright", reportOptions(path.join(output, "allure-results"))],
   ],
   use: {
     baseURL: process.env["RUN_API_URL"] ?? "http://127.0.0.1:4010/lab/v1/",

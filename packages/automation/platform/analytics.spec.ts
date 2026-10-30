@@ -1,110 +1,57 @@
 import { test, expect } from "./fixtures";
-import { readFile } from "node:fs/promises";
-
-test("analytics filters persist in the URL and charts provide table alternatives", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: "Quality at a glance" }),
-  ).toBeVisible();
-  await page
-    .getByLabel("History window", { exact: true })
-    .selectOption({ label: "30 days" });
-  await page
-    .getByLabel("Execution project", { exact: true })
-    .selectOption("api");
-  await page
-    .getByRole("button", { name: "Apply filters", exact: true })
-    .click();
-  await expect(page).toHaveURL(/days=30&browser=api/);
-  await expect(
-    page.getByRole("heading", { name: "Last 30 days", exact: true }),
-  ).toBeVisible();
-  await page
-    .getByText("Show chart data and denominators", { exact: true })
-    .click();
-  await expect(
-    page.getByRole("columnheader", { name: "Date (UTC)", exact: true }),
-  ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Save my filters", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Reset filters", exact: true })
-    .click();
-  await expect(
-    page.getByLabel("Execution project", { exact: true }),
-  ).toHaveValue("all");
-  await page
-    .getByRole("button", { name: "Restore my filters", exact: true })
-    .click();
-  await expect(
-    page.getByLabel("Execution project", { exact: true }),
-  ).toHaveValue("api");
-  await expect(
-    page.getByRole("heading", {
-      name: "Previous interval comparison",
-      exact: true,
-    }),
-  ).toBeVisible();
-  const downloadPromise = page.waitForEvent("download");
-  await page
-    .getByRole("button", { name: "Export metrics JSON", exact: true })
-    .click();
-  const download = await downloadPromise;
-  const downloadPath = await download.path();
-  expect(downloadPath).toBeTruthy();
-  const exported = JSON.parse(await readFile(downloadPath!, "utf8"));
-  expect(exported.filters.browser).toBe("api");
-  expect(exported.definitions.comparison).toContain("UTC");
-  expect(exported.generatedAt).toBeTruthy();
-  expect(exported.comparison).toHaveProperty("missingPriorIdentities");
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.screenshot({
-    path: "../../docs/changelog/assets/unreleased/analytics-desktop.png",
-    fullPage: true,
+import { AnalyticsPage } from "../ui/pages/analytics.page";
+import { HistoryPage } from "../ui/pages/history.page";
+import { downloadText } from "../ui/utils/file.utils";
+import { viewport, fitsViewport } from "../ui/utils/viewport.utils";
+test.describe("Quality analytics", () => {
+  let analytics: AnalyticsPage;
+  test.beforeEach(async ({ page }) => {
+    analytics = new AnalyticsPage(page);
+    await analytics.goto();
   });
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
-  await page.screenshot({
-    path: "../../docs/changelog/assets/unreleased/analytics-mobile.png",
-    fullPage: true,
+  test("filters persist, charts have tables and exported metrics explain comparisons", async ({
+    page,
+  }) => {
+    await expect(analytics.heading).toBeVisible();
+    await analytics.filter(30, "api");
+    await expect(page).toHaveURL(/days=30&browser=api/);
+    await expect(analytics.period(30)).toBeVisible();
+    await analytics.showData();
+    await expect(analytics.dateColumn).toBeVisible();
+    await analytics.saveFilters();
+    await analytics.resetFilters();
+    await expect(analytics.browser).toHaveValue("all");
+    await analytics.restoreFilters();
+    await expect(analytics.browser).toHaveValue("api");
+    await expect(analytics.comparison).toBeVisible();
+    const exported = JSON.parse(await downloadText(await analytics.export()));
+    expect(exported.filters.browser).toBe("api");
+    expect(exported.definitions.comparison).toContain("UTC");
+    expect(exported.generatedAt).toBeTruthy();
+    expect(exported.comparison).toHaveProperty("missingPriorIdentities");
+    await viewport(page, "mobile");
+    expect(await fitsViewport(page)).toBe(true);
+    await page.reload();
+    await expect(analytics.browser).toHaveValue("api");
   });
-  await page.reload();
-  await expect(
-    page.getByLabel("Execution project", { exact: true }),
-  ).toHaveValue("api");
-  await page.goto("/runs");
-  await page.getByLabel("Phase", { exact: true }).selectOption("completed");
-  await page.getByLabel("Browser or API", { exact: true }).selectOption("api");
-  await page
-    .getByRole("button", { name: "Apply filters", exact: true })
-    .click();
-  await expect(page).toHaveURL(/phase=completed&browser=api/);
-  await expect(
-    page.getByRole("columnheader", { name: "Created", exact: true }),
-  ).toBeVisible();
-  const sort = page.getByRole("columnheader", {
-    name: "Selected",
-    exact: true,
+});
+test.describe("Execution history filters", () => {
+  let history: HistoryPage;
+  test.beforeEach(async ({ page }) => {
+    history = new HistoryPage(page);
+    await history.goto();
   });
-  await expect(
-    page.getByRole("button", { name: "Apply filters", exact: true }),
-  ).toBeEnabled();
-  await sort.getByRole("button").focus();
-  await page.keyboard.press("Enter");
-  await expect(sort).toHaveAttribute("aria-sort", "ascending");
-  await expect(sort.getByRole("button")).toBeFocused();
-  await page.keyboard.press("Enter");
-  await expect(sort).toHaveAttribute("aria-sort", "descending");
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.screenshot({
-    path: "../../docs/changelog/assets/unreleased/history-filters.png",
-    fullPage: true,
+  test("URL filters and keyboard sorting expose accessible state", async ({
+    page,
+  }) => {
+    await history.filter("completed", "api");
+    await expect(page).toHaveURL(/phase=completed&browser=api/);
+    await expect(history.created).toBeVisible();
+    await expect(history.apply).toBeEnabled();
+    await history.sortWithKeyboard();
+    await expect(history.sort).toHaveAttribute("aria-sort", "ascending");
+    await expect(history.sortButton).toBeFocused();
+    await history.sortWithKeyboard();
+    await expect(history.sort).toHaveAttribute("aria-sort", "descending");
   });
 });

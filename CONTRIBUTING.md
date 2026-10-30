@@ -11,3 +11,5 @@ Linux CI supplies PostgreSQL, Redis, private MinIO and isolated OCI jobs. It run
 Follow [the complete changelog rules](docs/changelog-rules.md). Record verified behavior under Unreleased and capture actual desktop/mobile UI changes in the established assets directory. Keep historical design artifacts distinguishable from implemented application evidence. Update `.env.example` and operational guidance for configuration changes. No release version is assigned by routine implementation commits.
 
 PRs should explain behavior, relevant verification, migration/security impact and remaining limitations. Link screenshots and requirement coverage. Keep PR #1 unmerged until the owner explicitly requests a merge.
+
+UI changes must follow the [Page Object architecture](docs/playwright-ui-architecture.md) and [implemented testing/reporting workflow](docs/ui-testing.md). Run `npm run test:architecture` and `npm run test:reporting` in `packages/automation` when changing selectors, fixtures, diagnostics or reporting. Do not regenerate committed changelog screenshots during routine test runs.

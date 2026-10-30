@@ -1,3 +1,7 @@
+import {
+  TraceFixturePage,
+  TraceViewerPage,
+} from "./support/trace-viewer.page.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { chromium, expect } from "@playwright/test";
@@ -64,12 +68,10 @@ test(
         snapshots: true,
         sources: true,
       });
-      const fixture = await recording.newPage();
-      await fixture.goto(`${origin}/fixture`);
-      await fixture.getByRole("button", { name: "Start", exact: true }).click();
-      await expect(
-        fixture.getByRole("button", { name: "Complete", exact: true }),
-      ).toBeVisible();
+      const fixture = new TraceFixturePage(await recording.newPage());
+      await fixture.goto(origin);
+      await fixture.start();
+      await expect(fixture.complete).toBeVisible();
       const trace = path.join(output, "evidence", "trace.zip");
       await recording.tracing.stop({ path: trace });
       await recording.close();
@@ -110,41 +112,16 @@ test(
       const page = await context.newPage();
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(error.message));
-      await page.goto(`${origin}/v1/runs/${id}/traces/${artifacts[0]!.id}`);
-      await expect(page.getByText("Actions", { exact: true })).toBeVisible({
-        timeout: 15000,
-      });
-      await expect(
-        page.getByText("Click", { exact: true }).first(),
-      ).toBeVisible({ timeout: 15000 });
+      const traceViewer = new TraceViewerPage(page);
+      await traceViewer.goto(origin, id, artifacts[0]!.id);
+      await expect(traceViewer.actions).toBeVisible({ timeout: 15000 });
+      await expect(traceViewer.recordedClick).toBeVisible({ timeout: 15000 });
       await expect
-        .poll(
-          async () => {
-            const texts = await Promise.all(
-              page
-                .frames()
-                .filter((frame) => frame !== page.mainFrame())
-                .map((frame) =>
-                  frame
-                    .locator("body")
-                    .innerText()
-                    .catch(() => ""),
-                ),
-            );
-            return texts.some((text) => text.includes("Complete"));
-          },
-          { timeout: 10000 },
-        )
+        .poll(() => traceViewer.containsCompletedSnapshot(), { timeout: 10000 })
         .toBe(true);
       assert.deepEqual(errors, []);
       const assetsUrl = page.url().split("?")[0]!;
       assert.equal((await fetch(assetsUrl)).status, 403);
-      await page.screenshot({
-        path: path.resolve(
-          runRoot,
-          "../../docs/changelog/assets/unreleased/private-trace.png",
-        ),
-      });
       await db.query("DELETE FROM sessions WHERE digest=$1", [digest]);
       await expect(page).toHaveURL(/\/auth-status$/, { timeout: 8000 });
       assert.equal((await context.request.get(assetsUrl)).status(), 403);

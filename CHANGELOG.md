@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added feature-grouped Allure reports for connected UI acceptance, with domain steps, runtime/build metadata, masked failure screenshots and sanitized context. OCI and Kubernetes CI preserve separate reports and evidence, with bounded branch history. Local checks cover 26 app journeys, 36 storefront browser cases, seven manual browser exercises and an intentional credential-redaction failure probe; see [UI testing and report usage](docs/ui-testing.md).
+
 - Added service/web container builds, validated Kubernetes deployment rendering, production startup checks, supervisor health probes, internal queue/lease metrics, scheduled encrypted PostgreSQL backups and a manual image publication/provenance workflow. Renderer, configuration and metrics checks pass locally; container, backup and cluster gates run in CI. See [deployment and recovery setup](docs/production-deployment.md).
 
 - Added Kubernetes Job execution with digest-pinned workers, bounded resources, cancellation cleanup and isolated source/output transfer, plus Vault Transit credential encryption using Kubernetes workload identity. Local policy/authentication checks pass; real cluster and Vault integration checks are CI gates. See [production deployment](docs/production-deployment.md).

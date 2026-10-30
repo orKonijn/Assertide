@@ -1,9 +1,20 @@
+import { reportOptions } from "./ui/utils/reporting.config";
+// Suppress automatic DOM snapshots: form values can include one-time credentials.
+process.env["PLAYWRIGHT_NO_COPY_PROMPT"] = "1";
 import { defineConfig } from "@playwright/test";
+const output = `../../.local/platform/${process.env["WORKER_RUNTIME"] ?? "local"}`;
 export default defineConfig({
+  globalSetup: "./ui/utils/platform-setup.ts",
+  outputDir: `${output}/test-results`,
+  reporter: [
+    ["list"],
+    ["json", { outputFile: `${output}/results.json` }],
+    ["allure-playwright", reportOptions(`${output}/allure-results`)],
+  ],
   testDir: "./platform",
   workers: 1,
   retries: 0,
-  timeout: 30_000,
+  timeout: 90_000,
   webServer: [
     {
       command: "node ../../scripts/dev-api.mjs",
@@ -20,8 +31,11 @@ export default defineConfig({
     },
   ],
   use: {
+    actionTimeout: 10000,
+    navigationTimeout: 15000,
     baseURL: "http://127.0.0.1:4200",
     trace: "off",
-    screenshot: "only-on-failure",
+    screenshot: "off",
+    video: "off",
   },
 });

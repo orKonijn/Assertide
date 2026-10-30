@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-go@v5
         if: steps.minio-cache.outputs.cache-hit != 'true'
         with:
-          go-version: '1.27.3'
+          go-version: "1.27.3"
           cache: false
       - run: node scripts/setup-object-store.mjs
         if: steps.minio-cache.outputs.cache-hit != 'true'
@@ -57,7 +57,7 @@ jobs:
         env:
           MINIO_ROOT_USER: assertide_test
           MINIO_ROOT_PASSWORD: local_ci_object_store_only
-          MINIO_BROWSER: 'off'
+          MINIO_BROWSER: "off"
           MINIO_KMS_SECRET_KEY: ci-key:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       - run: npm ci
         working-directory: apps/web
@@ -123,7 +123,7 @@ jobs:
       - run: npx tsx --test test/trace-viewer.test.ts
         working-directory: apps/api
         env:
-          TEST_TRACE_VIEWER: 'true'
+          TEST_TRACE_VIEWER: "true"
       - run: node scripts/setup-sandbox.mjs
       - name: Build immutable isolated worker
         run: |
@@ -131,23 +131,35 @@ jobs:
           echo "OCI_WORKER_IMAGE=$(docker image inspect --format '{{.Id}}' assertide-worker:ci)" >> "$GITHUB_ENV"
       - run: npx tsx --test test/oci-worker.test.ts
         working-directory: apps/api
+      - run: node packages/automation/checks/architecture.mjs
+      - run: node packages/automation/checks/reporting.mjs
       - run: node packages/automation/checks/video.mjs
+      - uses: actions/cache@v4
+        with:
+          path: .local/platform-history
+          key: platform-history-${{ runner.os }}-${{ github.ref }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: platform-history-${{ runner.os }}-${{ github.ref }}-
       - run: npx playwright test --config platform.config.ts
         working-directory: packages/automation
         env:
           DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
-          SEPARATE_WORKERS: 'true'
+          SEPARATE_WORKERS: "true"
           WORKER_RUNTIME: oci
           REDIS_URL: redis://127.0.0.1:6379
           S3_BUCKET: assertide-test
           S3_ENDPOINT: http://127.0.0.1:9000
           AWS_ACCESS_KEY_ID: assertide_test
           AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
+      - name: Render OCI UI report
+        if: always()
+        run: node packages/automation/checks/report.mjs oci
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: browser-failure-screenshots
-          path: packages/automation/test-results/**/*.png
+          name: platform-oci-report-and-evidence
+          path: .local/platform/oci
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Verify encrypted scheduled backups
         if: ${{ !cancelled() }}
         run: npx tsx checks/scheduled-backup.ts
@@ -170,12 +182,16 @@ jobs:
           AWS_REGION: us-east-1
           AWS_ACCESS_KEY_ID: assertide_test
           AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
+      - name: Render Kubernetes UI report
+        if: always()
+        run: node packages/automation/checks/report.mjs kubernetes
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: cluster-browser-failure-evidence
-          path: packages/automation/test-results
+          name: platform-kubernetes-report-and-evidence
+          path: .local/platform/kubernetes
           if-no-files-found: ignore
+          retention-days: 14
       - name: Build and scan service, web and worker images
         if: ${{ !cancelled() }}
         run: bash scripts/verify-images.sh
