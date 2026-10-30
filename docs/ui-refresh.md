@@ -38,6 +38,24 @@ Dark mode preserves readable text and the white logo treatment.
 
 Sign-in uses a focused card and full-width action.
 
+## Dialog and card polish
+
+Dialogs fade and move slightly as they close, including the backdrop. Native top-layer/display transitions retain the closing surface for 160ms; reduced-motion preferences dismiss it immediately. The mobile drawer now has a small close icon with a 44px hit target and the accessible name “Close menu.” Project actions use a single row with a short visible Edit label and a project-specific accessible name. Catalog status badges and edit buttons have an explicit wrapping gap.
+
+![Compact mobile drawer close control](changelog/assets/unreleased/detail-polish-drawer.png)
+
+The Workspace heading and close icon replace the full-width close button.
+
+![Compact project actions](changelog/assets/unreleased/detail-polish-project.png)
+
+Open project remains prominent, with Edit alongside it.
+
+![Disabled test badge separated from its edit action](changelog/assets/unreleased/detail-polish-disabled-catalog.png)
+
+The disabled status remains distinct from the edit button on a narrow screen.
+
+Closing transition captured from the actual running dialog: [open](changelog/assets/unreleased/detail-polish-popup-open.png), [mid-close](changelog/assets/unreleased/detail-polish-popup-closing.png), [closed](changelog/assets/unreleased/detail-polish-popup-closed.png). The browser animation was paused at its midpoint for the middle capture, then completed. Browser inspection confirmed an active exit transition and immediate reduced-motion dismissal. Seven browser tests, including the 64-state accessibility matrix, passed along with production build and lint. No product version was assigned.
+
 ## Dropdowns and scrollbars
 
 Regular select controls now use rounded anchored menus with themed selected options and arrows inset from the right edge. They retain native select semantics, Angular form values, keyboard selection, and Escape dismissal. The project-switch dialog remains searchable, and clicking or tapping its backdrop closes it and returns focus; starting a drag inside the dialog does not dismiss it.

@@ -37,7 +37,23 @@
     [attr.aria-modal]="menu() ? 'true' : null"
     aria-label="Workspace navigation"
   >
-    <button class="mobile-close" (click)="closeMenu()">Close menu</button>
+    <div class="drawer-heading">
+      <span>Workspace</span>
+      <button class="mobile-close icon-button" aria-label="Close menu" (click)="closeMenu()">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        >
+          <path d="m6 6 12 12M18 6 6 18" />
+        </svg>
+      </button>
+    </div>
     <a class="brand brand-logo" routerLink="/"
       ><img src="/brand/assertide-logo.png" alt="Assertide"
     /></a>

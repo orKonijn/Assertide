@@ -113,12 +113,14 @@ import { LoadingState } from '../core/loading-state';
                       <p class="muted">
                         {{ test.file }}:{{ test.line }} · {{ test.tags.join(', ') }}
                       </p>
-                      @if (!test.enabled) {
-                        <span class="badge">Disabled</span>
-                      }
-                      @if (canEdit()) {
-                        <button (click)="edit(test)">Edit {{ test.id }}</button>
-                      }
+                      <div class="actions catalog-actions">
+                        @if (!test.enabled) {
+                          <span class="badge">Disabled</span>
+                        }
+                        @if (canEdit()) {
+                          <button (click)="edit(test)">Edit {{ test.id }}</button>
+                        }
+                      </div>
                     </td>
                     <td class="hide-mobile">{{ test.feature }}</td>
                     <td data-label="Priority">

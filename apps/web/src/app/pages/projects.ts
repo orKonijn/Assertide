@@ -43,7 +43,9 @@ import { Api, Project, errorMessage } from '../core/api';
               >Open project</a
             >
             @if (api.identity()?.role === 'administrator') {
-              <button (click)="edit(project)">Edit {{ project.name }}</button>
+              <button [attr.aria-label]="'Edit ' + project.name" (click)="edit(project)">
+                Edit
+              </button>
             }
           </div>
         </section>

@@ -1163,6 +1163,98 @@ select option {
     background-image: none;
   }
 }
+.drawer-heading {
+  display: none;
+}
+.project-card > h2 {
+  margin-bottom: 8px;
+}
+.project-card > p {
+  margin: 0 0 20px;
+}
+.project-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+}
+.project-actions > * {
+  margin: 0;
+}
+.catalog-actions {
+  align-items: center;
+  gap: 12px;
+}
+.catalog-actions .badge {
+  flex-shrink: 0;
+}
+@media (max-width: 850px) {
+  .drawer-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+    font-weight: 650;
+  }
+  .drawer-heading .mobile-close {
+    display: inline-flex;
+    margin: 0;
+    padding: 0;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-color: transparent;
+    background: transparent;
+  }
+  .drawer-heading .mobile-close:hover {
+    background: var(--soft);
+    border-color: var(--border);
+  }
+  aside .workspace {
+    margin-top: 0;
+  }
+  .catalog-cards td[data-label='Priority'] {
+    padding-top: 4px;
+  }
+}
+/* Keep native dialogs in the top layer until their exit transition finishes. */
+@supports (transition-behavior: allow-discrete) {
+  dialog {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease,
+      display 160ms allow-discrete,
+      overlay 160ms allow-discrete;
+  }
+  dialog[open] {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    animation: none;
+  }
+  dialog::backdrop {
+    opacity: 0;
+    transition:
+      opacity 160ms ease,
+      display 160ms allow-discrete,
+      overlay 160ms allow-discrete;
+  }
+  dialog[open]::backdrop {
+    opacity: 1;
+  }
+  @starting-style {
+    dialog[open] {
+      opacity: 1;
+      transform: translateY(8px) scale(0.98);
+    }
+    dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
