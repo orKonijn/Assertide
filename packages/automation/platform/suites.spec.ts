@@ -46,6 +46,20 @@ test("saved suite metadata and membership survive editing and reload", async ({
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name, exact: true }) });
   await expect(card).toContainText("2 tests · revision 2");
+  await expect(page.locator(".toast")).toContainText("Changes saved.");
+  await page.getByText(/Notification history \(2\)/).click();
+  await expect(page.locator("app-notifications details")).toContainText(
+    "Changes saved.",
+  );
+  await page
+    .locator("app-notifications")
+    .screenshot({
+      path: "../../docs/changelog/assets/unreleased/notifications.png",
+    });
+  await expect(page.locator(".toast")).toHaveCount(0, { timeout: 7000 });
+  await expect(page.locator("app-notifications details")).toContainText(
+    "Changes saved.",
+  );
   await page.reload();
   await expect(card).toContainText("Updated contract checks");
   await page.setViewportSize({ width: 1440, height: 900 });

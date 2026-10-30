@@ -193,10 +193,14 @@ export class LocalRunner {
   private active = false;
   private operation: Promise<void> = Promise.resolve();
   private transport?: RedisTransport;
-  constructor(private readonly db: SqlConnection) {
+  constructor(
+    private readonly db: SqlConnection,
+    private readonly role: "all" | "execution" | "report" = "all",
+  ) {
     if (
       process.env["NODE_ENV"] === "production" &&
-      process.env["WORKER_RUNTIME"] !== "oci"
+      process.env["WORKER_RUNTIME"] !== "oci" &&
+      role !== "report"
     )
       throw new Error("Local runner is forbidden in production");
   }
@@ -204,7 +208,7 @@ export class LocalRunner {
     await mkdir(runRoot, { recursive: true });
     await recoverExpiredLeases(this.db);
     const redis = process.env["REDIS_URL"];
-    if (redis) {
+    if (redis && this.role !== "report") {
       this.transport = new RedisTransport(this.db, redis, async (id) => {
         while (this.active && !this.stopped)
           await new Promise((resolve) => setTimeout(resolve, 100));
@@ -277,7 +281,7 @@ export class LocalRunner {
     this.active = true;
     try {
       await recoverExpiredLeases(this.db);
-      if (process.env["WORKER_RUNTIME"] === "oci") {
+      if (process.env["WORKER_RUNTIME"] === "oci" && this.role !== "report") {
         const orphaned = await this.db.query<{ id: string }>(
           "SELECT id FROM platform_documents WHERE kind='run' AND body->>'workerRuntime'='oci' AND body->>'workerHost'=$1 AND body->>'phase' IN ('completed','canceled','timed_out','infrastructure_error') AND NOT COALESCE((body->>'containerCleaned')::boolean,false)",
           [hostname()],
@@ -299,19 +303,22 @@ export class LocalRunner {
         );
         this.nextRetentionSweep = Date.now() + 60_000;
       }
-      const rebuild = (
-        await this.db.query<{ body: Record<string, unknown> }>(
-          `UPDATE platform_documents SET body=body || jsonb_build_object('reportPhase','generating','leaseOwner',$1::text,'leaseEpoch',COALESCE((body->>'leaseEpoch')::int,0)+1,'leaseExpires',now()+interval '30 seconds'),version=version+1 WHERE id=(SELECT id FROM platform_documents WHERE kind='run' AND body->>'reportPhase'='rebuild_requested' LIMIT 1) AND body->>'reportPhase'='rebuild_requested' RETURNING body`,
-          [this.owner],
-        )
-      ).rows[0];
+      const rebuild =
+        this.role === "execution"
+          ? undefined
+          : (
+              await this.db.query<{ body: Record<string, unknown> }>(
+                `UPDATE platform_documents SET body=body || jsonb_build_object('reportPhase','generating','leaseOwner',$1::text,'leaseEpoch',COALESCE((body->>'leaseEpoch')::int,0)+1,'leaseExpires',now()+interval '30 seconds'),version=version+1 WHERE id=(SELECT id FROM platform_documents WHERE kind='run' AND body->>'reportPhase'='rebuild_requested' LIMIT 1) AND body->>'reportPhase'='rebuild_requested' RETURNING body`,
+                [this.owner],
+              )
+            ).rows[0];
       if (rebuild) {
         await this.withLease(rebuild.body, () =>
           this.generateReport(String(rebuild.body["id"])),
         );
         return;
       }
-      if (!this.transport) {
+      if (!this.transport && this.role !== "report") {
         const body = await claimExecution(this.db, this.owner);
         if (body)
           await this.withLease(body, () => this.execute(runSchema.parse(body)));
@@ -656,7 +663,13 @@ export class LocalRunner {
       const rawArchive = await archiveRaw(run.id, raw);
       if (rawArchive) await this.update(run.id, { rawArchive });
       if (canceled || terminal?.phase === "canceled") return;
-      await this.generateReport(run.id);
+      if (this.role === "execution") {
+        if (!rawArchive)
+          throw new Error(
+            "Separate report workers require archived raw evidence",
+          );
+        await this.update(run.id, { reportPhase: "rebuild_requested" });
+      } else await this.generateReport(run.id);
     } catch (error) {
       const diagnostic = redact(
         error instanceof Error ? error.message : "Worker failed",

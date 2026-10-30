@@ -6,6 +6,10 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added five-second success notifications with a bounded session history, delayed loading placeholders, keyboard-sortable execution history and generated error references. Browser and unit checks verify notification expiry, retained sorting focus and safe correlation logs; see [interaction behavior and screenshot](docs/shared-interactions.md).
+
+- CI now packages the compiled web application and reviewed source with checksums and signed build provenance. Both checks passed for commit `80cbd91`; this is a verified build artifact, not a published product release or signed container image. See [build verification](docs/build-provenance.md).
+
 - Added checksum-locked, transactional database migrations with concurrent-start serialization and preservation of existing data. Local tests verify adoption, repeat startup, rollback, failed-batch retry and refusal of edited migrations; PostgreSQL verification runs in CI. See [migration and rollback guidance](docs/migrations.md).
 
 - Added an authenticated screenshot dialog, collapsible/downloadable redacted JSON, suite/environment history filters and automatic expiry/revocation clearing of protected views. Browser checks verify real evidence, Escape/focus return, downloads and sign-in return URLs; see [investigation screenshots and behavior](docs/investigation.md).

@@ -12,9 +12,10 @@ import { Api, Identity } from './core/api';
 import { HttpErrorResponse } from '@angular/common/http';
 import { errorMessage } from './core/api';
 import { FormsModule } from '@angular/forms';
+import { NotificationLog, Notifications } from './core/notifications';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, NotificationLog],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
@@ -76,6 +77,10 @@ export class App {
     ['/settings', 'Settings'],
   ];
   constructor() {
+    const notices = inject(Notifications);
+    effect(() => {
+      if (!this.api.identity()) notices.clear();
+    });
     this.applyTheme();
     void this.connect();
     effect((onCleanup) => {

@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom, catchError, throwError } from 'rxjs';
+import { Notifications } from './notifications';
 
 export interface Identity {
   subject: string;
@@ -115,18 +116,21 @@ export interface ResultStep {
 }
 export function errorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
+    const id = error.headers.get('X-Request-ID');
+    const reference = id && /^[a-f0-9-]{36}$/.test(id) ? ` Reference: ${id}.` : '';
     const body: unknown = error.error;
     if (body && typeof body === 'object' && 'title' in body && typeof body.title === 'string')
-      return body.title;
+      return body.title + reference;
     return error.status === 0
       ? 'The service is unavailable. Please retry.'
-      : `Request failed (${error.status}).`;
+      : `Request failed (${error.status}).${reference}`;
   }
   return 'The request could not be completed.';
 }
 @Injectable({ providedIn: 'root' })
 export class Api {
   private readonly http = inject(HttpClient);
+  private readonly notices = inject(Notifications);
   readonly identity = signal<Identity | null>(null);
   readonly projects = signal<Project[]>([]);
   readonly projectId = signal('00000000-0000-4000-8000-000000000010');
@@ -171,7 +175,18 @@ export class Api {
             return throwError(() => error);
           }),
         ),
-    );
+    ).then((result) => {
+      this.notices.success(
+        path.endsWith('/runs') || path.endsWith('/reruns')
+          ? 'Execution requested.'
+          : path.endsWith('/cancel')
+            ? 'Cancellation requested.'
+            : path.endsWith('/report-rebuilds')
+              ? 'Report rebuild requested.'
+              : 'Changes saved.',
+      );
+      return result;
+    });
   }
   patch<T>(path: string, body: unknown, version: number) {
     return firstValueFrom(
@@ -181,7 +196,10 @@ export class Api {
           return throwError(() => error);
         }),
       ),
-    );
+    ).then((result) => {
+      this.notices.success('Changes saved.');
+      return result;
+    });
   }
   async logout() {
     await firstValueFrom(this.http.post('/auth/logout', {}));

@@ -2,6 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TrendChart } from '../core/trend-chart';
+import { LoadingState } from '../core/loading-state';
 import { Api, Run, Environment, Suite, errorMessage } from '../core/api';
 import { PercentPipe, DatePipe, DecimalPipe } from '@angular/common';
 interface Analytics {
@@ -74,7 +75,7 @@ interface Analytics {
   failures: { caseId: string; count: number; samples: number; rate: number }[];
 }
 @Component({
-  imports: [RouterLink, PercentPipe, DatePipe, DecimalPipe, FormsModule, TrendChart],
+  imports: [RouterLink, PercentPipe, DatePipe, DecimalPipe, FormsModule, TrendChart, LoadingState],
   template: `
     <header class="page-header">
       <div>
@@ -147,7 +148,7 @@ interface Analytics {
       <p class="error" role="alert">{{ error() }} <button (click)="load()">Retry</button></p>
     }
     @if (loading()) {
-      <p role="status">Loading executions…</p>
+      <app-loading-state label="Loading executions…" />
     } @else {
       <div class="grid">
         <section class="card">

@@ -18,6 +18,7 @@ import { mountServiceAccounts } from "./service-accounts.ts";
 import { mountAdministration } from "./administration.ts";
 import { mountEnvironments } from "./environments.ts";
 import { mountOperations } from "./operations.ts";
+import { requestContext } from "./request-context.ts";
 
 @Module({})
 class AppModule {}
@@ -25,6 +26,7 @@ class AppModule {}
 const db = await connectDatabase(process.env["DATABASE_URL"]);
 const app = await NestFactory.create(AppModule);
 const express: Express = app.getHttpAdapter().getInstance();
+express.use(requestContext);
 express.use((req, res, next) => {
   if (
     !req.path.startsWith("/lab/v1/") &&
@@ -99,7 +101,7 @@ mountAnalytics(express, identity, platform);
 mountArtifacts(express, identity, platform);
 mountServiceAccounts(express, identity, platform);
 const reportViewer =
-  process.env["LOCAL_RUNNER"] === "true"
+  process.env["DISABLE_REPORT_VIEWER"] !== "true"
     ? await mountReportViewer(express, db, identity, platform)
     : undefined;
 if (process.env["ENABLE_LAB"] === "true") {

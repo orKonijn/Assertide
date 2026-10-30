@@ -1,10 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Api, Run, Suite, Environment, errorMessage } from '../core/api';
+import { LoadingState } from '../core/loading-state';
 @Component({
-  imports: [RouterLink, DatePipe, FormsModule],
+  imports: [RouterLink, DatePipe, FormsModule, LoadingState],
   template: `
     <header class="page-header">
       <div>
@@ -54,21 +55,29 @@ import { Api, Run, Suite, Environment, errorMessage } from '../core/api';
         <button type="submit" [disabled]="loading()">Apply filters</button
         ><button type="button" (click)="load()">Refresh</button>
       </form>
-      @if (loading()) {
-        <p role="status">Loading history…</p>
+      @if (loading() && !hasLoaded()) {
+        <app-loading-state label="Loading history…" />
       } @else {
         <div class="table-wrap">
-          <table>
+          <table [attr.aria-busy]="loading()">
             <thead>
               <tr>
-                <th>Run</th>
-                <th>Phase</th>
-                <th>Selected</th>
-                <th>Created</th>
+                <th [attr.aria-sort]="sortState('id')">
+                  <button type="button" (click)="sortBy('id')">Run</button>
+                </th>
+                <th [attr.aria-sort]="sortState('phase')">
+                  <button type="button" (click)="sortBy('phase')">Phase</button>
+                </th>
+                <th [attr.aria-sort]="sortState('selected')">
+                  <button type="button" (click)="sortBy('selected')">Selected</button>
+                </th>
+                <th [attr.aria-sort]="sortState('createdAt')">
+                  <button type="button" (click)="sortBy('createdAt')">Created</button>
+                </th>
               </tr>
             </thead>
             <tbody>
-              @for (run of runs(); track run.id) {
+              @for (run of sorted(); track run.id) {
                 <tr>
                   <td>
                     <a [routerLink]="['/runs', run.id]">{{ run.id.slice(0, 8) }}</a>
@@ -90,6 +99,9 @@ import { Api, Run, Suite, Environment, errorMessage } from '../core/api';
             </tbody>
           </table>
         </div>
+        <p class="muted">
+          Column buttons sort the loaded executions. Load older executions to include more history.
+        </p>
       }
       @if (nextCursor()) {
         <button [disabled]="loading()" (click)="load(true)">Load older executions</button>
@@ -120,12 +132,37 @@ export class Runs {
   readonly environments = signal<Environment[]>([]);
   readonly nextCursor = signal<string | null>(null);
   readonly runs = signal<Run[]>([]);
+  readonly sortKey = signal<'id' | 'phase' | 'selected' | 'createdAt'>('createdAt');
+  readonly ascending = signal(false);
+  readonly sorted = computed(() =>
+    [...this.runs()].sort((a, b) => {
+      const key = this.sortKey();
+      const order =
+        key === 'selected'
+          ? a.selection.testIds.length - b.selection.testIds.length
+          : a[key].localeCompare(b[key]);
+      return (this.ascending() ? 1 : -1) * order;
+    }),
+  );
+  sortBy(key: 'id' | 'phase' | 'selected' | 'createdAt') {
+    if (this.sortKey() === key) this.ascending.update((value) => !value);
+    else {
+      this.sortKey.set(key);
+      this.ascending.set(true);
+    }
+  }
+  sortState(key: string) {
+    return this.sortKey() === key ? (this.ascending() ? 'ascending' : 'descending') : 'none';
+  }
   readonly loading = signal(true);
+  readonly hasLoaded = signal(false);
   readonly error = signal('');
   constructor() {
     void this.load();
   }
   async apply() {
+    this.loading.set(true);
+    this.requestVersion++;
     await this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
@@ -161,6 +198,7 @@ export class Runs {
         this.api.get<{ items: Environment[] }>(`/projects/${this.api.projectId()}/environments`),
       ]);
       if (version !== this.requestVersion) return;
+      this.hasLoaded.set(true);
       this.suites.set(suites.items);
       this.environments.set(environments.items);
       this.runs.set(more ? [...this.runs(), ...result.items] : result.items);

@@ -2,8 +2,9 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Api, TestCase, Environment, errorMessage } from '../core/api';
+import { LoadingState } from '../core/loading-state';
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule, LoadingState],
   template: `
     <header class="page-header">
       <div>
@@ -76,7 +77,7 @@ import { Api, TestCase, Environment, errorMessage } from '../core/api';
           >
         </div>
         @if (loading()) {
-          <p role="status">Discovering catalog…</p>
+          <app-loading-state label="Discovering catalog…" />
         } @else {
           <div class="table-wrap">
             <table>

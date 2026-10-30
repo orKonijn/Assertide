@@ -1,5 +1,13 @@
 # Isolated workers
 
+## Separate supervisors
+
+Start the API with `LOCAL_RUNNER=false` (the default). It applies migrations and serves the authenticated report gateway independently of workers. After API readiness, start `npm --prefix apps/api run worker` in two separate processes, one with `WORKER_ROLE=execution` and one with `WORKER_ROLE=report`. Both require the same PostgreSQL `DATABASE_URL`, private `S3_BUCKET` configuration, approved source checkout and installed dependencies. Execution additionally requires `REDIS_URL`, `WORKER_RUNTIME=oci`, the immutable `OCI_WORKER_IMAGE` and the secret encryption key. The report worker does not need Docker access, OIDC credentials or the environment encryption key.
+
+Execution archives raw evidence before handing a report request to the report worker. A database lease and epoch fence each report claim; generated reports publish from shared storage and can be rebuilt on another host. SIGTERM stops owned work and closes database/queue connections. Scale execution processes to the deployment's quota and host capacity; each supervisor owns one run at a time. The API's live-event endpoint reads persisted events and remains available while a worker restarts.
+
+Linux browser CI uses `SEPARATE_WORKERS=true` in the local fixture launcher to exercise this topology with PostgreSQL, Redis and MinIO. The default Windows embedded-database launcher uses one combined supervisor because PGlite storage cannot be opened by independent processes. Keep the API and report listeners behind their separately configured reverse-proxy origins; they bind to loopback.
+
 Environments can opt into headed browser execution in Settings. Explorer exposes the headed option only when that policy permits it and the API uses OCI workers. Each headed run starts its own Xvfb display inside the same network-isolated container; API-only and Windows local-process launches reject headed mode. Existing environments default to headless. The OCI integration check exercises a real headed Chromium case; inspect the latest PR checks for Linux verification.
 
 Linux workers can execute the approved fixture snapshot in a Docker container. First run `node scripts/setup-sandbox.mjs`, then build `docker build -f workers/Dockerfile -t assertide-worker:local .`. Set `WORKER_RUNTIME=oci` and set `OCI_WORKER_IMAGE` to the immutable ID returned by `docker image inspect --format '{{.Id}}' assertide-worker:local`. Use a non-root supervisor account with access to Docker. Treat that account and the Docker daemon as privileged infrastructure.

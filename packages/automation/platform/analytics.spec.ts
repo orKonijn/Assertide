@@ -96,6 +96,19 @@ test("analytics filters persist in the URL and charts provide table alternatives
   await expect(
     page.getByRole("columnheader", { name: "Created", exact: true }),
   ).toBeVisible();
+  const sort = page.getByRole("columnheader", {
+    name: "Selected",
+    exact: true,
+  });
+  await expect(
+    page.getByRole("button", { name: "Apply filters", exact: true }),
+  ).toBeEnabled();
+  await sort.getByRole("button").focus();
+  await page.keyboard.press("Enter");
+  await expect(sort).toHaveAttribute("aria-sort", "ascending");
+  await expect(sort.getByRole("button")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(sort).toHaveAttribute("aria-sort", "descending");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.screenshot({
     path: "../../docs/changelog/assets/unreleased/history-filters.png",
