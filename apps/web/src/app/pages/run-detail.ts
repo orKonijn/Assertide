@@ -77,7 +77,14 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
       <div class="grid execution-summary">
         <section class="card">
           <h2>Execution phase</h2>
-          <p class="metric" role="status">{{ current.phase }}</p>
+          <p class="metric" role="status">
+            <span
+              class="status-indicator"
+              [attr.data-status]="current.phase"
+              aria-hidden="true"
+            ></span
+            >{{ current.phase }}
+          </p>
           @if (current.queueReason) {
             <p>{{ current.queueReason }}. The run will start when capacity becomes available.</p>
           }
@@ -106,7 +113,14 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
         <section class="card execution-report">
           <div class="execution-report-heading">
             <h2>Allure report</h2>
-            <span class="badge">{{ current.reportPhase }}</span>
+            <span class="badge"
+              ><span
+                class="status-indicator"
+                [attr.data-status]="current.reportPhase"
+                aria-hidden="true"
+              ></span
+              >{{ current.reportPhase }}</span
+            >
           </div>
           @if (current.reportExpiresAt) {
             <p class="muted">
@@ -233,7 +247,14 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
                       [open]="focusedResult() === result.id"
                       (toggle)="toggleResult(result.id, $event)"
                     >
-                      <summary>{{ result.id }} · {{ result.status }}</summary>
+                      <summary>
+                        <span
+                          class="status-indicator"
+                          [attr.data-status]="result.status"
+                          aria-hidden="true"
+                        ></span
+                        >{{ result.id }} · {{ result.status }}
+                      </summary>
                       <a [routerLink]="['/runs', id]" [queryParams]="{ result: result.id }"
                         >Link to this result</a
                       >

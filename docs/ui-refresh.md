@@ -423,3 +423,11 @@ Actual running captures:
 Verification: nine web unit tests and the production build pass, including a new test for pagination, incoming results, retained selections, deep links, empty results, and route reset. Lint passes. Browser checks confirmed pagination, direct links to later-page results, and no horizontal overflow at 320/390/768/1280px in both themes. The two accessibility scenarios passed, including the 64-state matrix.
 
 An initial full local verification passed. The final broader rerun hit API test process out-of-memory failures. The execution acceptance run then remained queued and subsequent scenarios could not connect to the development server; restarting it twice failed with a local PGlite database startup abort. Those four execution acceptance scenarios are not claimed as passing for this change. Eight infrastructure checks remain skipped on Windows. No product version is assigned or changed; this remains Unreleased.
+
+## Settings shortcuts and status indicators
+
+Health, Members, Environments, Service accounts, and Audit trail are in-page buttons. Each focuses its section and scrolls to it without changing the route or reloading the application. Reduced-motion users get immediate scrolling.
+
+Service health and dependency labels, execution phases, report phases, and individual results have status dots. Healthy/ready/completed/passed states are green; queued/running/provisioning/pending/generating/degraded/skipped/canceled states are orange; failures, timeouts, interruptions, and unavailable services are red. Unknown statuses remain neutral. Existing text labels remain visible, so status never depends on color alone. Execution history badges follow the same palette.
+
+Verification: lint, ten web unit tests, and production build pass. A focused regression test checks all five shortcuts for correct focus/scroll targets and unchanged URL, plus missing-target handling and reduced-motion behavior. Live screenshots and browser checks are unavailable: the local development server remains down after the previously recorded database startup failure. No screenshots are claimed for this change. This remains Unreleased; no product version is assigned or changed.

@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Settings section shortcuts now scroll and focus within the current page instead of triggering navigation. Added green healthy/completed, orange active/pending, and red failed/unavailable indicators to service health, execution phases, reports, and results while retaining status text. Lint, ten web unit tests, and production build pass. Live screenshots/browser verification remain unavailable because the local database cannot start. See [verification details](docs/ui-refresh.md#settings-shortcuts-and-status-indicators).
+
 - Compacted execution summary cards and bounded the expanded frozen selection. Test results now use a ten-row paginated table with visible rerun checkboxes, duration, attempts, and expandable evidence; phones use labeled cards. Direct result links open the appropriate page. Web tests/build and responsive checks pass; execution acceptance reruns were blocked by local database startup and memory failures. See [results table evidence and verification limits](docs/ui-refresh.md#paginated-execution-results).
 
 - Reorganized Settings with section shortcuts, grouped forms, readable tables, and compact account controls. Refined explorer row actions and added ascending/descending sorting by case ID, title, feature, or priority before pagination; the sort choice survives reloads. Six browser scenarios, responsive light/dark checks, and local verification pass. See [settings and sorting evidence](docs/ui-refresh.md#settings-readability-and-catalog-sorting).

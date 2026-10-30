@@ -3094,3 +3094,66 @@ aside .account {
     grid-column: 1 / -1;
   }
 }
+
+.settings-nav button {
+  font-size: 12px;
+  padding: 8px 14px;
+  min-height: 36px;
+}
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--muted);
+  margin-right: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 8%, transparent);
+}
+.status-indicator:is(
+  [data-status='ready'],
+  [data-status='ok'],
+  [data-status='healthy'],
+  [data-status='passed'],
+  [data-status='completed']
+),
+.phase-badge[data-phase='completed']::before {
+  background: #239564;
+}
+.status-indicator:is(
+  [data-status='running'],
+  [data-status='queued'],
+  [data-status='provisioning'],
+  [data-status='pending'],
+  [data-status='generating'],
+  [data-status='degraded'],
+  [data-status='skipped'],
+  [data-status='canceled']
+),
+.phase-badge:is(
+    [data-phase='running'],
+    [data-phase='queued'],
+    [data-phase='provisioning'],
+    [data-phase='canceled']
+  )::before {
+  background: #d98719;
+}
+.status-indicator:is(
+  [data-status='failed'],
+  [data-status='error'],
+  [data-status='unavailable'],
+  [data-status='broken'],
+  [data-status='interrupted'],
+  [data-status='timedOut'],
+  [data-status='timed_out'],
+  [data-status='infrastructure_error']
+),
+.phase-badge:is([data-phase='infrastructure_error'], [data-phase='timed_out'])::before {
+  background: #d95161;
+}
+.execution-summary .metric .status-indicator {
+  width: 10px;
+  height: 10px;
+  margin-right: 10px;
+}
