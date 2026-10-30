@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import type { ElementRef } from '@angular/core';
-import { Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -164,114 +164,176 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
           }
         </section>
       }
-      <section class="card">
-        <h2>Test results</h2>
-        @if (current.results?.length) {
-          <button
-            [disabled]="busy() || !canRerun() || !selected().length"
-            (click)="rerun('selected')"
-          >
-            Rerun checked tests
-          </button>
-        }
-        @for (result of current.results ?? []; track result.id) {
-          <details
-            [open]="focusedResult() === result.id"
-            (toggle)="toggleResult(result.id, $event)"
-          >
-            <summary>{{ result.id }} · {{ result.status }} · {{ result.duration }}ms</summary>
-            <a [routerLink]="['/runs', id]" [queryParams]="{ result: result.id }"
-              >Link to this result</a
+      <section class="card execution-results">
+        <div class="section-heading">
+          <h2>Test results</h2>
+          @if (current.results?.length) {
+            <button
+              [disabled]="busy() || !canRerun() || !selected().length"
+              (click)="rerun('selected')"
             >
-            <p>{{ result.title }}</p>
-            @if (result.assertion; as values) {
-              <dl>
-                <dt>Expected</dt>
-                <dd>
-                  <pre>{{ values.expected }}</pre>
-                </dd>
-                <dt>Actual</dt>
-                <dd>
-                  <pre>{{ values.actual }}</pre>
-                </dd>
-              </dl>
-            }
-            @if (result.quarantined) {
-              <p class="badge">Quarantined · excluded from headline metrics</p>
-            }
-            @if (result.expectedFailure) {
-              <p class="badge">Expected failure</p>
-            }
-            @if (result.status === 'passed' && (result.attempts?.length ?? 0) > 1) {
-              <p class="badge">Passed after retry</p>
-            }
-            @if (result.category && result.category !== 'none') {
-              <p>
-                Failure category: {{ result.category }} · rules {{ result.categoryRuleVersion }}.
-                This classification is a starting point for investigation.
-              </p>
-            }
-            <label
-              ><input
-                type="checkbox"
-                [checked]="selected().includes(result.id.split(':')[0])"
-                (change)="toggle(result.id.split(':')[0])"
-              />
-              Select {{ result.id }} for rerun</label
+              Rerun checked tests
+            </button>
+          }
+        </div>
+        <nav class="result-pagination" aria-label="Result pages">
+          <span class="muted" role="status"
+            >{{ current.results?.length ?? 0 }} results · Page {{ currentResultPage() }} of
+            {{ resultPageCount() }} · {{ selected().length }} checked</span
+          >
+          <div class="catalog-page-buttons">
+            <button
+              aria-label="Previous result page"
+              [disabled]="currentResultPage() === 1"
+              (click)="resultPage.set(currentResultPage() - 1)"
             >
-            @for (attempt of result.attempts ?? []; track $index) {
-              <p>Attempt {{ $index + 1 }} · {{ attempt.status }} · {{ attempt.duration }}ms</p>
-              @if (attempt.steps?.length) {
-                <app-result-steps [steps]="attempt.steps" />
-              }
-              @if (attempt.error) {
-                <pre>{{ attempt.error }}</pre>
-              }
+              ‹
+            </button>
+            @for (number of resultPageNumbers(); track number) {
+              <button
+                [attr.aria-label]="'Result page ' + number"
+                [attr.aria-current]="currentResultPage() === number ? 'page' : null"
+                (click)="resultPage.set(number)"
+              >
+                {{ number }}
+              </button>
             }
-            @if (result.error) {
-              <pre>{{ result.error }}</pre>
-            }
-            @for (artifact of current.artifacts ?? []; track artifact.id) {
-              @if (artifact.resultId === result.id) {
-                <div class="card">
-                  <p>Attempt {{ artifact.attempt }} · {{ artifact.createdAt | date: 'short' }}</p>
-                  @if (artifact.unavailableReason) {
-                    <p>{{ artifact.name }}: {{ artifact.unavailableReason }}</p>
-                  } @else {
-                    @if (artifact.name === 'screenshot') {
-                      <app-screenshot-viewer
-                        [url]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
-                        [description]="result.title + ' · attempt ' + artifact.attempt"
-                      />
-                    }
-                    @if (artifact.name === 'trace') {
-                      <a
-                        [href]="'/v1/runs/' + id + '/traces/' + artifact.id"
-                        target="_blank"
-                        rel="noopener"
-                        >Open private trace viewer</a
-                      >
-                    }
-                    <a [href]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
-                      >Download {{ artifact.name }}</a
+            <button
+              aria-label="Next result page"
+              [disabled]="currentResultPage() === resultPageCount()"
+              (click)="resultPage.set(currentResultPage() + 1)"
+            >
+              ›
+            </button>
+          </div>
+        </nav>
+        <div class="table-wrap">
+          <table class="result-table mobile-result-cards" role="table" aria-label="Test results">
+            <thead>
+              <tr>
+                <th>Select</th>
+                <th>Test result</th>
+                <th>Duration</th>
+                <th>Attempts</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (result of pageResults(); track result.id) {
+                <tr>
+                  <td data-label="Select">
+                    <input
+                      type="checkbox"
+                      [checked]="selected().includes(result.id.split(':')[0])"
+                      (change)="toggle(result.id.split(':')[0])"
+                      [attr.aria-label]="'Select ' + result.id + ' for rerun'"
+                    />
+                  </td>
+                  <td data-label="Test result">
+                    <details
+                      [open]="focusedResult() === result.id"
+                      (toggle)="toggleResult(result.id, $event)"
                     >
-                  }
-                  <p class="muted">
-                    {{ artifact.redactionPolicy }} · Expires
-                    {{ artifact.expiresAt | date: 'shortDate' }}
-                  </p>
-                </div>
+                      <summary>{{ result.id }} · {{ result.status }}</summary>
+                      <a [routerLink]="['/runs', id]" [queryParams]="{ result: result.id }"
+                        >Link to this result</a
+                      >
+                      <p>{{ result.title }}</p>
+                      @if (result.assertion; as values) {
+                        <dl>
+                          <dt>Expected</dt>
+                          <dd>
+                            <pre>{{ values.expected }}</pre>
+                          </dd>
+                          <dt>Actual</dt>
+                          <dd>
+                            <pre>{{ values.actual }}</pre>
+                          </dd>
+                        </dl>
+                      }
+                      @if (result.quarantined) {
+                        <p class="badge">Quarantined · excluded from headline metrics</p>
+                      }
+                      @if (result.expectedFailure) {
+                        <p class="badge">Expected failure</p>
+                      }
+                      @if (result.status === 'passed' && (result.attempts?.length ?? 0) > 1) {
+                        <p class="badge">Passed after retry</p>
+                      }
+                      @if (result.category && result.category !== 'none') {
+                        <p>
+                          Failure category: {{ result.category }} · rules
+                          {{ result.categoryRuleVersion }}. This classification is a starting point
+                          for investigation.
+                        </p>
+                      }
+                      @for (attempt of result.attempts ?? []; track $index) {
+                        <p>
+                          Attempt {{ $index + 1 }} · {{ attempt.status }} · {{ attempt.duration }}ms
+                        </p>
+                        @if (attempt.steps?.length) {
+                          <app-result-steps [steps]="attempt.steps" />
+                        }
+                        @if (attempt.error) {
+                          <pre>{{ attempt.error }}</pre>
+                        }
+                      }
+                      @if (result.error) {
+                        <pre>{{ result.error }}</pre>
+                      }
+                      @for (artifact of current.artifacts ?? []; track artifact.id) {
+                        @if (artifact.resultId === result.id) {
+                          <div class="card">
+                            <p>
+                              Attempt {{ artifact.attempt }} ·
+                              {{ artifact.createdAt | date: 'short' }}
+                            </p>
+                            @if (artifact.unavailableReason) {
+                              <p>{{ artifact.name }}: {{ artifact.unavailableReason }}</p>
+                            } @else {
+                              @if (artifact.name === 'screenshot') {
+                                <app-screenshot-viewer
+                                  [url]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
+                                  [description]="result.title + ' · attempt ' + artifact.attempt"
+                                />
+                              }
+                              @if (artifact.name === 'trace') {
+                                <a
+                                  [href]="'/v1/runs/' + id + '/traces/' + artifact.id"
+                                  target="_blank"
+                                  rel="noopener"
+                                  >Open private trace viewer</a
+                                >
+                              }
+                              <a [href]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
+                                >Download {{ artifact.name }}</a
+                              >
+                            }
+                            <p class="muted">
+                              {{ artifact.redactionPolicy }} · Expires
+                              {{ artifact.expiresAt | date: 'shortDate' }}
+                            </p>
+                          </div>
+                        }
+                      }
+                      @if (expanded().includes(result.id)) {
+                        <app-result-notes [runId]="id" [resultId]="result.id" />
+                      }
+                    </details>
+                    <p class="result-title">{{ result.title }}</p>
+                  </td>
+                  <td data-label="Duration">{{ result.duration }} ms</td>
+                  <td data-label="Attempts">{{ result.attempts?.length || 1 }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="empty">
+                    Results appear as execution finishes. No outcomes have been recorded yet.
+                  </td>
+                </tr>
               }
-            }
-            @if (expanded().includes(result.id)) {
-              <app-result-notes [runId]="id" [resultId]="result.id" />
-            }
-          </details>
-        } @empty {
-          <p class="empty">
-            Results appear as execution finishes. No outcomes have been recorded yet.
-          </p>
-        }
+            </tbody>
+          </table>
+        </div>
       </section>
       <section class="card">
         <h2>Worker log</h2>
@@ -311,6 +373,32 @@ export class RunDetail {
     [],
   );
   public readonly run = signal<Run | null>(null);
+  public readonly resultPage = signal<number | null>(null);
+  public readonly resultPageCount = computed(() =>
+    Math.max(1, Math.ceil((this.run()?.results?.length ?? 0) / 10)),
+  );
+  public readonly currentResultPage = computed(() => {
+    const index = (this.run()?.results ?? []).findIndex(
+      (result) => result.id === this.focusedResult(),
+    );
+    return Math.max(
+      1,
+      Math.min(
+        this.resultPage() ?? Math.floor(Math.max(0, index) / 10) + 1,
+        this.resultPageCount(),
+      ),
+    );
+  });
+  public readonly pageResults = computed(() =>
+    (this.run()?.results ?? []).slice(
+      (this.currentResultPage() - 1) * 10,
+      this.currentResultPage() * 10,
+    ),
+  );
+  public readonly resultPageNumbers = computed(() => {
+    const start = Math.max(1, Math.min(this.currentResultPage() - 2, this.resultPageCount() - 4));
+    return Array.from({ length: Math.min(5, this.resultPageCount()) }, (_, index) => start + index);
+  });
   public readonly error = signal('');
   public readonly busy = signal(false);
   private readonly rerunDialog = viewChild.required<ElementRef<HTMLDialogElement>>('rerunDialog');
@@ -329,7 +417,10 @@ export class RunDetail {
   public constructor() {
     inject(ActivatedRoute)
       .queryParamMap.pipe(takeUntilDestroyed())
-      .subscribe((params) => this.focusedResult.set(params.get('result') ?? ''));
+      .subscribe((params) => {
+        this.focusedResult.set(params.get('result') ?? '');
+        this.resultPage.set(null);
+      });
     inject(DestroyRef).onDestroy(() => {
       this.accessRevoked = true;
       this.loadGeneration++;
@@ -345,6 +436,7 @@ export class RunDetail {
         this.run.set(null);
         this.history.set([]);
         this.selected.set([]);
+        this.resultPage.set(null);
         this.expanded.set([]);
         this.lastSequence = 0;
         this.connect();

@@ -406,3 +406,20 @@ Actual running views:
 ![Explorer sorting on mobile](changelog/assets/unreleased/settings-sort-explorer-390.png)
 
 Verification: local lint, formatting, type checks, API/web tests, and production build pass. Six browser scenarios pass, including 64 accessibility states, metadata editing, sorting across pages/reloads, selection, pagination, and environment credential execution. Page Object architecture/reporting checks pass. Settings and explorer have no horizontal page overflow at 320/390/768/1280px in both themes; the Members shortcut reaches its section. Eight infrastructure tests remain skipped on Windows. No release version is assigned or changed; these changes remain Unreleased.
+
+## Paginated execution results
+
+Execution summary cards size independently, so expanding Frozen selection no longer stretches the phase card. The identifier list is bounded to 130px. Test results use a table with visible rerun selection, expandable result evidence, duration, and attempt count. Ten results appear per page with numbered navigation and a checked count; mobile uses labeled cards. Existing artifact, screenshot, notes, and rerun controls remain in the result details.
+
+Pagination retains checked cases while switching pages and receiving live updates. Direct result links choose the page containing the target; navigating to another execution resets pagination and selection. Empty results retain an explanatory message.
+
+Actual running captures:
+
+![Compact execution summary on desktop](changelog/assets/unreleased/results-summary-1280.png)
+![Paginated results table on desktop](changelog/assets/unreleased/results-table-1280.png)
+![Execution summary on a phone](changelog/assets/unreleased/results-summary-390.png)
+![Paginated result cards on a phone](changelog/assets/unreleased/results-table-390.png)
+
+Verification: nine web unit tests and the production build pass, including a new test for pagination, incoming results, retained selections, deep links, empty results, and route reset. Lint passes. Browser checks confirmed pagination, direct links to later-page results, and no horizontal overflow at 320/390/768/1280px in both themes. The two accessibility scenarios passed, including the 64-state matrix.
+
+An initial full local verification passed. The final broader rerun hit API test process out-of-memory failures. The execution acceptance run then remained queued and subsequent scenarios could not connect to the development server; restarting it twice failed with a local PGlite database startup abort. Those four execution acceptance scenarios are not claimed as passing for this change. Eight infrastructure checks remain skipped on Windows. No product version is assigned or changed; this remains Unreleased.

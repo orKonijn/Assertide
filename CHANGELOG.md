@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Compacted execution summary cards and bounded the expanded frozen selection. Test results now use a ten-row paginated table with visible rerun checkboxes, duration, attempts, and expandable evidence; phones use labeled cards. Direct result links open the appropriate page. Web tests/build and responsive checks pass; execution acceptance reruns were blocked by local database startup and memory failures. See [results table evidence and verification limits](docs/ui-refresh.md#paginated-execution-results).
+
 - Reorganized Settings with section shortcuts, grouped forms, readable tables, and compact account controls. Refined explorer row actions and added ascending/descending sorting by case ID, title, feature, or priority before pagination; the sort choice survives reloads. Six browser scenarios, responsive light/dark checks, and local verification pass. See [settings and sorting evidence](docs/ui-refresh.md#settings-readability-and-catalog-sorting).
 
 - Redesigned Test explorer and Executions tables with compact rows, lighter headers, icon edit actions, selected-row highlighting, and clearer phase badges. Selection, pagination, and sorting remain available. Local verification, six browser tests including 64 accessibility states, and light/dark responsive checks pass. See [table redesign evidence](docs/ui-refresh.md#catalog-and-execution-table-redesign).
