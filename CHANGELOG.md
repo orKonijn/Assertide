@@ -6,6 +6,22 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Execution detail now groups phase and frozen selection in one aligned overview panel with smaller header actions and an explicit selected-test count. Mobile stacks the two sections within the panel. Lint, ten web tests, build, and responsive fixture-based checks pass. See [execution overview screenshots](docs/ui-refresh.md#aligned-execution-overview).
+
+- Test suites now shows ten suites per page with numbered navigation above the list. Paging preserves create/edit form values. Lint, ten web tests, production build, and responsive browser checks with fixture data pass. See [suite pagination evidence](docs/ui-refresh.md#suite-list-pagination).
+
+- Redesigned Settings shortcuts as a compact grouped navigation strip with a selected state, and converted the four remaining links to in-page buttons. Reports now has a library header, loaded/ready counts, colored statuses, separate expiry dates, and compact mobile cards. Lint, ten web tests, build, and production-UI checks with fixture responses pass. See [screenshots and verification scope](docs/ui-refresh.md#settings-navigation-and-report-library).
+
+- Settings section shortcuts now scroll and focus within the current page instead of triggering navigation. Added green healthy/completed, orange active/pending, and red failed/unavailable indicators to service health, execution phases, reports, and results while retaining status text. Lint, ten web unit tests, and production build pass. Live screenshots/browser verification remain unavailable because the local database cannot start. See [verification details](docs/ui-refresh.md#settings-shortcuts-and-status-indicators).
+
+- Compacted execution summary cards and bounded the expanded frozen selection. Test results now use a ten-row paginated table with visible rerun checkboxes, duration, attempts, and expandable evidence; phones use labeled cards. Direct result links open the appropriate page. Web tests/build and responsive checks pass; execution acceptance reruns were blocked by local database startup and memory failures. See [results table evidence and verification limits](docs/ui-refresh.md#paginated-execution-results).
+
+- Reorganized Settings with section shortcuts, grouped forms, readable tables, and compact account controls. Refined explorer row actions and added ascending/descending sorting by case ID, title, feature, or priority before pagination; the sort choice survives reloads. Six browser scenarios, responsive light/dark checks, and local verification pass. See [settings and sorting evidence](docs/ui-refresh.md#settings-readability-and-catalog-sorting).
+
+- Redesigned Test explorer and Executions tables with compact rows, lighter headers, icon edit actions, selected-row highlighting, and clearer phase badges. Selection, pagination, and sorting remain available. Local verification, six browser tests including 64 accessibility states, and light/dark responsive checks pass. See [table redesign evidence](docs/ui-refresh.md#catalog-and-execution-table-redesign).
+
+- Redesigned API workspace with a compact execution summary, clearer exchange rows, and a focused evidence inspector. Recorded exchanges now paginate ten at a time; paging preserves the selected evidence and changing executions resets it. Local verification, six browser scenarios including 64 accessibility states, evidence-download/pagination checks, and mobile/dark layout checks pass. See [API workspace screenshots](docs/ui-refresh.md#api-workspace-and-exchange-pagination).
+
 - Simplified the mobile/tablet header with grouped theme/menu icons, standardized checkboxes across the site, and prevented the explorer Select heading from wrapping. Desktop report headings now align with their data columns. Local verification, eight browser scenarios including 64 accessibility states, and light/dark geometry checks pass. See [header, checkbox, and table evidence](docs/ui-refresh.md#header-controls-shared-checkboxes-and-aligned-table-headings).
 
 - Catalog columns now retain their widths when switching pages. Desktop navigation uses tighter spacing in shorter windows to avoid unnecessary scrollbars while retaining scrolling when content truly overflows. Local verification, four browser tests including 64 accessibility states, and sidebar/column geometry checks pass. See [sidebar and pagination evidence](docs/ui-refresh.md#stable-catalog-columns-and-sidebar-fit).
@@ -131,6 +147,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - Added an offline Figma development plugin intended to create editable screens, components, styles, variables and prototype links. Native Figma execution and visual validation remain blocked by the connected provider quota.
 
 ### Fixed
+
+- Redesigned Test explorer and Executions tables with compact rows, lighter headers, icon edit actions, selected-row highlighting, and clearer phase badges. Selection, pagination, and sorting remain available. Local verification, six browser tests including 64 accessibility states, and light/dark responsive checks pass. See [table redesign evidence](docs/ui-refresh.md#catalog-and-execution-table-redesign).
 
 - Execution supervisors now prepare verified source snapshots before accepting work. Kubernetes API/execution pods share a durable source claim so retained revisions survive pod replacement; provision the claim and retain matching worker images as described in [deployment setup](docs/production-deployment.md). Independent-directory integrity checks pass locally; fresh-container startup is checked in CI.
 - Disabled cases already saved in a suite can be removed, and API-suite launches include only enabled cases. The API workspace shows the executable count and disables launch when none remain. The browser regression verifies removal, saved membership, successful launches and the empty selection state.

@@ -27,6 +27,42 @@ test.describe('Catalog metadata', () => {
     await catalog.editMetadata(D.latency);
     await expect(catalog.quarantined).toBeChecked();
   });
+  test('sorting applies before pagination and preserves selection', async ({
+    api,
+    isolatedProject,
+    page,
+  }) => {
+    const items = (await api.catalog(isolatedProject.id)).items;
+    await catalog.selection(D.lifecycle).check();
+    await catalog.goToPage(2);
+    await catalog.sortBy('id-desc');
+    const descending = [...items].sort((a, b) =>
+      b.id.localeCompare(a.id, undefined, { numeric: true }),
+    );
+    await expect(catalog.cases.first()).toHaveAttribute(
+      'aria-label',
+      'Select ' + descending[0]!.id,
+    );
+    await catalog.goToPage(2);
+    await expect(catalog.cases.first()).toHaveAttribute(
+      'aria-label',
+      'Select ' + descending[10]!.id,
+    );
+    await catalog.sortBy('title-asc');
+    const titled = [...items].sort(
+      (a, b) =>
+        a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' }) ||
+        a.id.localeCompare(b.id, undefined, { numeric: true }),
+    );
+    await expect(catalog.cases.first()).toHaveAttribute('aria-label', 'Select ' + titled[0]!.id);
+    await page.reload();
+    await expect(catalog.cases.first()).toHaveAttribute('aria-label', 'Select ' + titled[0]!.id);
+    await catalog.sortBy('id-asc');
+    await catalog.selection(D.lifecycle).check();
+    await catalog.sortBy('priority-desc');
+    await catalog.search(D.lifecycle);
+    await expect(catalog.selection(D.lifecycle)).toBeChecked();
+  });
   test('pagination preserves selection and select all includes every page', async ({
     api,
     isolatedProject,

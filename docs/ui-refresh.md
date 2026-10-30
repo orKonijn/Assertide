@@ -355,3 +355,116 @@ Actual running captures:
 Geometry checks confirm report heading/cell alignment and no horizontal overflow at 320/390/768/1280px in both themes. Local lint, formatting, type checks, API/web tests, and production build pass; eight infrastructure checks remain skipped on Windows. This is an Unreleased UI update with no version change.
 
 Eight browser scenarios pass, including the 64-state accessibility matrix, catalog selection, suite checkbox workflows, and mobile drawer/project-picker behavior. The initial catalog test expected 27 fixtures but the local catalog had expanded to 127; it now derives expected selection/page counts from the catalog API, and both catalog tests pass on rerun. The changed test also passes lint, type checks, and Page Object architecture checks.
+
+## API workspace and exchange pagination
+
+The workspace uses a compact contract/execution summary and a two-panel exchange browser. Exchange rows emphasize method, path, status, case, and attempt; the selected row is highlighted. Recorded exchanges are filtered before pagination, with ten entries per page and a sliding numbered window. Paging preserves the inspected evidence; changing execution resets the page, selected exchange, and evidence. Empty executions show a clear message even when they contain only non-API artifacts.
+
+The request/response inspector has a loading state, explicit empty state, and selected-case badge. It stays in view on desktop with bounded internal scrolling. Evidence still uses the redacted viewer/download flow, and viewing an exchange never repeats its request. Concurrent inspection responses cannot replace a newer selection.
+
+Actual running implementation:
+
+![Dark API workspace with paginated exchanges](changelog/assets/unreleased/api-redesign-1280-dark.png)
+![Light API workspace with inspected evidence](changelog/assets/unreleased/api-redesign-evidence.png)
+![Mobile API workspace](changelog/assets/unreleased/api-redesign-390-dark.png)
+
+Layout checks pass at 320/390/768/1280px in both themes. Local lint, formatting, type checks, API/web unit tests, production build, and Page Object architecture/reporting checks pass. Eight infrastructure tests remain skipped on Windows. No product version is assigned; the redesign is Unreleased.
+
+Six browser scenarios pass, including the 64-state accessibility matrix, execution/evidence flows, and the expanded API workspace test for ten-row pagination, preserved inspected evidence, JSON inspection, and redacted downloads. An initial multi-case launch returned only one selected case during development; its isolated rerun passed with all 18 results.
+
+## Catalog and execution table redesign
+
+Test explorer now emphasizes the test title, with a secondary case ID/source line and a compact labeled edit icon. Selected rows receive a tinted background and accent edge. Executions use compact run buttons, aligned counts, and phase badges with a status dot and readable text. Both tables have lighter headers, tighter spacing, and mobile cards; selection, pagination, keyboard sorting, and accessible control names are retained.
+
+Actual desktop captures at the same viewport and theme:
+
+![Explorer table before the redesign](changelog/assets/unreleased/table-redesign-explorer-before.png)
+![Explorer table with compact test rows and edit icons](changelog/assets/unreleased/table-redesign-explorer-after.png)
+![Execution table before the redesign](changelog/assets/unreleased/table-redesign-runs-before.png)
+![Execution table with compact run buttons and phase badges](changelog/assets/unreleased/table-redesign-runs-after.png)
+
+Mobile views:
+
+![Compact test cards on a phone](changelog/assets/unreleased/table-redesign-explorer-mobile.png)
+![Execution cards on a phone](changelog/assets/unreleased/table-redesign-runs-mobile.png)
+
+Local lint, formatting, type checks, API/web tests, and production build pass; eight infrastructure checks remain skipped on Windows. Six browser scenarios pass, including 64 accessibility states, catalog editing/selection/pagination, and execution filtering/sorting. Both tables fit 320/390/768/1280px viewports in light and dark themes without horizontal page overflow. This remains Unreleased with no product version assigned or changed.
+
+## Settings readability and catalog sorting
+
+Settings now has section shortcuts for health, members, environments, service accounts, and audit. Forms use consistent groups and spacing, tables align headings and values, and audit rows become labeled cards on mobile. Account controls separate the name and role beside an initial avatar, with compact theme and sign-out actions.
+
+Explorer sorting sits above the table and supports case ID, title, feature, and priority in both directions. Sorting happens before the ten-row page slice, resets pagination to page one, and persists in the URL. Changing sort retains selections. Edit icons now sit beside case IDs on desktop, and hover backgrounds are quieter.
+
+Actual running views:
+
+![Settings before the readability redesign](changelog/assets/unreleased/settings-before.png)
+![Settings with section shortcuts and compact account controls](changelog/assets/unreleased/settings-sort-settings-1280.png)
+![Grouped member form and aligned table in light mode](changelog/assets/unreleased/settings-members-light.png)
+![Settings on a dark phone](changelog/assets/unreleased/settings-sort-settings-390.png)
+![Explorer sorting and revised rows on desktop](changelog/assets/unreleased/settings-sort-explorer-1280.png)
+![Explorer sorting on mobile](changelog/assets/unreleased/settings-sort-explorer-390.png)
+
+Verification: local lint, formatting, type checks, API/web tests, and production build pass. Six browser scenarios pass, including 64 accessibility states, metadata editing, sorting across pages/reloads, selection, pagination, and environment credential execution. Page Object architecture/reporting checks pass. Settings and explorer have no horizontal page overflow at 320/390/768/1280px in both themes; the Members shortcut reaches its section. Eight infrastructure tests remain skipped on Windows. No release version is assigned or changed; these changes remain Unreleased.
+
+## Paginated execution results
+
+Execution summary cards size independently, so expanding Frozen selection no longer stretches the phase card. The identifier list is bounded to 130px. Test results use a table with visible rerun selection, expandable result evidence, duration, and attempt count. Ten results appear per page with numbered navigation and a checked count; mobile uses labeled cards. Existing artifact, screenshot, notes, and rerun controls remain in the result details.
+
+Pagination retains checked cases while switching pages and receiving live updates. Direct result links choose the page containing the target; navigating to another execution resets pagination and selection. Empty results retain an explanatory message.
+
+Actual running captures:
+
+![Compact execution summary on desktop](changelog/assets/unreleased/results-summary-1280.png)
+![Paginated results table on desktop](changelog/assets/unreleased/results-table-1280.png)
+![Execution summary on a phone](changelog/assets/unreleased/results-summary-390.png)
+![Paginated result cards on a phone](changelog/assets/unreleased/results-table-390.png)
+
+Verification: nine web unit tests and the production build pass, including a new test for pagination, incoming results, retained selections, deep links, empty results, and route reset. Lint passes. Browser checks confirmed pagination, direct links to later-page results, and no horizontal overflow at 320/390/768/1280px in both themes. The two accessibility scenarios passed, including the 64-state matrix.
+
+An initial full local verification passed. The final broader rerun hit API test process out-of-memory failures. The execution acceptance run then remained queued and subsequent scenarios could not connect to the development server; restarting it twice failed with a local PGlite database startup abort. Those four execution acceptance scenarios are not claimed as passing for this change. Eight infrastructure checks remain skipped on Windows. No product version is assigned or changed; this remains Unreleased.
+
+## Settings shortcuts and status indicators
+
+Health, Members, Environments, Service accounts, and Audit trail are in-page buttons. Each focuses its section and scrolls to it without changing the route or reloading the application. Reduced-motion users get immediate scrolling.
+
+Service health and dependency labels, execution phases, report phases, and individual results have status dots. Healthy/ready/completed/passed states are green; queued/running/provisioning/pending/generating/degraded/skipped/canceled states are orange; failures, timeouts, interruptions, and unavailable services are red. Unknown statuses remain neutral. Existing text labels remain visible, so status never depends on color alone. Execution history badges follow the same palette.
+
+Verification: lint, ten web unit tests, and production build pass. A focused regression test checks all five shortcuts for correct focus/scroll targets and unchanged URL, plus missing-target handling and reduced-motion behavior. Live screenshots and browser checks are unavailable: the local development server remains down after the previously recorded database startup failure. No screenshots are claimed for this change. This remains Unreleased; no product version is assigned or changed.
+
+## Settings navigation and report library
+
+Settings shortcuts share a compact navigation strip with numbered labels and a highlighted last-selected section. All five controls scroll and focus within Settings; review found four links remained after the previous change, and this update replaces them with buttons. The strip wraps on smaller screens.
+
+Reports has a library heading with counts for the loaded records and ready reports, an adjacent refresh control, aligned execution/status/expiry/action columns, colored status dots, and compact mobile cards. Counts describe loaded records rather than claiming an organization-wide total. Existing execution and Allure links retain their destinations.
+
+These screenshots show the actual production build with representative intercepted API fixture responses, not live database records:
+
+![Settings navigation strip on desktop using fixtures](changelog/assets/unreleased/navigation-reports-settings-1280.png)
+![Settings navigation on mobile using fixtures](changelog/assets/unreleased/navigation-reports-settings-390.png)
+![Report library with mixed report states using fixtures](changelog/assets/unreleased/navigation-reports-reports-1280.png)
+![Compact report cards on mobile using fixtures](changelog/assets/unreleased/navigation-reports-reports-390.png)
+
+Lint, ten web unit tests, and production build pass. Browser checks against the production build verify all five shortcuts remain on Settings and update their selected state, and both pages fit 320/390/768/1280px in light/dark themes. The database remains unavailable, so these checks do not verify live API integration or report opening. This remains Unreleased; no product version is assigned or changed.
+
+## Suite list pagination
+
+Test suites now displays ten suites per page with a total count, current page, previous/next controls, and up to five numbered page buttons above the list. First/last controls disable at their boundaries. Page counts clamp when the loaded suite list shrinks, and empty lists retain their existing message. Paging leaves create/edit fields and membership selections intact.
+
+Actual production build with intercepted representative API fixture responses:
+
+![Suite pagination on desktop with fixture data](changelog/assets/unreleased/suite-pagination-1280.png)
+![Suite pagination on mobile with fixture data](changelog/assets/unreleased/suite-pagination-390.png)
+
+Lint, ten web tests, and production build pass. Browser checks verify ten suites on the first page, three on the last page of a 23-suite fixture, disabled boundary controls, retained create/edit form values, and no horizontal overflow at 320/390/768/1280px in light and dark themes. Live database integration remains unverified because the local database is unavailable. No product version is assigned or changed; this remains Unreleased.
+
+## Aligned execution overview
+
+The execution header uses smaller actions and a tighter title. Phase and frozen selection share a divided overview panel, with aligned labels and metrics, a status dot, and an explicit “tests selected” unit. On phones the sections stack with a horizontal divider. Expanded identifiers retain their bounded scrolling region; cancel, refresh, and rerun behavior is unchanged.
+
+Actual production build with sample API responses and an inert live-event connection:
+
+![Aligned queued execution overview on desktop with fixtures](changelog/assets/unreleased/execution-overview-1280.png)
+![Stacked execution overview on mobile with fixtures](changelog/assets/unreleased/execution-overview-390.png)
+
+Lint, ten web unit tests, and production build pass. Browser checks cover the queued state, disabled rerun controls, expanding 127 selected identifiers, and no horizontal overflow at 320/390/768/1280px in both themes. These are layout checks; they do not verify queue processing or live database behavior. The previously recorded local database startup problem remains outside this UI change. No product version is assigned or changed; this remains Unreleased.

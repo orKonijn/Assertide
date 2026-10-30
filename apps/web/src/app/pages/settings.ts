@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { Api, errorMessage } from '../core/api';
@@ -21,15 +21,30 @@ interface ServiceAccount {
   version: number;
 }
 @Component({
+  host: { class: 'settings-page' },
   imports: [DatePipe, FormsModule, Members, Environments, Operations],
   template: `<header class="page-header">
       <div>
         <p class="eyebrow">WORKSPACE SETTINGS</p>
-        <h1>Environment and audit</h1>
-        <p class="muted">Approved execution policy and recorded changes.</p>
+        <h1>Workspace settings</h1>
+        <p class="muted">Manage access, execution policies, and workspace activity.</p>
       </div>
     </header>
-    <div class="grid">
+    @if (api.identity()?.role === 'administrator') {
+      <nav class="settings-nav" aria-label="Settings sections">
+        @for (section of sections; track section.id) {
+          <button
+            type="button"
+            [attr.aria-current]="activeSection() === section.id ? 'location' : null"
+            (click)="openSection(section.id)"
+          >
+            <span class="settings-nav-index" aria-hidden="true">{{ section.number }}</span
+            >{{ section.label }}
+          </button>
+        }
+      </nav>
+    }
+    <div class="grid settings-overview">
       <section class="card">
         <h2>Local Lab sandbox</h2>
         <p>API and browser execution · up to 4 workers · up to 2 retries.</p>
@@ -47,10 +62,10 @@ interface ServiceAccount {
       <p class="error" role="alert">{{ error() }}</p>
     }
     @if (api.identity()?.role === 'administrator') {
-      <app-operations />
-      <app-members />
-      <app-environments />
-      <section class="card">
+      <app-operations id="settings-health" />
+      <app-members id="settings-members" />
+      <app-environments id="settings-environments" />
+      <section class="card" id="settings-accounts">
         <h2>CI service accounts</h2>
         <p class="muted">
           Project-scoped execution and evidence access. Credentials cannot manage suites or
@@ -84,7 +99,7 @@ interface ServiceAccount {
           </div>
         }
         @for (account of accounts(); track account.id) {
-          <article>
+          <article class="service-account-row">
             <h3>{{ account.name }}</h3>
             <p>
               {{ account.revoked ? 'Revoked' : 'Active' }} · expires
@@ -105,10 +120,10 @@ interface ServiceAccount {
           <p>No CI credentials have been created.</p>
         }
       </section>
-      <section class="card">
+      <section class="card" id="settings-audit">
         <h2>Audit trail</h2>
         <div class="table-wrap" tabindex="0" role="region" aria-label="Audit events table">
-          <table>
+          <table class="mobile-result-cards" role="table">
             <thead>
               <tr>
                 <th>Time</th>
@@ -120,10 +135,10 @@ interface ServiceAccount {
             <tbody>
               @for (event of events(); track event.id) {
                 <tr>
-                  <td>{{ event.occurredAt | date: 'short' }}</td>
-                  <td>{{ event.actor }}</td>
-                  <td>{{ event.action }}</td>
-                  <td>{{ event.resourceId.slice(0, 8) }}</td>
+                  <td data-label="Time">{{ event.occurredAt | date: 'short' }}</td>
+                  <td data-label="Actor">{{ event.actor }}</td>
+                  <td data-label="Action">{{ event.action }}</td>
+                  <td data-label="Resource">{{ event.resourceId.slice(0, 8) }}</td>
                 </tr>
               } @empty {
                 <tr>
@@ -137,6 +152,15 @@ interface ServiceAccount {
     }`,
 })
 export class Settings {
+  public readonly sections = [
+    { id: 'settings-health', label: 'Health', number: '01' },
+    { id: 'settings-members', label: 'Members', number: '02' },
+    { id: 'settings-environments', label: 'Environments', number: '03' },
+    { id: 'settings-accounts', label: 'Service accounts', number: '04' },
+    { id: 'settings-audit', label: 'Audit trail', number: '05' },
+  ];
+  public readonly activeSection = signal('settings-health');
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   public readonly api = inject(Api);
   public readonly events = signal<Audit[]>([]);
   public readonly error = signal('');
@@ -155,6 +179,21 @@ export class Settings {
         .then((data) => this.events.set(data.items))
         .catch((error) => this.error.set(errorMessage(error)));
     }
+  }
+  public openSection(id: string): void {
+    const section = this.host.nativeElement.querySelector<HTMLElement>('#' + id);
+    if (!section) {
+      return;
+    }
+    this.activeSection.set(id);
+    section.setAttribute('tabindex', '-1');
+    section.focus({ preventScroll: true });
+    section.scrollIntoView({
+      block: 'start',
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'instant'
+        : 'smooth',
+    });
   }
   public async loadAccounts(): Promise<void> {
     try {

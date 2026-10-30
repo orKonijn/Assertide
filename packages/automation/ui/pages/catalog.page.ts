@@ -19,6 +19,9 @@ export class CatalogPage {
     this.cases = page.locator(S.cases);
     this.quarantined = page.getByLabel(S.quarantined);
   }
+  public sortBy(value: string): Promise<string[]> {
+    return this.page.getByLabel(S.sort, { exact: true }).selectOption(value);
+  }
   public goToPage(number: number): Promise<void> {
     return this.page.getByRole('button', { name: S.page(number), exact: true }).click();
   }

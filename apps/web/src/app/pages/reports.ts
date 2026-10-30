@@ -1,10 +1,11 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import type { Run } from '../core/api';
 import { Api, errorMessage } from '../core/api';
 @Component({
+  host: { class: 'reports-page' },
   imports: [RouterLink, DatePipe],
   template: `<header class="page-header">
       <div>
@@ -16,10 +17,12 @@ import { Api, errorMessage } from '../core/api';
     @if (error()) {
       <p class="error" role="alert">{{ error() }}</p>
     }
-    <section class="card reports-panel">
-      <div class="report-toolbar">
-        <span aria-hidden="true">Execution</span><span aria-hidden="true">Report</span
-        ><span aria-hidden="true">Action</span>
+    <section class="card reports-panel" [attr.aria-busy]="loading()">
+      <div class="report-library-heading">
+        <div>
+          <h2>Report library</h2>
+          <p class="muted">{{ runs().length }} loaded · {{ readyCount() }} ready to open</p>
+        </div>
         <button
           class="icon-button report-refresh"
           (click)="load()"
@@ -47,7 +50,8 @@ import { Api, errorMessage } from '../core/api';
           <thead>
             <tr>
               <th>Execution</th>
-              <th>Report</th>
+              <th>Status</th>
+              <th>Available until</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -59,10 +63,24 @@ import { Api, errorMessage } from '../core/api';
                     run.id.slice(0, 8)
                   }}</a>
                 </td>
-                <td data-label="Report">
-                  <span class="badge">{{ run.reportPhase }}</span>
+                <td data-label="Status">
+                  <span class="report-status"
+                    ><span
+                      class="status-indicator"
+                      [attr.data-status]="run.reportPhase"
+                      aria-hidden="true"
+                    ></span
+                    >{{ run.reportPhase }}</span
+                  >
+                </td>
+                <td data-label="Available until">
                   @if (run.reportExpiresAt) {
-                    <p class="muted">Expires {{ run.reportExpiresAt | date: 'short' }}</p>
+                    <time [attr.datetime]="run.reportExpiresAt">{{
+                      run.reportExpiresAt | date: 'mediumDate'
+                    }}</time>
+                    <p class="muted">{{ run.reportExpiresAt | date: 'shortTime' }}</p>
+                  } @else {
+                    <span class="muted">Not available yet</span>
                   }
                 </td>
                 <td data-label="Action">
@@ -87,7 +105,7 @@ import { Api, errorMessage } from '../core/api';
               </tr>
             } @empty {
               <tr>
-                <td colspan="3" class="empty">
+                <td colspan="4" class="empty">
                   No reports yet. Start an execution to collect evidence.
                 </td>
               </tr>
@@ -100,6 +118,9 @@ import { Api, errorMessage } from '../core/api';
 export class Reports {
   private readonly api = inject(Api);
   public readonly runs = signal<Run[]>([]);
+  public readonly readyCount = computed(
+    () => this.runs().filter((run) => run.reportPhase === 'ready').length,
+  );
   public readonly error = signal('');
   public readonly loading = signal(false);
   public constructor() {

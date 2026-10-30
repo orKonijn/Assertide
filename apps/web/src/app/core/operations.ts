@@ -25,10 +25,20 @@ interface State {
       <p role="alert" class="error">{{ error() }}</p>
     }
     @if (state(); as value) {
-      <p role="status">{{ value.status }} · checked {{ value.checkedAt | date: 'medium' }}</p>
+      <p role="status">
+        <span class="status-indicator" [attr.data-status]="value.status" aria-hidden="true"></span
+        >{{ value.status }} · checked {{ value.checkedAt | date: 'medium' }}
+      </p>
       <ul>
         @for (dependency of value.dependencies | keyvalue; track dependency.key) {
-          <li>{{ dependency.key }}: {{ dependency.value }}</li>
+          <li>
+            <span
+              class="status-indicator"
+              [attr.data-status]="dependency.value"
+              aria-hidden="true"
+            ></span
+            >{{ dependency.key }}: {{ dependency.value }}
+          </li>
         }
       </ul>
       <p>
@@ -63,7 +73,14 @@ interface State {
           <tbody>
             @for (phase of value.phases; track phase.phase) {
               <tr>
-                <td>{{ phase.phase }}</td>
+                <td>
+                  <span
+                    class="status-indicator"
+                    [attr.data-status]="phase.phase"
+                    aria-hidden="true"
+                  ></span
+                  >{{ phase.phase }}
+                </td>
                 <td>{{ phase.count }}</td>
                 <td>{{ phase.workers }}</td>
               </tr>

@@ -118,4 +118,38 @@ describe('Run detail response ordering', () => {
     expect(component.run()).toBeNull();
     expect(component.history()).toEqual([]);
   });
+  it('paginates live results, preserves checks and locates deep-linked results', () => {
+    const { component, params } = setup();
+    const results = Array.from({ length: 23 }, (_, index) => ({
+      id: 'case-' + index,
+      title: 'Case ' + index,
+      status: 'passed',
+      duration: index,
+    }));
+    component.run.set({ ...run('running'), results });
+    expect(component.pageResults()).toHaveLength(10);
+    component.toggle('case-0');
+    component.resultPage.set(3);
+    expect(component.pageResults().map((item) => item.id)).toEqual([
+      'case-20',
+      'case-21',
+      'case-22',
+    ]);
+    component.run.set({
+      ...run('running'),
+      results: [...results, { id: 'case-23', title: 'New result', status: 'passed', duration: 1 }],
+    });
+    expect(component.currentResultPage()).toBe(3);
+    expect(component.selected()).toEqual(['case-0']);
+    component.resultPage.set(null);
+    component.focusedResult.set('case-15');
+    expect(component.currentResultPage()).toBe(2);
+    expect(component.pageResults().some((item) => item.id === 'case-15')).toBe(true);
+    component.run.set({ ...run('running'), results: [] });
+    expect(component.currentResultPage()).toBe(1);
+    expect(component.resultPageCount()).toBe(1);
+    params.next(convertToParamMap({ id: 'run-2' }));
+    expect(component.selected()).toEqual([]);
+    expect(component.resultPage()).toBeNull();
+  });
 });

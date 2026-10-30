@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -17,8 +17,41 @@ import { Api, errorMessage } from '../core/api';
       <p role="alert" class="error">{{ error() }}</p>
     }
     <div class="split suite-layout">
-      <section>
-        @for (suite of suites(); track suite.id) {
+      <section class="suite-list">
+        <nav class="result-pagination" aria-label="Suite pages">
+          <span class="muted" role="status"
+            >{{ suites().length }} suites · Page {{ currentPage() }} of {{ pageCount() }}</span
+          >
+          <div class="catalog-page-buttons">
+            <button
+              type="button"
+              aria-label="Previous suite page"
+              [disabled]="currentPage() === 1"
+              (click)="page.set(currentPage() - 1)"
+            >
+              ‹
+            </button>
+            @for (number of pageNumbers(); track number) {
+              <button
+                type="button"
+                [attr.aria-label]="'Suite page ' + number"
+                [attr.aria-current]="currentPage() === number ? 'page' : null"
+                (click)="page.set(number)"
+              >
+                {{ number }}
+              </button>
+            }
+            <button
+              type="button"
+              aria-label="Next suite page"
+              [disabled]="currentPage() === pageCount()"
+              (click)="page.set(currentPage() + 1)"
+            >
+              ›
+            </button>
+          </div>
+        </nav>
+        @for (suite of pageSuites(); track suite.id) {
           <article class="card">
             <h2>{{ suite.name }}</h2>
             <p>{{ suite.description }}</p>
@@ -99,6 +132,18 @@ export class Suites {
   public readonly api = inject(Api);
   private readonly router = inject(Router);
   public readonly suites = signal<Suite[]>([]);
+  public readonly page = signal(1);
+  public readonly pageCount = computed(() => Math.max(1, Math.ceil(this.suites().length / 10)));
+  public readonly currentPage = computed(() =>
+    Math.max(1, Math.min(this.page(), this.pageCount())),
+  );
+  public readonly pageSuites = computed(() =>
+    this.suites().slice((this.currentPage() - 1) * 10, this.currentPage() * 10),
+  );
+  public readonly pageNumbers = computed(() => {
+    const start = Math.max(1, Math.min(this.currentPage() - 2, this.pageCount() - 4));
+    return Array.from({ length: Math.min(5, this.pageCount()) }, (_, index) => start + index);
+  });
   public readonly tests = signal<TestCase[]>([]);
   public readonly selected = signal<string[]>([]);
   public readonly error = signal('');

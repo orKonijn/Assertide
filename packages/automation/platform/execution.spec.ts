@@ -84,13 +84,14 @@ test.describe('Execution and evidence', () => {
     api,
     diagnostics,
   }) => {
-    const run = await api.completed([D.lifecycle]);
+    const run = await api.completed(D.apiIds);
     const workspace = new ApiWorkspacePage(page);
     const password = await localPassword();
     diagnostics.secrets.push(password);
     await workspace.goto();
     await expect(workspace.heading).toBeVisible();
     await workspace.selectExecution(run.id);
+    await expect(workspace.exchanges).toHaveCount(10);
     await workspace.openExchange(D.lifecycle);
     await expect(workspace.evidence).toContainText('"method": "POST"');
     expect(
@@ -102,6 +103,12 @@ test.describe('Execution and evidence', () => {
     expect(JSON.parse(downloaded).request.method).toBe('POST');
     await workspace.inspectPointer('/response/body/quantity');
     await expect(workspace.selectedValue).toHaveText('2');
+    await workspace.goToExchangePage(2);
+    await expect(workspace.exchanges).toHaveCount(
+      Math.min(10, run.artifacts.filter((item) => item.name.startsWith('api-')).length - 10),
+    );
+    await expect(workspace.evidence).toContainText('"method": "POST"');
+    await workspace.goToExchangePage(1);
     await viewport(page, 'mobile');
     expect(await fitsViewport(page)).toBe(true);
   });
