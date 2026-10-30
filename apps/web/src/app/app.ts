@@ -24,7 +24,7 @@ export class App {
   public readonly api = inject(Api);
   public readonly loading = signal(true);
   public readonly identityError = signal('');
-  public readonly dark = signal(localStorage.getItem('assertide-theme') === 'dark');
+  public readonly dark = signal(localStorage.getItem('assertide-theme') !== 'light');
   public readonly menu = signal(false);
   public readonly menuButton = viewChild<ElementRef<HTMLButtonElement>>('menuButton');
   public readonly links = [

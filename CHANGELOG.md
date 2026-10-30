@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- New visits now default to dark mode. Saved light/dark preferences continue to apply on reload. Production build and fixture-based browser checks for first visit and both saved choices pass.
+
 - Softened light mode with gray page and card backgrounds, quieter borders, and a muted purple accent. Checked text/accent combinations retain at least 4.5:1 contrast. Production build and responsive fixture-based checks pass. See [light theme screenshots](docs/ui-refresh.md#softer-light-theme).
 
 - Redesigned recorded evidence with Overview/Request/Response controls, a single JSON viewer, a compact download action, and expandable pointer lookup. JSON expands with the page instead of scrolling internally; the sidebar uses tighter spacing in short windows without its own scrolling area. Build, lint, ten web tests, and fixture-based interaction checks pass. See [evidence screenshots](docs/ui-refresh.md#recorded-evidence-inspector).
