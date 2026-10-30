@@ -479,3 +479,18 @@ Actual production UI with representative API fixture responses:
 ![Project selector in the light desktop sidebar](changelog/assets/unreleased/project-trigger-1280-light.png)
 
 Lint and production build pass. Browser checks confirm vertical icon alignment, dialog opening, and focus restoration at 390/1280px in both themes. Live API integration was not exercised. This remains Unreleased with no product version change.
+
+## Projects redesign and sticky suite editor
+
+Projects has a compact creation/edit form, searchable cards with initials and an active-project badge, aligned actions, and twelve projects per page. Search matches names and descriptions across the entire loaded list and returns to page one. Paging preserves form drafts. Empty searches show an explicit message.
+
+Create/Edit suite stays 24px from the top while the desktop suite list scrolls. The panel is limited to viewport height with internal scrolling so Save suite stays reachable. On mobile it stays in normal document flow.
+
+Actual production UI with representative API fixture responses:
+
+![Redesigned Projects with twelve-per-page pagination](changelog/assets/unreleased/projects-redesign-1280-dark.png)
+![Projects on mobile](changelog/assets/unreleased/projects-redesign-390-dark.png)
+![Projects in light mode](changelog/assets/unreleased/projects-redesign-1280-light.png)
+![Pinned suite editor after scrolling](changelog/assets/unreleased/suite-editor-sticky.png)
+
+Lint, ten web unit tests, and production build pass. Browser checks confirm 12/11 cards for a 23-project fixture, search/page reset, draft preservation, edit/cancel, empty search, and no horizontal overflow at 320/390/768/1280px in both themes. Separate geometry checks verify desktop pinning, a reachable Save suite button, and non-sticky mobile behavior. These checks use sample responses and do not validate live API persistence. No product version is assigned or changed; this remains Unreleased.

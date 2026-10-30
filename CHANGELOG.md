@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Redesigned Projects with searchable cards, active-project identification, a compact editor, and twelve-project numbered pagination. Search resets paging and drafts survive page changes. Create/Edit suite now sticks beside the desktop suite list with internal scrolling when needed; mobile retains normal flow. Build, web tests, and fixture-based responsive/interaction checks pass. See [project and suite layout evidence](docs/ui-refresh.md#projects-redesign-and-sticky-suite-editor).
+
 - Settings section numbers now retain their label colors at full opacity, fixing insufficient text contrast in light mode. Focused browser contrast checks pass in both themes at desktop, tablet, and phone widths.
 
 - Replaced the active-project selector’s text arrow with a centered SVG chevron and consistent spacing. Lint/build and desktop/mobile picker alignment, opening, and focus checks pass with fixture data. See [selector evidence](docs/ui-refresh.md#project-selector-chevron).
