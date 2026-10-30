@@ -15,6 +15,12 @@ export interface SqlConnection extends SqlExecutor {
 export async function connectDatabase(url?: string): Promise<SqlConnection> {
   if (url) {
     const pool = new pg.Pool({ connectionString: url });
+    // Idle clients can disconnect during failover or shutdown. pg removes the
+    // client before emitting this event; subsequent queries open a new one.
+    // Never log the error object: it can contain connection credentials.
+    pool.on("error", () => {
+      console.warn("PostgreSQL idle connection lost; pool will reconnect");
+    });
     return {
       query: (sql, values) => pool.query(sql, values),
       transaction: async (handler) => {
