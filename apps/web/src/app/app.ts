@@ -11,11 +11,11 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { Api, Identity } from './core/api';
 import { HttpErrorResponse } from '@angular/common/http';
 import { errorMessage } from './core/api';
-import { FormsModule } from '@angular/forms';
 import { NotificationLog, Notifications } from './core/notifications';
+import { ProjectPicker } from './core/project-picker';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, NotificationLog],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationLog, ProjectPicker],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
@@ -46,6 +46,7 @@ export class App {
     if (window.innerWidth > 850) this.closeMenu();
   }
   onKeydown(event: KeyboardEvent) {
+    if (document.querySelector('dialog[open]')) return;
     if (!this.menu()) return;
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -67,14 +68,14 @@ export class App {
     }
   }
   readonly links = [
-    ['/', 'Overview'],
-    ['/projects', 'Projects'],
-    ['/suites', 'Test suites'],
-    ['/explorer', 'Test explorer'],
-    ['/runs', 'Executions'],
-    ['/reports', 'Reports'],
-    ['/api', 'API workspace'],
-    ['/settings', 'Settings'],
+    ['/', 'Overview', 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z'],
+    ['/projects', 'Projects', 'M3 7V4h6l3 3h9v13H3z'],
+    ['/suites', 'Test suites', 'M5 3h14v18H5z M9 8h6 M9 12h6 M9 16h4'],
+    ['/explorer', 'Test explorer', 'M10 3a7 7 0 1 0 0 14a7 7 0 0 0 0-14 M15 15l6 6'],
+    ['/runs', 'Executions', 'M7 3l14 9L7 21z'],
+    ['/reports', 'Reports', 'M4 3v18h17 M9 16v-5 M14 16V6 M19 16v-8'],
+    ['/api', 'API workspace', 'M8 5l-6 7 6 7 M16 5l6 7-6 7 M14 3l-4 18'],
+    ['/settings', 'Settings', 'M4 7h16 M4 17h16 M8 4v6 M16 14v6'],
   ];
   constructor() {
     const notices = inject(Notifications);
@@ -137,10 +138,6 @@ export class App {
     this.menu.update((value) => !value);
     if (this.menu())
       setTimeout(() => document.querySelector<HTMLElement>('.mobile-close')?.focus(), 0);
-  }
-  changeProject(id: string) {
-    this.api.selectProject(id);
-    location.assign('/');
   }
   toggleTheme() {
     this.dark.update((value) => !value);

@@ -14,7 +14,7 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
     @if (error()) {
       <p role="alert" class="error">{{ error() }}</p>
     }
-    <div class="split">
+    <div class="split suite-layout">
       <section>
         @for (suite of suites(); track suite.id) {
           <article class="card">
@@ -25,15 +25,17 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
             <p class="muted">
               {{ suite.owner || 'No owner assigned' }} · {{ suite.tags.join(', ') }}
             </p>
-            @if (canEdit()) {
-              <button [disabled]="busy()" (click)="edit(suite)">Edit {{ suite.name }}</button>
-            }
-            <button
-              [disabled]="busy() || !suite.testIds.length || api.identity()?.role === 'viewer'"
-              (click)="run(suite)"
-            >
-              Run suite
-            </button>
+            <div class="actions">
+              @if (canEdit()) {
+                <button [disabled]="busy()" (click)="edit(suite)">Edit {{ suite.name }}</button>
+              }
+              <button
+                [disabled]="busy() || !suite.testIds.length || api.identity()?.role === 'viewer'"
+                (click)="run(suite)"
+              >
+                Run suite
+              </button>
+            </div>
           </article>
         } @empty {
           <section class="card empty">No suites yet. Create a reusable selection.</section>
@@ -63,7 +65,7 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
         <label
           >Tags (comma separated)<input name="tags" [(ngModel)]="tags" maxlength="1000"
         /></label>
-        <fieldset>
+        <fieldset class="selection-list">
           <legend>Membership</legend>
           @for (test of tests(); track test.id) {
             <label

@@ -22,15 +22,14 @@ use([LineChart, GridComponent, TooltipComponent, SVGRenderer]);
     '<div #chart role="img" aria-label="Daily final and first-attempt pass rates. Exact values and day filters are in the table below." style="height:260px;width:100%"></div>',
 })
 export class TrendChart {
-  readonly points =
-    input.required<
-      {
-        day: string;
-        finalPassRate: number | null;
-        firstAttemptPassRate: number | null;
-        executed: number;
-      }[]
-    >();
+  readonly points = input.required<
+    {
+      day: string;
+      finalPassRate: number | null;
+      firstAttemptPassRate: number | null;
+      executed: number;
+    }[]
+  >();
   readonly daySelected = output<string>();
   private readonly element = viewChild<ElementRef<HTMLDivElement>>('chart');
   private chart?: EChartsType;
@@ -60,12 +59,21 @@ export class TrendChart {
     });
   }
   private draw() {
-    const color =
-      getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#64748b';
+    const styles = getComputedStyle(document.documentElement);
+    const color = styles.getPropertyValue('--text').trim() || '#64748b';
+    const surface = styles.getPropertyValue('--surface').trim();
+    const border = styles.getPropertyValue('--border').trim();
     this.chart?.setOption({
       animation: false,
       grid: { left: 48, right: 20, top: 20, bottom: 35 },
-      tooltip: { trigger: 'axis', valueFormatter: (value: number | string) => `${value}%` },
+      tooltip: {
+        trigger: 'axis',
+        confine: true,
+        backgroundColor: surface,
+        borderColor: border,
+        textStyle: { color },
+        valueFormatter: (value: number | string) => `${value}%`,
+      },
       xAxis: {
         type: 'category',
         data: this.points().map((point) => point.day),

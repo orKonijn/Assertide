@@ -40,7 +40,7 @@ interface Member {
           </select></label
         >
       </div>
-      <fieldset>
+      <fieldset class="selection-list">
         <legend>Project access</legend>
         @for (project of api.projects(); track project.id) {
           <label
@@ -53,15 +53,17 @@ interface Member {
         }
       </fieldset>
       <p class="muted">Clear every project to revoke execution and evidence access.</p>
-      <button [disabled]="busy() || !subject.trim() || !name.trim()">
-        {{ editing ? 'Save member' : 'Add member' }}
-      </button>
-      @if (editing) {
-        <button type="button" (click)="reset()">Cancel member edit</button>
-      }
+      <div class="actions">
+        <button [disabled]="busy() || !subject.trim() || !name.trim()">
+          {{ editing ? 'Save member' : 'Add member' }}
+        </button>
+        @if (editing) {
+          <button type="button" (click)="reset()">Cancel member edit</button>
+        }
+      </div>
     </form>
     <div class="table-wrap">
-      <table>
+      <table class="mobile-result-cards" role="table">
         <thead>
           <tr>
             <th>Name</th>
@@ -74,11 +76,11 @@ interface Member {
         <tbody>
           @for (member of members(); track member.subject) {
             <tr>
-              <td>{{ member.name }}</td>
-              <td>{{ member.subject }}</td>
-              <td>{{ member.role }}</td>
-              <td>{{ member.projectIds.length }}</td>
-              <td>
+              <td data-label="Name">{{ member.name }}</td>
+              <td data-label="Subject">{{ member.subject }}</td>
+              <td data-label="Role">{{ member.role }}</td>
+              <td data-label="Projects">{{ member.projectIds.length }}</td>
+              <td data-label="Action">
                 <button
                   [disabled]="member.subject === api.identity()?.subject"
                   (click)="edit(member)"

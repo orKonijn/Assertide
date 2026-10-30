@@ -35,15 +35,17 @@ import { Api, Project, errorMessage } from '../core/api';
     }
     <div class="grid">
       @for (project of projects(); track project.id) {
-        <section class="card">
+        <section class="card project-card">
           <h2>{{ project.name }}</h2>
           <p>{{ project.description }}</p>
-          <a class="button" routerLink="/explorer" (click)="api.selectProject(project.id)"
-            >Open project</a
-          >
-          @if (api.identity()?.role === 'administrator') {
-            <button (click)="edit(project)">Edit {{ project.name }}</button>
-          }
+          <div class="actions project-actions">
+            <a class="button" routerLink="/explorer" (click)="api.selectProject(project.id)"
+              >Open project</a
+            >
+            @if (api.identity()?.role === 'administrator') {
+              <button (click)="edit(project)">Edit {{ project.name }}</button>
+            }
+          </div>
         </section>
       } @empty {
         <p class="empty">No accessible projects.</p>

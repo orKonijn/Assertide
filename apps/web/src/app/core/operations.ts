@@ -16,7 +16,7 @@ interface State {
   selector: 'app-operations',
   imports: [DatePipe, KeyValuePipe],
   template: `<section class="card">
-    <div class="actions">
+    <div class="section-heading">
       <h2>Service health and capacity</h2>
       <button (click)="load()" [disabled]="busy()">Refresh health</button>
     </div>
@@ -47,7 +47,7 @@ interface State {
       @if (value.oldestQueuedAt) {
         <p>Oldest queued run: {{ value.oldestQueuedAt | date: 'medium' }}</p>
       }
-      <div class="table-scroll">
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Execution capacity table">
         <table>
           <caption>
             Executions in your authorized projects

@@ -3,6 +3,7 @@ import { NavigationSelectors as S } from "../types/navigation.selectors";
 import { AuthenticationSelectors as A } from "../types/authentication.selectors";
 import { workflow } from "../utils/allure.utils";
 import { Routes } from "../types/routes";
+import { ProjectPickerComponent } from "./project-picker.component";
 export class NavigationComponent {
   readonly activeProject;
   readonly selectedProject;
@@ -15,7 +16,7 @@ export class NavigationComponent {
   readonly heading;
   constructor(readonly page: Page) {
     this.activeProject = page.getByLabel(S.activeProject);
-    this.selectedProject = this.activeProject.locator(S.selectedOption);
+    this.selectedProject = this.activeProject.locator("span").first();
     this.menu = page.getByRole("button", { name: S.menu, exact: true });
     this.dialog = page.getByRole("dialog", { name: S.dialog });
     this.closeMenu = this.dialog.getByRole("button", {
@@ -41,7 +42,10 @@ export class NavigationComponent {
           frame === this.page.mainFrame() &&
           new URL(frame.url()).pathname === Routes.overview,
       });
-      await this.activeProject.selectOption({ label: name });
+      const picker = new ProjectPickerComponent(this.page);
+      await picker.open();
+      await picker.searchFor(name);
+      await picker.choose(name);
       await navigated;
       await this.page.waitForLoadState("load");
     });

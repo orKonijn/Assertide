@@ -1,0 +1,5 @@
+Assertide logo asset
+Generated with the built-in image generation tool. Used in the application sidebar, mobile header, and sign-in/loading screens. The original PNG is preserved; CSS frames its transparent clear space and provides a white treatment in dark mode.
+
+Final generation prompt:
+Use case: logo-brand. Create a professional, simple logo for Assertide, a QA automation platform. One polished horizontal logo lockup: a distinctive minimal geometric capital A symbol with a subtle check/verification cue integrated into its negative space, followed by the exact word "Assertide" in refined modern sans-serif typography with excellent kerning. Indigo #5145CD symbol, deep charcoal wordmark. Flat solid colors, crisp vector-like edges, balanced proportions, highly legible and understated enterprise software identity. Transparent background. Center the complete lockup with comfortable clear space. No tagline, no extra text, no mockup, no gradients, no shadows, no 3D, no decorative elements, no presentation board. Deliver one finished logo.

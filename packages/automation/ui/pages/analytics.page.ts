@@ -32,6 +32,10 @@ export class AnalyticsPage {
   }
   filter(days: number, browser: string) {
     return workflow("Apply analytics filters", async () => {
+      const panel = this.page.locator('details.history-filters');
+      if (!(await panel.evaluate((element) => element.hasAttribute('open')))) {
+        await panel.locator('summary').click();
+      }
       await this.page
         .getByLabel(S.window, { exact: true })
         .selectOption({ label: `${days} days` });

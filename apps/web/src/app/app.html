@@ -1,11 +1,11 @@
 @if (loading()) {
   <main class="login">
-    <h1>Assertide</h1>
+    <h1 class="brand-logo"><img src="/brand/assertide-logo.png" alt="Assertide" /></h1>
     <p role="status">Connecting to your workspace…</p>
   </main>
 } @else if (!api.identity()) {
   <main class="login">
-    <img src="/brand/logo-mark.svg" width="72" height="72" alt="" />
+    <div class="brand-logo"><img src="/brand/assertide-logo.png" alt="Assertide" /></div>
     <p class="eyebrow">CONFIDENCE, ONE RUN AT A TIME</p>
     <h1>Your quality workspace.</h1>
     <p>Discover tests, follow executions, and investigate the evidence in one place.</p>
@@ -20,8 +20,8 @@
 } @else {
   <a class="skip" href="#content" (click)="skipToContent($event)">Skip to content</a>
   <header class="mobile-header">
-    <strong>Assertide</strong
-    ><button
+    <a class="brand-logo" routerLink="/"><img src="/brand/assertide-logo.png" alt="Assertide" /></a>
+    <button
       #menuButton
       (click)="toggleMenu()"
       [attr.aria-expanded]="menu()"
@@ -38,18 +38,11 @@
     aria-label="Workspace navigation"
   >
     <button class="mobile-close" (click)="closeMenu()">Close menu</button>
-    <a class="brand" routerLink="/"
-      ><img src="/brand/logo-mark.svg" width="36" height="36" alt="" />Assertide</a
-    >
+    <a class="brand brand-logo" routerLink="/"
+      ><img src="/brand/assertide-logo.png" alt="Assertide"
+    /></a>
     <p class="workspace">QUALITY WORKSPACE</p>
-    <label
-      >Active project
-      <select [ngModel]="api.projectId()" (ngModelChange)="changeProject($event)">
-        @for (project of api.projects(); track project.id) {
-          <option [value]="project.id">{{ project.name }}</option>
-        }
-      </select>
-    </label>
+    <app-project-picker />
     <nav aria-label="Main navigation">
       @for (link of links; track link[0]) {
         <a
@@ -58,6 +51,17 @@
           ariaCurrentWhenActive="page"
           [routerLinkActiveOptions]="{ exact: true }"
           (click)="menu.set(false)"
+          ><svg
+            class="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path [attr.d]="link[2]" /></svg
           >{{ link[1] }}</a
         >
       }

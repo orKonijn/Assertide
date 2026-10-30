@@ -1,0 +1,100 @@
+# Workspace visual refresh
+
+The workspace uses a consistent indigo accent, navigation icons, clearer headings, softly elevated cards, and a more prominent metric row. History filters expand on demand, preserving all existing filtering, saved-filter, and export controls. Sign-in uses a contained card, and mobile actions expand to a comfortable width.
+
+Motion includes short header and metric entrances, hover/press feedback, a mobile drawer entrance, toast/dialog entrances, and pulsing loading placeholders. The operating system's reduced-motion preference disables animations and transitions, including pseudo-elements.
+
+## Actual application captures
+
+These captures use the running local application and its existing Lab data, with matching viewport sizes and themes before and after the changes. They are not generated mockups.
+
+### Desktop, 1440 × 1000
+
+![Desktop before the visual refresh](changelog/assets/unreleased/ui-refresh-desktop-before.png)
+
+Before: the full filter form occupies the top of the overview.
+
+![Desktop after the visual refresh](changelog/assets/unreleased/ui-refresh-desktop-after.png)
+
+After: expandable filters make room for headline metrics, with consistent surfaces and navigation icons.
+
+### Mobile, 390 × 844
+
+![Mobile overview before the refresh](changelog/assets/unreleased/ui-refresh-mobile-before.png)
+
+Before: filters dominate the initial mobile view.
+
+![Mobile overview after the refresh](changelog/assets/unreleased/ui-refresh-mobile-after.png)
+
+After: the primary action, filter disclosure, and metric cards fit the viewport.
+
+### Dark theme and sign-in
+
+![Updated dark desktop overview](changelog/assets/unreleased/ui-refresh-dark-after.png)
+
+Dark mode preserves readable text and the white logo treatment.
+
+![Updated sign-in screen](changelog/assets/unreleased/ui-refresh-login-after.png)
+
+Sign-in uses a focused card and full-width action.
+
+## Site-wide review
+
+Reviewed overview, projects, suites, test explorer, execution history, reports, API workspace, and settings at 320, 768, and 1440 CSS pixels in light and dark themes. The browser acceptance suite additionally exercises run details, live monitoring, reruns, screenshot dialogs, JSON evidence, report access, credentials, and keyboard navigation. Its accessibility matrix covers 64 states at 390/768/1440px.
+
+Completed corrections:
+
+- Suite, member-edit, and rerun actions use wrapping groups with explicit spacing.
+- Member tables become labeled cards on mobile, keeping edit buttons on-screen.
+- Membership checklists have bounded scrolling, spaced checkboxes, and wrapping names.
+- Split layouts no longer stretch editors to match long lists. The suite form appears first on mobile.
+- Long names and evidence content stay within cards; dialogs fit short screens.
+- Chart tooltips use the active theme and remain inside chart bounds; data tables have keyboard-accessible scrolling regions.
+
+![Suite controls and editor in dark mode](changelog/assets/unreleased/site-audit-suites-desktop-dark.png)
+
+The desktop editor remains at its natural height beside the suite list. [Original full-page capture](changelog/assets/unreleased/site-audit-suites-before.png) records the previous stretched panel; the after image focuses on the first viewport.
+
+![Suite editor on a 320px phone viewport](changelog/assets/unreleased/site-audit-suites-mobile-light.png)
+
+The form is reachable before the suite list and checkbox labels wrap within the panel.
+
+![Member controls visible on a mobile screen in dark mode](changelog/assets/unreleased/site-audit-members-mobile-dark.png)
+
+Member cards keep all fields and actions within the phone viewport. [Original settings capture at 320px](changelog/assets/unreleased/site-audit-settings-before.png) records the horizontally scrolling table; this focused after capture is 390px, so it is not a pixel-matched comparison.
+
+![Theme-aware chart tooltip](changelog/assets/unreleased/site-audit-chart-dark.png)
+
+The tooltip has a dark surface, readable labels, and stays inside the chart.
+
+Verification: all 27 browser acceptance tests passed, including 64 accessibility states; the additional 48-route/theme/viewport scan found no overflowing controls. `npm run verify:quick`, architecture checks, and reporting/redaction checks passed. Eight infrastructure-dependent API checks are skipped locally and remain Linux CI gates. An initial concurrent verification attempt failed catalog initialization; the isolated discovery test and full subsequent verification passed. No product release version is assigned; GitHub source publication is distinct from deployment or a numbered release.
+
+### Earlier refresh verification
+
+Production build, lint, analytics filter/export and execution-history browser tests passed. Automated accessibility scans passed for the application's light/dark desktop/mobile states; keyboard skip-link, menu focus containment, Escape/focus restoration, and reduced-motion checks passed. Entrance animations keep text fully opaque to preserve contrast throughout the transition. Browser checks also verified all eight primary routes at 390px without horizontal overflow and animation suppression under reduced motion. No product version is assigned or published by this update.
+
+## Layout corrections
+
+### Searchable project picker
+
+The active-project control opens a searchable dialog with wrapped names, current-project highlighting, alphabetical results, and a bounded scrolling area. Escape closes the picker and returns focus to its trigger while keeping the mobile navigation open. Selecting another project preserves the existing project-switch behavior.
+
+![Searchable project picker in dark mode on mobile](changelog/assets/unreleased/project-picker-mobile.png)
+
+Actual application capture at 390px. Search, empty results, project switching and persistence, mobile focus restoration, and dark-mode accessibility checks pass. Build and lint pass. No comparable automated before-state image was captured for this change.
+
+Follow-up fixes reduce the logo size, add a 12px gap between wrapping project actions, and align service-health headings with their refresh action. Mobile navigation uses the same 72px offset as its header, omits the duplicate logo, and locks background scrolling while open.
+
+![Project card with separated action buttons](changelog/assets/unreleased/layout-fixes-project-after.png)
+
+Project actions retain spacing when they wrap onto separate lines.
+
+![Service health with aligned heading and refresh action](changelog/assets/unreleased/layout-fixes-health-after.png)
+
+The heading and action are vertically centered and wrap with a defined gap on narrow screens.
+
+![Mobile drawer below the header without a duplicated logo](changelog/assets/unreleased/layout-fixes-menu-after.png)
+
+The drawer clears the header even when opened after scrolling. These are actual post-fix captures; the attempted automated before-state capture failed at sign-in, so no comparable before images are claimed.
+
+Build, lint, and browser checks passed. Projects and settings fit 320, 390, 768, and 1280px viewports without horizontal overflow.

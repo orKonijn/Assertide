@@ -4,9 +4,25 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Fixed
+
+- Fixed crowded suite/member/rerun actions, off-screen member-table controls on phones, oversized membership lists, and suite editors stretched to the full list height. Long labels wrap within panels; the suite form appears before the list on mobile. Chart tooltips now match dark mode and stay inside the chart. Verified eight primary routes at 320/768/1440px in both themes, all 27 browser acceptance tests (including 64 accessibility states), and local build/lint/type/unit checks. See [site-wide review and screenshots](docs/ui-refresh.md#site-wide-review).
+
+### Changed
+
+- GitHub verification now runs for pushes to `main` as well as pull requests and the existing feature branch. UI regression tests use the established Page Objects and no longer regenerate committed screenshots during routine runs.
+
 ### Added
 
-- Added feature-grouped Allure reports for connected UI acceptance, with domain steps, runtime/build metadata, masked failure screenshots and sanitized context. OCI and Kubernetes CI preserve separate reports and evidence, with bounded branch history. Local checks cover 26 app journeys, 36 storefront browser cases, seven manual browser exercises and an intentional credential-redaction failure probe; see [UI testing and report usage](docs/ui-testing.md).
+- Replaced the long native project dropdown with a searchable project dialog. Names wrap, the current project appears first, and results scroll within a bounded panel. Browser tests verify search, empty results, switching and persistence, mobile Escape/focus restoration, and dark-mode accessibility; build and lint pass. [Mobile picker screenshot](docs/changelog/assets/unreleased/project-picker-mobile.png).
+
+- Corrected crowded project actions and service-health headings, reduced logo sizing, and aligned the mobile drawer below a consistently sized header. Mobile navigation no longer repeats the logo, and the background page stops scrolling while the drawer is open. Build, lint, and responsive browser checks pass at 320, 390, 768, and 1280px; see [layout corrections](docs/ui-refresh.md#layout-corrections).
+
+- Refreshed the workspace with navigation icons, clearer headings, consistent cards and tables, a focused sign-in screen, and expandable history filters that keep overview metrics visible. Added subtle entrance, button, loading, notification, and mobile-menu animations with reduced-motion support. Build, lint, analytics/history browser tests, light/dark desktop/mobile accessibility scans, and keyboard checks pass. See [before-and-after screenshots and verification](docs/ui-refresh.md). No release version or publication is assigned.
+
+- Added the new Assertide logo to the main sidebar, mobile header, and sign-in/loading screens, with a white treatment for dark mode. Production build and lint pass; browser checks confirm image loading and no horizontal overflow at 390px. Actual implementation captures: [sidebar](docs/changelog/assets/unreleased/assertide-logo-sidebar.png), [dark mobile header](docs/changelog/assets/unreleased/assertide-logo-mobile.png), [sign-in](docs/changelog/assets/unreleased/assertide-logo-login.png), and [dark sidebar](docs/changelog/assets/unreleased/assertide-logo-dark.png). These show the current implementation; no before-state capture was taken.
+
+- Added feature-grouped Allure reports for connected UI acceptance, with domain steps, runtime/build metadata, masked failure screenshots and sanitized context. OCI and Kubernetes CI preserve separate reports and evidence, with bounded branch history. Both runtimes passed all 26 app journeys; local verification also passed 36 storefront browser cases, seven manual browser exercises and the credential-redaction failure probe. Merged in [PR #2](https://github.com/orKonijn/Assertide/pull/2); see [verified CI results](https://github.com/orKonijn/Assertide/actions/runs/41061287034), [UI testing and report usage](docs/ui-testing.md), and the [actual Allure report screenshot](docs/changelog/assets/unreleased/ui-acceptance-allure.png). This remains unreleased; no product version or production deployment is assigned.
 
 - Added service/web container builds, validated Kubernetes deployment rendering, production startup checks, supervisor health probes, internal queue/lease metrics, scheduled encrypted PostgreSQL backups and a manual image publication/provenance workflow. Renderer, configuration and metrics checks pass locally; container, backup and cluster gates run in CI. See [deployment and recovery setup](docs/production-deployment.md).
 

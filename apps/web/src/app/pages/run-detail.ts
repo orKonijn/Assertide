@@ -37,14 +37,16 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
       @if (rerunError()) {
         <p class="error" role="alert">{{ rerunError() }}</p>
       }
-      <button type="button" autofocus (click)="rerunDialog.close()">Cancel rerun</button>
-      <button
-        type="button"
-        [disabled]="busy() || !environmentAvailable() || !rerunIds().length"
-        (click)="startRerun()"
-      >
-        Start rerun
-      </button>
+      <div class="actions">
+        <button type="button" autofocus (click)="rerunDialog.close()">Cancel rerun</button>
+        <button
+          type="button"
+          [disabled]="busy() || !environmentAvailable() || !rerunIds().length"
+          (click)="startRerun()"
+        >
+          Start rerun
+        </button>
+      </div>
     </dialog>
     <header class="page-header">
       <div>

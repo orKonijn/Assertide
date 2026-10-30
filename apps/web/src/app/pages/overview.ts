@@ -89,74 +89,79 @@ interface Analytics {
       </div>
       <a class="button" routerLink="/explorer">New execution</a>
     </header>
-    <form class="card actions" (ngSubmit)="filter()">
-      <label
-        >History window<select aria-label="History window" name="days" [(ngModel)]="days">
-          <option [ngValue]="7">7 days</option>
-          <option [ngValue]="30">30 days</option>
-          <option [ngValue]="90">90 days</option>
-        </select></label
-      >
-      <label
-        >Execution project<select
-          aria-label="Execution project"
-          name="browser"
-          [(ngModel)]="browser"
+    <details class="history-filters card">
+      <summary>
+        History filters <span class="muted">Date range, environment, and results</span>
+      </summary>
+      <form class="actions" (ngSubmit)="filter()">
+        <label
+          >History window<select aria-label="History window" name="days" [(ngModel)]="days">
+            <option [ngValue]="7">7 days</option>
+            <option [ngValue]="30">30 days</option>
+            <option [ngValue]="90">90 days</option>
+          </select></label
         >
-          <option value="all">All browsers and API</option>
-          <option value="api">API (no browser)</option>
-          <option value="chromium">Chromium</option>
-          <option value="firefox">Firefox</option>
-          <option value="webkit">WebKit</option>
-        </select></label
-      >
-      <button type="submit" [disabled]="loading()">Apply filters</button>
-      <label
-        >From ({{ analytics()?.timeZone ?? 'UTC' }})<input
-          type="date"
-          name="from"
-          aria-label="From date"
-          [(ngModel)]="from"
-      /></label>
-      <label
-        >Through ({{ analytics()?.timeZone ?? 'UTC' }})<input
-          type="date"
-          name="to"
-          aria-label="Through date"
-          [(ngModel)]="to"
-      /></label>
-      <label
-        >Environment<select name="environment" [(ngModel)]="environment">
-          <option value="">All environments</option>
-          @for (item of environments(); track item.id) {
-            <option [value]="item.id">{{ item.name }}</option>
-          }
-        </select></label
-      >
-      <label
-        >Result status<select name="status" [(ngModel)]="status">
-          <option value="all">All results</option>
-          <option value="passed">Passed</option>
-          <option value="failed">Failed</option>
-          <option value="broken">Broken</option>
-          <option value="skipped">Skipped</option>
-        </select></label
-      >
-      <label
-        >Suite<select name="suite" [(ngModel)]="suite">
-          <option value="">All suites and selections</option>
-          @for (item of suites(); track item.id) {
-            <option [value]="item.id">{{ item.name }}</option>
-          }
-        </select></label
-      >
-      <button type="button" (click)="reset()">Reset filters</button>
-      <button type="button" (click)="saveFilters()">Save my filters</button>
-      <button type="button" (click)="restoreFilters()">Restore my filters</button>
-      <button type="button" [disabled]="!analytics() || loading()" (click)="exportMetrics()">
-        Export metrics JSON
-      </button>
-    </form>
+        <label
+          >Execution project<select
+            aria-label="Execution project"
+            name="browser"
+            [(ngModel)]="browser"
+          >
+            <option value="all">All browsers and API</option>
+            <option value="api">API (no browser)</option>
+            <option value="chromium">Chromium</option>
+            <option value="firefox">Firefox</option>
+            <option value="webkit">WebKit</option>
+          </select></label
+        >
+        <button type="submit" [disabled]="loading()">Apply filters</button>
+        <label
+          >From ({{ analytics()?.timeZone ?? 'UTC' }})<input
+            type="date"
+            name="from"
+            aria-label="From date"
+            [(ngModel)]="from"
+        /></label>
+        <label
+          >Through ({{ analytics()?.timeZone ?? 'UTC' }})<input
+            type="date"
+            name="to"
+            aria-label="Through date"
+            [(ngModel)]="to"
+        /></label>
+        <label
+          >Environment<select name="environment" [(ngModel)]="environment">
+            <option value="">All environments</option>
+            @for (item of environments(); track item.id) {
+              <option [value]="item.id">{{ item.name }}</option>
+            }
+          </select></label
+        >
+        <label
+          >Result status<select name="status" [(ngModel)]="status">
+            <option value="all">All results</option>
+            <option value="passed">Passed</option>
+            <option value="failed">Failed</option>
+            <option value="broken">Broken</option>
+            <option value="skipped">Skipped</option>
+          </select></label
+        >
+        <label
+          >Suite<select name="suite" [(ngModel)]="suite">
+            <option value="">All suites and selections</option>
+            @for (item of suites(); track item.id) {
+              <option [value]="item.id">{{ item.name }}</option>
+            }
+          </select></label
+        >
+        <button type="button" (click)="reset()">Reset filters</button>
+        <button type="button" (click)="saveFilters()">Save my filters</button>
+        <button type="button" (click)="restoreFilters()">Restore my filters</button>
+        <button type="button" [disabled]="!analytics() || loading()" (click)="exportMetrics()">
+          Export metrics JSON
+        </button>
+      </form>
+    </details>
     @if (notice()) {
       <p role="status">{{ notice() }}</p>
     }
@@ -166,7 +171,7 @@ interface Analytics {
     @if (loading()) {
       <app-loading-state label="Loading executions…" />
     } @else {
-      <div class="grid">
+      <div class="grid metric-grid">
         <section class="card">
           <h2>Completed runs</h2>
           <div class="metric">{{ analytics()?.runCount ?? 0 }}</div>
@@ -302,7 +307,7 @@ interface Analytics {
           }
           <details>
             <summary>Show chart data and denominators</summary>
-            <div class="table-wrap">
+            <div class="table-wrap" tabindex="0" role="region" aria-label="Daily reliability data">
               <table>
                 <thead>
                   <tr>
