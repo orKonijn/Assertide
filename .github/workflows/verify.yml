@@ -91,11 +91,17 @@ jobs:
         working-directory: apps/api
         env:
           TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+      - name: Restore a PostgreSQL backup into an empty database
+        run: npx tsx checks/restore-drill.ts
+        working-directory: apps/api
+        env:
+          TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+          PG_TOOL_CONTAINER: ${{ job.services.postgres.id }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: reference-load-results
-          path: .local/verification/reference-load.json
+          path: .local/verification/*.json
           if-no-files-found: ignore
       - run: npx playwright install --with-deps chromium
         working-directory: packages/automation

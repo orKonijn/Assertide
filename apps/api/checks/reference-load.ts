@@ -140,7 +140,7 @@ try {
         await request(
           index,
           "metadata",
-          `/v1/projects/${project}/runs?limit=10`,
+          `/v1/runs?projectId=${project}&limit=10`,
         );
       }),
     );
