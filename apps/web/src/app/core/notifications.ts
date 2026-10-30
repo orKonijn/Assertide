@@ -1,4 +1,4 @@
-import { Component, Injectable, inject, signal, DestroyRef } from '@angular/core';
+import { Component, Injectable, inject, signal, computed, DestroyRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
 interface Notice {
   id: number;
@@ -9,6 +9,15 @@ interface Notice {
 export class Notifications {
   readonly history = signal<Notice[]>([]);
   readonly active = signal<Notice[]>([]);
+  private readonly seenThrough = signal(0);
+  readonly historyOpen = signal(false);
+  readonly unread = computed(() =>
+    this.historyOpen() ? 0 : this.history().filter((item) => item.id > this.seenThrough()).length,
+  );
+  setHistoryOpen(open: boolean) {
+    this.seenThrough.set(this.nextId);
+    this.historyOpen.set(open);
+  }
   private nextId = 0;
   private readonly timers = new Set<ReturnType<typeof setTimeout>>();
   constructor() {
@@ -30,6 +39,8 @@ export class Notifications {
   clear() {
     for (const timer of this.timers) clearTimeout(timer);
     this.timers.clear();
+    this.historyOpen.set(false);
+    this.seenThrough.set(this.nextId);
     this.history.set([]);
     this.active.set([]);
   }
@@ -38,33 +49,72 @@ export class Notifications {
   selector: 'app-notifications',
   imports: [DatePipe],
   template: `
-    <details class="notification-history">
-      <summary>Notification history ({{ notices.history().length }})</summary>
-      @for (item of notices.history(); track item.id) {
-        <p>{{ item.at | date: 'shortTime' }} · {{ item.message }}</p>
-      } @empty {
-        <p>No actions recorded in this session.</p>
+    <button
+      class="notification-bell icon-button"
+      popovertarget="notification-history"
+      aria-label="Notification history"
+      title="Notification history"
+      [attr.aria-expanded]="notices.historyOpen()"
+      aria-controls="notification-history"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        width="22"
+        height="22"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+      </svg>
+      @if (notices.unread()) {
+        <span class="notification-count" aria-hidden="true">{{ notices.unread() }}</span>
       }
-    </details>
-    <div class="toast-area" aria-live="polite" aria-atomic="true">
+      <span class="notification-sr">{{ notices.unread() }} unread notifications</span>
+    </button>
+    <section
+      id="notification-history"
+      class="notification-panel"
+      popover="auto"
+      role="region"
+      aria-label="Notification history"
+      (beforetoggle)="onToggle($event)"
+    >
+      <header>
+        <h2>Notifications</h2>
+        <button
+          class="icon-button"
+          popovertarget="notification-history"
+          popovertargetaction="hide"
+          aria-label="Close notifications"
+        >
+          &#215;
+        </button>
+      </header>
+      <div class="notification-items">
+        @for (item of notices.history(); track item.id) {
+          <article>
+            <p>{{ item.message }}</p>
+            <time [attr.datetime]="item.at">{{ item.at | date: 'shortTime' }}</time>
+          </article>
+        } @empty {
+          <p class="muted">No actions recorded in this session.</p>
+        }
+      </div>
+    </section>
+    <div class="notification-sr" aria-live="polite" aria-atomic="true">
       @for (item of notices.active(); track item.id) {
-        <div class="toast">
-          <span>{{ item.message }}</span
-          ><button
-            type="button"
-            (click)="notices.dismiss(item.id)"
-            aria-label="Dismiss notification"
-          >
-            Dismiss
-          </button>
-        </div>
+        <span>{{ item.message }}</span>
       }
     </div>
   `,
-  styles: [
-    '.notification-history { margin-bottom: 1rem; color: var(--muted); } .toast-area { position: fixed; bottom: 1rem; right: 1rem; z-index: 30; max-width: calc(100vw - 2rem); } .toast { display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: .75rem; color: var(--text); background: var(--surface); box-shadow: 0 4px 20px #0003; }',
-  ],
 })
 export class NotificationLog {
   readonly notices = inject(Notifications);
+  onToggle(event: Event) {
+    this.notices.setHistoryOpen((event as ToggleEvent).newState === 'open');
+  }
 }

@@ -9,7 +9,9 @@ export const NavigationSelectors = {
   heading: "h1",
   button: "button",
   selectedOption: "option:checked",
-  toast: ".toast",
-  notificationHistory: "app-notifications details",
+  notificationBell: "Notification history",
+  notificationBadge: ".notification-count",
+  closeNotifications: "Close notifications",
+  notificationHistory: "#notification-history",
   notifications: "app-notifications",
 } as const;

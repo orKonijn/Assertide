@@ -10,12 +10,36 @@ import { Api, Run, errorMessage } from '../core/api';
         <h1>Reports</h1>
         <p class="muted">Report generation is independent of test outcomes.</p>
       </div>
-      <button (click)="load()">Refresh</button>
     </header>
     @if (error()) {
       <p class="error" role="alert">{{ error() }}</p>
     }
     <section class="card">
+      <div class="report-toolbar">
+        <span aria-hidden="true">Execution</span><span aria-hidden="true">Report</span
+        ><span aria-hidden="true">Action</span>
+        <button
+          class="icon-button report-refresh"
+          (click)="load()"
+          aria-label="Refresh reports"
+          title="Refresh reports"
+          [disabled]="loading()"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M20 7v5h-5M4 17v-5h5M6.1 6.1A8 8 0 0 1 20 12M4 12a8 8 0 0 0 13.9 5.9" />
+          </svg>
+        </button>
+      </div>
       <div class="table-wrap">
         <table class="mobile-result-cards report-cards" role="table">
           <thead>
@@ -75,16 +99,22 @@ export class Reports {
   private readonly api = inject(Api);
   readonly runs = signal<Run[]>([]);
   readonly error = signal('');
+  readonly loading = signal(false);
   constructor() {
     void this.load();
   }
   async load() {
+    if (this.loading()) return;
+    this.loading.set(true);
+    this.error.set('');
     try {
       this.runs.set(
         (await this.api.get<{ items: Run[] }>(`/runs?projectId=${this.api.projectId()}`)).items,
       );
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.loading.set(false);
     }
   }
 }
