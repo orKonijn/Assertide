@@ -87,8 +87,8 @@ interface Analytics {
     <header class="page-header">
       <div>
         <p class="eyebrow">WORKSPACE OVERVIEW</p>
-        <h1>Quality at a glance</h1>
-        <p class="muted">Historical outcomes and live activity, clearly separated.</p>
+        <h1>Overview</h1>
+        <p class="muted">Your runs, results, and reliability in one place.</p>
       </div>
       <a class="button" routerLink="/explorer">New execution</a>
     </header>
@@ -96,73 +96,82 @@ interface Analytics {
       <summary>
         History filters <span class="muted">Date range, environment, and results</span>
       </summary>
-      <form class="actions" (ngSubmit)="filter()">
-        <label
-          >History window<select aria-label="History window" name="days" [(ngModel)]="days">
-            <option [ngValue]="7">7 days</option>
-            <option [ngValue]="30">30 days</option>
-            <option [ngValue]="90">90 days</option>
-          </select></label
-        >
-        <label
-          >Execution project<select
-            aria-label="Execution project"
-            name="browser"
-            [(ngModel)]="browser"
+      <form class="overview-filter-form" (ngSubmit)="filter()">
+        <div class="overview-filter-fields">
+          <label
+            >History window<select aria-label="History window" name="days" [(ngModel)]="days">
+              <option [ngValue]="7">7 days</option>
+              <option [ngValue]="30">30 days</option>
+              <option [ngValue]="90">90 days</option>
+            </select></label
           >
-            <option value="all">All browsers and API</option>
-            <option value="api">API (no browser)</option>
-            <option value="chromium">Chromium</option>
-            <option value="firefox">Firefox</option>
-            <option value="webkit">WebKit</option>
-          </select></label
-        >
-        <button type="submit" [disabled]="loading()">Apply filters</button>
-        <label
-          >From ({{ analytics()?.timeZone ?? 'UTC' }})<input
-            type="date"
-            name="from"
-            aria-label="From date"
-            [(ngModel)]="from"
-        /></label>
-        <label
-          >Through ({{ analytics()?.timeZone ?? 'UTC' }})<input
-            type="date"
-            name="to"
-            aria-label="Through date"
-            [(ngModel)]="to"
-        /></label>
-        <label
-          >Environment<select name="environment" [(ngModel)]="environment">
-            <option value="">All environments</option>
-            @for (item of environments(); track item.id) {
-              <option [value]="item.id">{{ item.name }}</option>
-            }
-          </select></label
-        >
-        <label
-          >Result status<select name="status" [(ngModel)]="status">
-            <option value="all">All results</option>
-            <option value="passed">Passed</option>
-            <option value="failed">Failed</option>
-            <option value="broken">Broken</option>
-            <option value="skipped">Skipped</option>
-          </select></label
-        >
-        <label
-          >Suite<select name="suite" [(ngModel)]="suite">
-            <option value="">All suites and selections</option>
-            @for (item of suites(); track item.id) {
-              <option [value]="item.id">{{ item.name }}</option>
-            }
-          </select></label
-        >
-        <button type="button" (click)="reset()">Reset filters</button>
-        <button type="button" (click)="saveFilters()">Save my filters</button>
-        <button type="button" (click)="restoreFilters()">Restore my filters</button>
-        <button type="button" [disabled]="!analytics() || loading()" (click)="exportMetrics()">
-          Export metrics JSON
-        </button>
+          <label
+            >Execution project<select
+              aria-label="Execution project"
+              name="browser"
+              [(ngModel)]="browser"
+            >
+              <option value="all">All browsers and API</option>
+              <option value="api">API (no browser)</option>
+              <option value="chromium">Chromium</option>
+              <option value="firefox">Firefox</option>
+              <option value="webkit">WebKit</option>
+            </select></label
+          >
+
+          <label
+            >From ({{ analytics()?.timeZone ?? 'UTC' }})<input
+              type="date"
+              name="from"
+              aria-label="From date"
+              [(ngModel)]="from"
+          /></label>
+          <label
+            >Through ({{ analytics()?.timeZone ?? 'UTC' }})<input
+              type="date"
+              name="to"
+              aria-label="Through date"
+              [(ngModel)]="to"
+          /></label>
+          <label
+            >Environment<select name="environment" [(ngModel)]="environment">
+              <option value="">All environments</option>
+              @for (item of environments(); track item.id) {
+                <option [value]="item.id">{{ item.name }}</option>
+              }
+            </select></label
+          >
+          <label
+            >Result status<select name="status" [(ngModel)]="status">
+              <option value="all">All results</option>
+              <option value="passed">Passed</option>
+              <option value="failed">Failed</option>
+              <option value="broken">Broken</option>
+              <option value="skipped">Skipped</option>
+            </select></label
+          >
+          <label
+            >Suite<select name="suite" [(ngModel)]="suite">
+              <option value="">All suites and selections</option>
+              @for (item of suites(); track item.id) {
+                <option [value]="item.id">{{ item.name }}</option>
+              }
+            </select></label
+          >
+        </div>
+        <div class="overview-filter-footer">
+          <div class="overview-filter-primary">
+            <button class="primary" type="submit" [disabled]="loading()">Apply filters</button>
+            <button type="button" (click)="reset()">Reset filters</button>
+          </div>
+          <div class="overview-filter-secondary">
+            <button type="button" (click)="saveFilters()">Save my filters</button>
+            <button type="button" (click)="restoreFilters()">Restore my filters</button>
+            <button type="button" [disabled]="!analytics() || loading()" (click)="exportMetrics()">
+              Export metrics JSON
+            </button>
+          </div>
+        </div>
       </form>
     </details>
     @if (notice()) {
@@ -174,6 +183,124 @@ interface Analytics {
     @if (loading()) {
       <app-loading-state label="Loading executions…" />
     } @else {
+      <section class="overview-summary" aria-label="Workspace summary">
+        <div>
+          <span>Final pass rate</span
+          ><strong>{{
+            !analytics() || analytics()?.finalPassRate === null
+              ? '—'
+              : (analytics()!.finalPassRate | percent: '1.1-1')
+          }}</strong
+          ><small>Selected history window</small>
+        </div>
+        <div>
+          <span>Completed runs</span><strong>{{ analytics()?.runCount ?? 0 }}</strong
+          ><small>In selected history</small>
+        </div>
+        <div>
+          <span>Failed results</span
+          ><strong>{{ (analytics()?.failed ?? 0) + (analytics()?.broken ?? 0) }}</strong
+          ><small>Failed or broken instances</small>
+        </div>
+        <div>
+          <span>Live now</span><strong>{{ live().length }}</strong
+          ><small>Active executions</small>
+        </div>
+      </section>
+      @if (analytics(); as metrics) {
+        <div class="overview-focus-grid">
+          <section class="card overview-reliability">
+            <h2>Daily reliability</h2>
+            @if (metrics.trends.length) {
+              <app-trend-chart [points]="metrics.trends" (daySelected)="selectDay($event)" />
+              <p class="muted">
+                Solid purple: final pass rate. Dashed teal: first-attempt pass rate. Select a day in
+                the chart or table to filter the interval.
+              </p>
+            }
+            @if (!metrics.trends.length) {
+              <p class="overview-chart-empty">
+                Reliability trends will appear as completed results accumulate.
+              </p>
+            }
+            <details>
+              <summary>Show chart data and denominators</summary>
+              <div
+                class="table-wrap"
+                tabindex="0"
+                role="region"
+                aria-label="Daily reliability data"
+              >
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date ({{ metrics.timeZone }})</th>
+                      <th>Passed</th>
+                      <th>Failed/broken</th>
+                      <th>Executed</th>
+                      <th>Final pass rate</th>
+                      <th>First-attempt pass rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (point of metrics.trends; track point.day) {
+                      <tr>
+                        <td>
+                          <button (click)="selectDay(point.day)">{{ point.day }}</button>
+                        </td>
+                        <td>{{ point.passed }}</td>
+                        <td>{{ point.failed + point.broken }}</td>
+                        <td>{{ point.executed }}</td>
+                        <td>
+                          {{
+                            point.finalPassRate === null
+                              ? '—'
+                              : (point.finalPassRate | percent: '1.1-1')
+                          }}
+                        </td>
+                        <td>
+                          {{
+                            point.firstAttemptPassRate === null
+                              ? '—'
+                              : (point.firstAttemptPassRate | percent: '1.1-1')
+                          }}
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="6">No completed results match these filters.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </section>
+          <section class="card overview-attention">
+            <div class="section-heading">
+              <h2>Needs attention</h2>
+              <span class="badge"
+                >{{ metrics.failures.length }}
+                {{ metrics.failures.length === 1 ? 'case' : 'cases' }}</span
+              >
+            </div>
+            @for (failure of metrics.failures.slice(0, 4); track failure.caseId) {
+              <div class="attention-row">
+                <a routerLink="/explorer" [queryParams]="{ query: failure.caseId }"
+                  >{{ failure.caseId }} ↗</a
+                ><span>{{ failure.count }} / {{ failure.samples }} failed</span>
+              </div>
+            } @empty {
+              <div class="overview-empty">
+                <span class="attention-check" aria-hidden="true">✓</span
+                ><strong>No failed results</strong>
+                <p>No failed results in the selected history window.</p>
+              </div>
+            }
+            <p class="muted">Based on completed results in your history filters.</p>
+          </section>
+        </div>
+      }
       <div class="overview-activity-grid">
         <section class="card overview-activity">
           <div class="section-heading">
@@ -219,315 +346,253 @@ interface Analytics {
           }
         </section>
       </div>
-      <div class="grid metric-grid">
-        <section class="card">
-          <h2>Completed runs</h2>
-          <div class="metric">{{ analytics()?.runCount ?? 0 }}</div>
-          <p class="muted">Completed runs in the selected history window</p>
-        </section>
-        <section class="card">
-          <h2>Live runs</h2>
-          <div class="metric">{{ live().length }}</div>
-          <p class="muted">Excluded from historical metrics</p>
-        </section>
-        <section class="card">
-          <h2>Failed results</h2>
-          <div class="metric">{{ (analytics()?.failed ?? 0) + (analytics()?.broken ?? 0) }}</div>
-          <p class="muted">Failed or broken test instances</p>
-        </section>
-      </div>
-      @if (analytics(); as metrics) {
-        <p class="muted">
-          Excluded from headline rates: {{ metrics.quarantined }} quarantined and
-          {{ metrics.expectedFailures }} expected-failure instances. Day buckets:
-          {{ metrics.timeZone }}.
-        </p>
-        <section class="card">
-          <h2>Previous interval comparison</h2>
-          <p>
-            {{ metrics.comparison.from | date: 'mediumDate' : 'UTC' }} to
-            {{ metrics.comparison.to | date: 'mediumDate' : 'UTC' }} (exclusive, UTC) ·
-            {{ metrics.comparison.executed }} executed instances
-          </p>
-          <p>
-            Final pass-rate change:
-            {{
-              metrics.comparison.finalPassRateChange === null
-                ? 'Insufficient comparable data'
-                : (metrics.comparison.finalPassRateChange * 100 | number: '1.1-1') +
-                  ' percentage points'
-            }}
-          </p>
+      <details class="overview-details">
+        <summary>
+          <span>Explore detailed analytics</span
+          ><span class="muted">Pass rates, comparisons, performance, and evidence</span>
+        </summary>
+        @if (analytics(); as metrics) {
           <p class="muted">
-            Same filters, equal-length preceding interval.
-            {{ metrics.comparison.missingPriorIdentities }} identities absent from the prior
-            interval; {{ metrics.comparison.missingCurrentIdentities }} absent from this interval.
-            Changes may reflect case mix.
+            Excluded from headline rates: {{ metrics.quarantined }} quarantined and
+            {{ metrics.expectedFailures }} expected-failure instances. Day buckets:
+            {{ metrics.timeZone }}.
           </p>
-        </section>
-        <section class="card">
-          <h2>{{ from || to ? 'Selected UTC interval' : 'Last ' + days + ' days' }}</h2>
-          <p class="muted">
-            Data as of {{ metrics.dataAsOf | date: 'medium' }} · {{ metrics.executed }} executed
-            instances · {{ metrics.excluded }} excluded
-          </p>
+          <section class="card">
+            <h2>Previous interval comparison</h2>
+            <p>
+              {{ metrics.comparison.from | date: 'mediumDate' : 'UTC' }} to
+              {{ metrics.comparison.to | date: 'mediumDate' : 'UTC' }} (exclusive, UTC) ·
+              {{ metrics.comparison.executed }} executed instances
+            </p>
+            <p>
+              Final pass-rate change:
+              {{
+                metrics.comparison.finalPassRateChange === null
+                  ? 'Insufficient comparable data'
+                  : (metrics.comparison.finalPassRateChange * 100 | number: '1.1-1') +
+                    ' percentage points'
+              }}
+            </p>
+            <p class="muted">
+              Same filters, equal-length preceding interval.
+              {{ metrics.comparison.missingPriorIdentities }} identities absent from the prior
+              interval; {{ metrics.comparison.missingCurrentIdentities }} absent from this interval.
+              Changes may reflect case mix.
+            </p>
+          </section>
+          <section class="card">
+            <h2>{{ from || to ? 'Selected UTC interval' : 'Last ' + days + ' days' }}</h2>
+            <p class="muted">
+              Data as of {{ metrics.dataAsOf | date: 'medium' }} · {{ metrics.executed }} executed
+              instances · {{ metrics.excluded }} excluded
+            </p>
+            <div class="grid">
+              <div>
+                <h3>Final pass rate</h3>
+                <p class="metric">
+                  {{
+                    metrics.finalPassRate === null
+                      ? '—'
+                      : (metrics.finalPassRate | percent: '1.1-1')
+                  }}
+                </p>
+                <p>Final passed / executed</p>
+              </div>
+              <div>
+                <h3>First-attempt pass rate</h3>
+                <p class="metric">
+                  {{
+                    metrics.firstAttemptPassRate === null
+                      ? '—'
+                      : (metrics.firstAttemptPassRate | percent: '1.1-1')
+                  }}
+                </p>
+                <p>First-attempt passed / executed</p>
+              </div>
+              <div>
+                <h3>Recovered after retry</h3>
+                <p class="metric">
+                  {{
+                    metrics.recoveredFlakyRate === null
+                      ? '—'
+                      : (metrics.recoveredFlakyRate | percent: '1.1-1')
+                  }}
+                </p>
+                <p>Passed after an earlier failure / executed</p>
+              </div>
+            </div>
+            <p class="muted">
+              Executed = passed + failed + broken. Skipped, canceled and incomplete results are
+              excluded. Live runs never enter these figures.
+            </p>
+          </section>
           <div class="grid">
-            <div>
-              <h3>Final pass rate</h3>
+            <section class="card">
+              <h2>Average run duration</h2>
               <p class="metric">
                 {{
-                  metrics.finalPassRate === null ? '—' : (metrics.finalPassRate | percent: '1.1-1')
-                }}
-              </p>
-              <p>Final passed / executed</p>
-            </div>
-            <div>
-              <h3>First-attempt pass rate</h3>
-              <p class="metric">
-                {{
-                  metrics.firstAttemptPassRate === null
+                  metrics.duration.averageMs === null
                     ? '—'
-                    : (metrics.firstAttemptPassRate | percent: '1.1-1')
+                    : (metrics.duration.averageMs / 1000 | number: '1.1-1')
                 }}
+                <small>seconds</small>
               </p>
-              <p>First-attempt passed / executed</p>
-            </div>
-            <div>
-              <h3>Recovered after retry</h3>
+              <p class="muted">
+                Wall-clock duration / {{ metrics.duration.samples }} completed runs with timestamps;
+                includes matching mixed runs.
+              </p>
+            </section>
+            <section class="card">
+              <h2>API request p95</h2>
               <p class="metric">
                 {{
-                  metrics.recoveredFlakyRate === null
+                  metrics.apiLatency.p95Ms === null
                     ? '—'
-                    : (metrics.recoveredFlakyRate | percent: '1.1-1')
+                    : (metrics.apiLatency.p95Ms | number: '1.1-1')
                 }}
+                <small>ms</small>
               </p>
-              <p>Passed after an earlier failure / executed</p>
-            </div>
+              <p class="muted">
+                Nearest-rank p95 · {{ metrics.apiLatency.samples }} recorded non-authentication
+                exchanges, including failures.
+              </p>
+              @if (metrics.apiLatency.smallSample) {
+                <p>Small sample: fewer than 20 completed HTTP requests.</p>
+              }
+            </section>
           </div>
+          <div class="grid">
+            <section class="card">
+              <h2>Browser and API breakdown</h2>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Project</th>
+                      <th>Executed</th>
+                      <th>Final pass rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (group of metrics.browsers; track group.name) {
+                      <tr>
+                        <td>{{ group.name === 'api' ? 'API (no browser)' : group.name }}</td>
+                        <td>
+                          {{ group.executed }}{{ group.executed < 30 ? ' · small sample' : '' }}
+                        </td>
+                        <td>
+                          {{
+                            group.finalPassRate === null
+                              ? '—'
+                              : (group.finalPassRate | percent: '1.1-1')
+                          }}
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="3">No matching results.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <p class="muted">
+                Passed / executed in each project. API cases are never assigned to Chromium.
+              </p>
+            </section>
+            <section class="card">
+              <h2>Most frequent failures</h2>
+              @for (failure of metrics.failures; track failure.caseId) {
+                <p>
+                  <a routerLink="/explorer" [queryParams]="{ query: failure.caseId }">{{
+                    failure.caseId
+                  }}</a>
+                  · {{ failure.count }} / {{ failure.samples }} failed/broken instances ({{
+                    failure.rate | percent: '1.1-1'
+                  }})
+                </p>
+              } @empty {
+                <p class="empty">No failed results in this history window.</p>
+              }
+            </section>
+          </div>
+        }
+        @if (analytics(); as metrics) {
           <p class="muted">
-            Executed = passed + failed + broken. Skipped, canceled and incomplete results are
-            excluded. Live runs never enter these figures.
+            Excluded from headline rates: {{ metrics.quarantined }} quarantined and
+            {{ metrics.expectedFailures }} expected-failure instances. Day buckets:
+            {{ metrics.timeZone }}.
           </p>
-        </section>
-        <div class="grid">
           <section class="card">
-            <h2>Average run duration</h2>
-            <p class="metric">
-              {{
-                metrics.duration.averageMs === null
-                  ? '—'
-                  : (metrics.duration.averageMs / 1000 | number: '1.1-1')
-              }}
-              <small>seconds</small>
+            <h2>Test duration and instability</h2>
+            <p>
+              Attempt-duration sum per instance: median
+              {{ metrics.testDuration.medianMs ?? '—' }} ms · p95
+              {{ metrics.testDuration.p95Ms ?? '—' }} ms ·
+              {{ metrics.testDuration.samples }} samples. Retry cost is included.
             </p>
-            <p class="muted">
-              Wall-clock duration / {{ metrics.duration.samples }} completed runs with timestamps;
-              includes matching mixed runs.
+            <p>
+              {{ metrics.apiLatency.transportFailures }} transport failures excluded from completed
+              HTTP latency.
             </p>
-          </section>
-          <section class="card">
-            <h2>API request p95</h2>
-            <p class="metric">
-              {{
-                metrics.apiLatency.p95Ms === null
-                  ? '—'
-                  : (metrics.apiLatency.p95Ms | number: '1.1-1')
-              }}
-              <small>ms</small>
-            </p>
-            <p class="muted">
-              Nearest-rank p95 · {{ metrics.apiLatency.samples }} recorded non-authentication
-              exchanges, including failures.
-            </p>
-            @if (metrics.apiLatency.smallSample) {
-              <p>Small sample: fewer than 20 completed HTTP requests.</p>
-            }
-          </section>
-        </div>
-        <section class="card">
-          <h2>Daily reliability</h2>
-          @if (metrics.trends.length) {
-            <app-trend-chart [points]="metrics.trends" (daySelected)="selectDay($event)" />
-            <p class="muted">
-              Solid purple: final pass rate. Dashed teal: first-attempt pass rate. Select a day in
-              the chart or table to filter the interval.
-            </p>
-          }
-          <details>
-            <summary>Show chart data and denominators</summary>
-            <div class="table-wrap" tabindex="0" role="region" aria-label="Daily reliability data">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date ({{ metrics.timeZone }})</th>
-                    <th>Passed</th>
-                    <th>Failed/broken</th>
-                    <th>Executed</th>
-                    <th>Final pass rate</th>
-                    <th>First-attempt pass rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (point of metrics.trends; track point.day) {
-                    <tr>
-                      <td>
-                        <button (click)="selectDay(point.day)">{{ point.day }}</button>
-                      </td>
-                      <td>{{ point.passed }}</td>
-                      <td>{{ point.failed + point.broken }}</td>
-                      <td>{{ point.executed }}</td>
-                      <td>
-                        {{
-                          point.finalPassRate === null
-                            ? '—'
-                            : (point.finalPassRate | percent: '1.1-1')
-                        }}
-                      </td>
-                      <td>
-                        {{
-                          point.firstAttemptPassRate === null
-                            ? '—'
-                            : (point.firstAttemptPassRate | percent: '1.1-1')
-                        }}
-                      </td>
-                    </tr>
-                  } @empty {
-                    <tr>
-                      <td colspan="6">No completed results match these filters.</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </section>
-        <div class="grid">
-          <section class="card">
-            <h2>Browser and API breakdown</h2>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Project</th>
-                    <th>Executed</th>
-                    <th>Final pass rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (group of metrics.browsers; track group.name) {
-                    <tr>
-                      <td>{{ group.name === 'api' ? 'API (no browser)' : group.name }}</td>
-                      <td>
-                        {{ group.executed }}{{ group.executed < 30 ? ' · small sample' : '' }}
-                      </td>
-                      <td>
-                        {{
-                          group.finalPassRate === null
-                            ? '—'
-                            : (group.finalPassRate | percent: '1.1-1')
-                        }}
-                      </td>
-                    </tr>
-                  } @empty {
-                    <tr>
-                      <td colspan="3">No matching results.</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-            <p class="muted">
-              Passed / executed in each project. API cases are never assigned to Chromium.
-            </p>
-          </section>
-          <section class="card">
-            <h2>Most frequent failures</h2>
-            @for (failure of metrics.failures; track failure.caseId) {
+            @for (
+              item of metrics.instability;
+              track item.caseId + item.browser + item.environment + item.parameterFingerprint
+            ) {
               <p>
-                <a routerLink="/explorer" [queryParams]="{ query: failure.caseId }">{{
-                  failure.caseId
-                }}</a>
-                · {{ failure.count }} / {{ failure.samples }} failed/broken instances ({{
-                  failure.rate | percent: '1.1-1'
-                }})
+                {{ item.caseId }} · {{ item.browser }} · {{ item.environment }} ·
+                {{ item.parameterFingerprint }}: {{ item.failed }} failures in
+                {{ item.samples }} eligible runs.
               </p>
             } @empty {
-              <p class="empty">No failed results in this history window.</p>
+              <p>No instability candidates with at least five eligible runs.</p>
+            }
+            <p class="muted">
+              Candidates have both pass and failure in their last ten eligible runs within this
+              window. Code changes can explain differences; this is not a root-cause diagnosis.
+            </p>
+          </section>
+          <section class="card">
+            <h2>Evidence completeness</h2>
+            <p>
+              {{ metrics.evidence.completeAttempts }} /
+              {{ metrics.evidence.eligibleAttempts }} failed or broken attempts have all required
+              evidence ({{
+                metrics.evidence.rate === null
+                  ? 'No eligible attempts'
+                  : (metrics.evidence.rate | percent: '1.1-1')
+              }}).
+            </p>
+            <p>
+              Required items: {{ metrics.evidence.missing }} missing ·
+              {{ metrics.evidence.expired }} expired ·
+              {{ metrics.evidence.unavailable }} unavailable. Video capture disabled in
+              {{ metrics.evidence.videoDisabledRuns }} matching browser runs.
+            </p>
+            <p class="muted">
+              Browser failures require screenshot and trace, plus video when enabled. API failures
+              require a recorded exchange or transport error. Expected failures are excluded; failed
+              attempts recovered by retry remain eligible.
+            </p>
+          </section>
+          <section class="card">
+            <h2>API endpoint latency</h2>
+            @for (endpoint of metrics.endpoints; track endpoint.method + endpoint.path) {
+              <p>
+                <code style="overflow-wrap: anywhere"
+                  >{{ endpoint.method }} {{ endpoint.path }}</code
+                >
+                · p95 {{ endpoint.p95Ms ?? '—' }} ms · {{ endpoint.samples }} completed responses ·
+                {{ endpoint.transportFailures }} transport failures{{
+                  endpoint.smallSample ? ' · small sample' : ''
+                }}
+              </p>
+            } @empty {
+              <p>No recorded API exchanges match these filters.</p>
             }
           </section>
-        </div>
-      }
-      @if (analytics(); as metrics) {
-        <p class="muted">
-          Excluded from headline rates: {{ metrics.quarantined }} quarantined and
-          {{ metrics.expectedFailures }} expected-failure instances. Day buckets:
-          {{ metrics.timeZone }}.
-        </p>
-        <section class="card">
-          <h2>Test duration and instability</h2>
-          <p>
-            Attempt-duration sum per instance: median {{ metrics.testDuration.medianMs ?? '—' }} ms
-            · p95 {{ metrics.testDuration.p95Ms ?? '—' }} ms ·
-            {{ metrics.testDuration.samples }} samples. Retry cost is included.
-          </p>
-          <p>
-            {{ metrics.apiLatency.transportFailures }} transport failures excluded from completed
-            HTTP latency.
-          </p>
-          @for (
-            item of metrics.instability;
-            track item.caseId + item.browser + item.environment + item.parameterFingerprint
-          ) {
-            <p>
-              {{ item.caseId }} · {{ item.browser }} · {{ item.environment }} ·
-              {{ item.parameterFingerprint }}: {{ item.failed }} failures in
-              {{ item.samples }} eligible runs.
-            </p>
-          } @empty {
-            <p>No instability candidates with at least five eligible runs.</p>
-          }
-          <p class="muted">
-            Candidates have both pass and failure in their last ten eligible runs within this
-            window. Code changes can explain differences; this is not a root-cause diagnosis.
-          </p>
-        </section>
-        <section class="card">
-          <h2>Evidence completeness</h2>
-          <p>
-            {{ metrics.evidence.completeAttempts }} / {{ metrics.evidence.eligibleAttempts }} failed
-            or broken attempts have all required evidence ({{
-              metrics.evidence.rate === null
-                ? 'No eligible attempts'
-                : (metrics.evidence.rate | percent: '1.1-1')
-            }}).
-          </p>
-          <p>
-            Required items: {{ metrics.evidence.missing }} missing ·
-            {{ metrics.evidence.expired }} expired · {{ metrics.evidence.unavailable }} unavailable.
-            Video capture disabled in {{ metrics.evidence.videoDisabledRuns }} matching browser
-            runs.
-          </p>
-          <p class="muted">
-            Browser failures require screenshot and trace, plus video when enabled. API failures
-            require a recorded exchange or transport error. Expected failures are excluded; failed
-            attempts recovered by retry remain eligible.
-          </p>
-        </section>
-        <section class="card">
-          <h2>API endpoint latency</h2>
-          @for (endpoint of metrics.endpoints; track endpoint.method + endpoint.path) {
-            <p>
-              <code style="overflow-wrap: anywhere">{{ endpoint.method }} {{ endpoint.path }}</code>
-              · p95 {{ endpoint.p95Ms ?? '—' }} ms · {{ endpoint.samples }} completed responses ·
-              {{ endpoint.transportFailures }} transport failures{{
-                endpoint.smallSample ? ' · small sample' : ''
-              }}
-            </p>
-          } @empty {
-            <p>No recorded API exchanges match these filters.</p>
-          }
-        </section>
-      }
+        }
+      </details>
     }
   `,
 })

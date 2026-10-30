@@ -597,3 +597,25 @@ Production build, lint, and ten web tests pass. Fixture-based checks cover live/
 ![Light execution identity](changelog/assets/unreleased/execution-identity-1280-light.png)
 
 ![Light mobile execution identity](changelog/assets/unreleased/execution-identity-390-light.png)
+
+## Overview dashboard and filter layout
+
+Overview now has a unified summary band, a reliability chart beside a short failure list, and a grouped activity panel. Detailed metrics, comparisons, performance, and evidence remain under Explore detailed analytics. History filters use an aligned responsive grid with Apply/Reset separated from save/restore/export in a footer. The old parent grid rule was overridden to prevent the footer appearing beside the fields. Keyboard focus remains visible with a rounded indicator.
+
+Production build and lint pass. Browser checks with representative API fixtures cover activity display, expanded detailed analytics, execution links/sorting, responsive overflow, and filter-footer placement below the fields at 390/1280 pixels in both themes. Screenshots show the actual production UI with sample data; live backend writes were not tested. This remains Unreleased without a version increment.
+
+![Overview dashboard desktop](changelog/assets/unreleased/overview-dashboard-1280-dark.png)
+
+![Overview dashboard mobile](changelog/assets/unreleased/overview-dashboard-390-dark.png)
+
+![Overview dashboard light](changelog/assets/unreleased/overview-dashboard-1280-light.png)
+
+![Overview dashboard mobile light](changelog/assets/unreleased/overview-dashboard-390-light.png)
+
+![History filters desktop](changelog/assets/unreleased/overview-filters-1280-dark.png)
+
+![History filters mobile](changelog/assets/unreleased/overview-filters-390-dark.png)
+
+![History filters light](changelog/assets/unreleased/overview-filters-1280-light.png)
+
+![History filters mobile light](changelog/assets/unreleased/overview-filters-390-light.png)

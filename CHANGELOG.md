@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Redesigned Overview with a unified summary strip, reliability chart, attention panel, grouped activity, and expandable detailed analytics. History filters now span the panel in an aligned grid with actions in a separate footer and a rounded keyboard-focus indicator. Build, lint, and responsive fixture-based layout/navigation checks pass. See [Overview dashboard and filter screenshots](docs/ui-refresh.md#overview-dashboard-and-filter-layout).
+
 - Aligned shared page headings and section spacing, and moved live activity and recent completed executions to the top of Overview with compact summaries and actionable empty states. Execution history now keeps the run ID and Rerun metadata badge together. Build, lint, ten web tests, and fixture-based responsive/sorting checks pass. See [Overview and execution row screenshots](docs/ui-refresh.md#overview-priorities-and-consistent-page-spacing).
 
 - Removed sticky positioning from Create/Edit suite so the full form moves naturally with the page. Internal form/list scrolling remains disabled. Build and fixture-based desktop/mobile flow and selection checks pass.
