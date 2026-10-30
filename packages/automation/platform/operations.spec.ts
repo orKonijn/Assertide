@@ -1,24 +1,15 @@
-import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
-import { z } from "zod";
+import { test, expect } from "./fixtures";
+
 test("administrator inspects service health, quotas and retention on desktop and mobile", async ({
   page,
 }) => {
-  const credentials = z
-    .object({ password: z.string() })
-    .parse(JSON.parse(await readFile("../../.local/credentials.json", "utf8")));
   await page.goto("/settings");
-  await page.getByRole("link", { name: "Continue with SSO" }).click();
-  await page.getByLabel("Password", { exact: true }).fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  const card = page
-    .locator("section")
-    .filter({
-      has: page.getByRole("heading", {
-        name: "Service health and capacity",
-        exact: true,
-      }),
-    });
+  const card = page.locator("section").filter({
+    has: page.getByRole("heading", {
+      name: "Service health and capacity",
+      exact: true,
+    }),
+  });
   await expect(card.getByRole("status")).toContainText("ready");
   await expect(card).toContainText("database: ok");
   await expect(card).toContainText("trace/video 14 days");

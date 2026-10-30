@@ -125,7 +125,7 @@ async function readResults(output: string) {
     /* Interrupted workers may have only checkpoints. */
   }
   {
-    let checkpoint = "";
+    let checkpoint: string;
     try {
       checkpoint = await readFile(path.join(output, "attempts.ndjson"), "utf8");
     } catch {

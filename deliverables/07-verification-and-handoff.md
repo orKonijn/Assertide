@@ -1,5 +1,7 @@
 # Assertide verification and handoff
 
+Historical design handoff: the status below describes the 29 October specification delivery. For the subsequently implemented application and its executed checks, see [the current implementation handoff](../docs/implementation-verification.md).
+
 Delivery date: 29 October 2026. All work is **Unreleased**. There is no released product version or proposed release bump because this delivery contains specifications and design artifacts, not a released application. The example package's 0.1.0 version is independent of any future product version.
 
 ## Deliverable status

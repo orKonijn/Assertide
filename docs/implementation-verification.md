@@ -1,0 +1,46 @@
+# Implementation and verification
+
+This is the current application handoff. The original files in `deliverables/` remain the approved specification and historical design handoff, not evidence that their mockup data was executed. Product status is **Unreleased**; no release version, production deployment or merge to main is claimed.
+
+## Requirement traceability
+
+| Specification | Implemented behavior | Verification |
+|---|---|---|
+| AUTH-01 | Automatic local OIDC, PKCE/state/nonce, scoped roles, logout, expiry and revocation clearing | `platform/security.spec.ts`, identity/platform API tests |
+| CAT-01–03 | Immutable source discovery, stable IDs, search/filters, suites and versioned metadata; failed discovery preserves the catalog | `discovery.test.ts`, `catalog.test.ts`, `platform/catalog.spec.ts`, `platform/suites.spec.ts` |
+| RUN-01–03 | Frozen selections, idempotency/outbox, quotas, leases/fencing, cancel and reviewed linked reruns | `platform.test.ts`, `scheduler.test.ts`, `platform/cancellation.spec.ts`, `platform/login.spec.ts` |
+| RUN-02 | API-only/browser selection, environment limits, workers/retries/video, Chromium/Firefox/WebKit, headed Xvfb OCI jobs | `environments.test.ts`, `oci-worker.test.ts`, 36 local browser fixture cases |
+| RUN-04 | Persisted SSE cursors, resync, stale indication, bounded redacted logs and worker-loss reconciliation | scheduler/live checks, connected execution journeys, 50-client SSE measurement |
+| REP-01 | Allure 3, immutable publication, compatible JSONL history, independent rebuild and scoped viewer | report storage/history tests and two-run browser history journey |
+| REP-02 | Attempt steps, error categories, expected/actual values, screenshot dialog, private trace, optional video, annotations and previous-result comparison | artifact/result tests, real trace-viewer check, browser evidence journeys |
+| API-01 | All 15 controlled Lab cases; recorded request/response, redacted JSON download and JSON pointers | Lab HTTP tests, executed Lab suite, `platform/login.spec.ts` |
+| ANA-01–02 | Transactional instance projection, denominator-aware metrics, first-attempt/final trends, duration, instability, latency, comparison, saved filters and export | analytics calculation/HTTP/projection/calendar tests and browser export journey |
+| ENV-01 | Approved destinations, frozen policy, write-only versioned AES-GCM secret references | environment API/browser checks and key-recovery drill |
+| UX-01 | Lazy Angular views, light/dark themes, mobile result cards, keyboard sorting/dialogs, loading/error/empty states, accessible chart tables and notification history | automated WCAG 2.2 AA scans, keyboard tests, actual desktop/mobile captures |
+| OPS-01 | Health/readiness, quotas, audit, full-version artifact deletion, raw/report/result retention, backup/restore and additive migrations | real MinIO/PG tests, restore/load drills, migration rollback tests, operations browser journey |
+| CI-01 | Hashed project-scoped CI credentials, rotation/revocation and commit-linked runs | service-account API/browser tests |
+| Supplemental cases | Seven JSONPlaceholder and seven The Internet cases, explicitly manual and rate-limited | All 14 executed successfully; see `practice-targets.md` for public-target limits |
+
+## Architecture and engineering checks
+
+Angular core is 22.2.4 with standalone components, signals/computed state, native control flow, modern injection and lazy routes. The application is browser-rendered and zoneless-compatible; SSR is not configured. Forms use one consistent template-driven Angular Forms approach with typed component state and authoritative server validation. TypeScript strictness and Angular strict templates remain enabled. Zod validates API, worker, artifact and external-data boundaries; no explicit `any` or TypeScript suppression was added to application code.
+
+`npm run lint` checks TypeScript and Angular templates, including template accessibility, using ESLint 10 and Angular ESLint 22. `npm run verify:quick` runs lint, domain checks, automation/API type checks, API tests, Angular Vitest and a production build. `npm run test:e2e` runs the 15 connected browser journeys. Unrelated journeys reuse in-memory authenticated state; login/revocation tests retain their own sessions. No fixed Playwright sleeps or retry-based acceptance are used. Secret-entry tests disable trace/screenshots; fixtures and diagnostics remain ignored.
+
+Linux CI additionally exercises PostgreSQL 17, Redis, private MinIO, non-root network-isolated OCI jobs, headed Chromium, separate execution/report supervisors, a real private trace, backup/restore and reference control-plane load. Windows development uses trusted local processes and embedded PostgreSQL by default. Infrastructure-specific checks are skipped locally when their services are absent, and run explicitly in CI.
+
+The 12 store cases passed in Chromium, Firefox and WebKit (36 executions). The primary app journey also executes all 15 Lab cases and selected browser cases, opens a real Allure report, rebuilds it, reviews a rerun, and inspects evidence. Failure screenshots, traces and videos follow the configured policy; successful test volume is not inflated through retries.
+
+## Operational evidence and remaining acceptance gates
+
+See [operations measurements](operations.md), [restore evidence](database-recovery.md), [signed build provenance](build-provenance.md), [migration guidance](migrations.md) and [worker isolation](isolated-workers.md). These documents distinguish measured repository checks from deployment guarantees.
+
+Before a commercial production release, the deployment owner still needs to supply the production OIDC registration and secret-manager bindings; publish/scan/sign its chosen registry image; provision TLS, backup scheduling and monitoring; and validate production-size recovery, 20 simultaneous browser workloads and the 99.5% pilot availability target. The supplied runtime uses Docker-isolated jobs on a supervisor host; a Kubernetes Job adapter and deployment-specific vault integration are not implemented. Public/untrusted customer code remains outside the approved MVP boundary.
+
+Human assistive-technology and moderated task review, the original native Figma canvas verification, and name/domain clearance remain external acceptance gates. Automated accessibility scans and local screenshots do not replace those reviews. P2 destination-based external notification integrations are not enabled; the implemented notification history is in-app only.
+
+## Review and delivery
+
+Changes are on `feature/assertide-platform` in [PR #1](https://github.com/orKonijn/Assertide/pull/1). Commits are pushed as work completes; main is not merged. The PR's latest checks are the authoritative head verification. Self-review covered auth/scope, immutable run lineage, evidence redaction/access, transactional analytics, worker leases, mobile focus and async response races. Screenshots are actual application captures in `docs/changelog/assets/unreleased/`; earlier design-preview images remain clearly separate.
+
+Current and proposed product versions are unassigned. Private package `0.0.0` values are tooling placeholders. `CHANGELOG.md` records completed changes under Unreleased; this handoff does not publish a release.

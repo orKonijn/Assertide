@@ -43,7 +43,7 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
   ).toBe(true);
   await page.screenshot({
     path: "../../docs/changelog/assets/unreleased/catalog-mobile.png",
-    fullPage: true,
+    fullPage: false,
   });
   for (let number = 1; number <= 15; number++) {
     await page

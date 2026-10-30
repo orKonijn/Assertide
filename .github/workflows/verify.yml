@@ -62,6 +62,7 @@ jobs:
         working-directory: apps/web
       - run: npm audit --audit-level=high
         working-directory: apps/web
+      - run: npm run lint
       - run: node --test packages/domain/execution.test.ts
       - run: node apps/web/node_modules/typescript/bin/tsc -p packages/domain/tsconfig.json
       - run: npm test -- --watch=false

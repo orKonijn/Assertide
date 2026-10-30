@@ -111,7 +111,7 @@ test("application routes pass automated WCAG checks in light/dark desktop and mo
       localStorage.setItem("assertide-theme", value);
       document.documentElement.dataset["theme"] = value;
     }, theme);
-    for (const width of [1280, 390]) {
+    for (const width of [1440, 768, 390]) {
       await page.setViewportSize({ width, height: 844 });
       for (const route of routes) {
         await page.goto(route);

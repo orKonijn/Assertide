@@ -1,4 +1,5 @@
 import { command, completed, npm, root } from "./commands.mjs";
+await completed(npm(["run", "lint"]));
 await completed(
   command(process.execPath, ["--test", "packages/domain/execution.test.ts"]),
 );

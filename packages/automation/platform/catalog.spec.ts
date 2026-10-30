@@ -1,17 +1,11 @@
-import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { test, expect } from "./fixtures";
+
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
+
 test("maintainer metadata controls future selection and survives reload", async ({
   page,
 }) => {
-  const credentials = z
-    .object({ password: z.string() })
-    .parse(JSON.parse(await readFile("../../.local/credentials.json", "utf8")));
   await page.goto("/projects");
-  await page.getByRole("link", { name: "Continue with SSO" }).click();
-  await page.getByLabel("Password", { exact: true }).fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   const name = `Catalog ${randomUUID().slice(0, 8)}`;
   await page.getByLabel("Project name", { exact: true }).fill(name);
   await page

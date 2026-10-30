@@ -1,18 +1,11 @@
-import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { test, expect } from "./fixtures";
+
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
 
 test("administrator creates and switches projects and manages member access", async ({
   page,
 }) => {
-  const credentials = z
-    .object({ password: z.string() })
-    .parse(JSON.parse(await readFile("../../.local/credentials.json", "utf8")));
   await page.goto("/projects");
-  await page.getByRole("link", { name: "Continue with SSO" }).click();
-  await page.getByLabel("Password").fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   const name = `Payments ${randomUUID().slice(0, 8)}`;
   await page.getByLabel("Project name", { exact: true }).fill(name);
   await page
@@ -28,7 +21,10 @@ test("administrator creates and switches projects and manages member access", as
     .fill("Payment and refund contract verification");
   await page.getByRole("button", { name: "Save project", exact: true }).click();
   await expect(
-    page.locator("section").filter({ has: page.getByRole("heading", { name, exact: true }) }).getByText("Payment and refund contract verification", { exact: true }),
+    page
+      .locator("section")
+      .filter({ has: page.getByRole("heading", { name, exact: true }) })
+      .getByText("Payment and refund contract verification", { exact: true }),
   ).toBeVisible();
   await page.getByLabel("Active project").selectOption({ label: name });
   await expect(page).toHaveURL(/\/$/);

@@ -84,7 +84,7 @@ import { LoadingState } from '../core/loading-state';
           <app-loading-state label="Discovering catalog…" />
         } @else {
           <div class="table-wrap">
-            <table>
+            <table class="mobile-result-cards catalog-cards" role="table">
               <thead>
                 <tr>
                   <th>Select</th>
@@ -96,7 +96,7 @@ import { LoadingState } from '../core/loading-state';
               <tbody>
                 @for (test of filtered(); track test.id) {
                   <tr>
-                    <td>
+                    <td data-label="Select">
                       <input
                         type="checkbox"
                         [checked]="selected().includes(test.id)"
@@ -105,7 +105,7 @@ import { LoadingState } from '../core/loading-state';
                         [attr.aria-label]="'Select ' + test.id"
                       />
                     </td>
-                    <td>
+                    <td data-label="Test case">
                       <strong>{{ test.id }}</strong
                       ><br />{{ test.title }}
                       <p class="muted">
@@ -119,7 +119,7 @@ import { LoadingState } from '../core/loading-state';
                       }
                     </td>
                     <td class="hide-mobile">{{ test.feature }}</td>
-                    <td>
+                    <td data-label="Priority">
                       <span class="badge">{{ test.priority }}</span>
                     </td>
                   </tr>

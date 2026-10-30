@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { stripVTControlCharacters } from "node:util";
 export function assertionValues(message: string) {
-  const plain = message.replace(/\u001b\[[0-9;]*m/g, "");
+  const plain = stripVTControlCharacters(message);
   const expected =
     /^\s*Expected(?: (?:string|substring|pattern))?:\s*(.+)$/m.exec(plain)?.[1];
   const actual = /^\s*Received(?: string)?:\s*(.+)$/m.exec(plain)?.[1];

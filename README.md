@@ -4,7 +4,9 @@ QA automation control plane specified in [the product requirements](deliverables
 
 ## Implementation status
 
-The application supports automatic local OIDC sign-in, project and membership administration, source-backed catalog discovery, editable suites, queued execution of 15 controlled Lab API cases and 12 browser cases, live logs, attempt evidence, API investigation, analytics, scoped CI credentials, environment policies and encrypted credential references. Allure reports include compatible history and open through an authenticated viewer on a separate hostname. Private object storage supports integrity-checked evidence, report rebuilding after local raw-data loss, and retention cleanup. Linux CI exercises PostgreSQL, Redis, MinIO and isolated OCI workers. Windows development executes trusted fixtures in local processes. Supplemental practice targets and operational acceptance remain under development; the full specification is not yet complete. The files in `deliverables` are specifications, design previews and illustrative examples.
+The runnable application includes automatic local OIDC sign-in, project/member administration, source-backed discovery, editable suites, queued execution, live logs, attempt investigation, Allure 3 history and private viewers, scoped CI credentials, encrypted environment references, and transactional historical analytics. It executes 15 controlled Lab cases and 12 store cases across three browsers; 14 supplemental public-practice cases are available through an explicitly manual command. Linux CI exercises PostgreSQL, Redis, MinIO and separate execution/report supervisors with isolated OCI jobs. Windows development runs trusted fixtures locally.
+
+See [implementation, test coverage and remaining production gates](docs/implementation-verification.md). The files in `deliverables` are the original specifications, design previews and illustrative examples. No product release or production deployment is claimed.
 
 ## Web development
 

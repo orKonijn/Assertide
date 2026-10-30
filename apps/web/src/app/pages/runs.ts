@@ -65,7 +65,7 @@ import { LoadingState } from '../core/loading-state';
         <app-loading-state label="Loading history…" />
       } @else {
         <div class="table-wrap">
-          <table [attr.aria-busy]="loading()">
+          <table class="mobile-result-cards" role="table" [attr.aria-busy]="loading()">
             <thead>
               <tr>
                 <th [attr.aria-sort]="sortState('id')">
@@ -85,17 +85,17 @@ import { LoadingState } from '../core/loading-state';
             <tbody>
               @for (run of sorted(); track run.id) {
                 <tr>
-                  <td>
+                  <td data-label="Run">
                     <a [routerLink]="['/runs', run.id]">{{ run.id.slice(0, 8) }}</a>
                     @if (run.parentRunId) {
                       <br /><span class="muted">Rerun</span>
                     }
                   </td>
-                  <td>
+                  <td data-label="Phase">
                     <span class="badge">{{ run.phase }}</span>
                   </td>
-                  <td>{{ run.selection.testIds.length }}</td>
-                  <td>{{ run.createdAt | date: 'short' }}</td>
+                  <td data-label="Selected">{{ run.selection.testIds.length }}</td>
+                  <td data-label="Created">{{ run.createdAt | date: 'short' }}</td>
                 </tr>
               } @empty {
                 <tr>

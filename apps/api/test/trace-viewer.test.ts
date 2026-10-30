@@ -54,6 +54,8 @@ test(
     const browser = await chromium.launch();
     const id = randomUUID();
     const output = path.resolve(runRoot, id);
+    if (path.dirname(output) !== path.resolve(runRoot))
+      throw new Error("Unsafe trace fixture cleanup");
     await mkdir(path.join(output, "evidence"), { recursive: true });
     try {
       const recording = await browser.newContext();
@@ -157,8 +159,6 @@ test(
       ]);
       if (objectStore) await objectStore.deleteVersions(`runs/${id}/`);
       await db.close();
-      if (path.dirname(output) !== path.resolve(runRoot))
-        throw new Error("Unsafe trace fixture cleanup");
       await rm(output, { recursive: true, force: true });
     }
   },

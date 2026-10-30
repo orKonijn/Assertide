@@ -18,6 +18,11 @@ test(
   { skip: !objectStore },
   async () => {
     const root = await mkdtemp(path.join(tmpdir(), "assertide-raw-"));
+    if (
+      path.dirname(root) !== path.resolve(tmpdir()) ||
+      !path.basename(root).startsWith("assertide-raw-")
+    )
+      throw new Error("Unsafe cleanup");
     const id = randomUUID();
     try {
       const source = path.join(root, "source");
@@ -78,11 +83,6 @@ test(
       );
     } finally {
       await objectStore!.deleteVersions(`runs/${id}/`);
-      if (
-        path.dirname(root) !== path.resolve(tmpdir()) ||
-        !path.basename(root).startsWith("assertide-raw-")
-      )
-        throw new Error("Unsafe cleanup");
       await rm(root, { recursive: true, force: true });
     }
   },

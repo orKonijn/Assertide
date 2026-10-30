@@ -1,18 +1,11 @@
-import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { test, expect } from "./fixtures";
+
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
 
 test("saved suite metadata and membership survive editing and reload", async ({
   page,
 }) => {
-  const credentials = z
-    .object({ password: z.string() })
-    .parse(JSON.parse(await readFile("../../.local/credentials.json", "utf8")));
   await page.goto("/");
-  await page.getByRole("link", { name: "Continue with SSO" }).click();
-  await page.getByLabel("Password").fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByRole("link", { name: "Test suites", exact: true }).click();
   const name = `Regression ${randomUUID().slice(0, 8)}`;
   await page.getByLabel("Name", { exact: true }).fill(name);
@@ -51,11 +44,9 @@ test("saved suite metadata and membership survive editing and reload", async ({
   await expect(page.locator("app-notifications details")).toContainText(
     "Changes saved.",
   );
-  await page
-    .locator("app-notifications")
-    .screenshot({
-      path: "../../docs/changelog/assets/unreleased/notifications.png",
-    });
+  await page.locator("app-notifications").screenshot({
+    path: "../../docs/changelog/assets/unreleased/notifications.png",
+  });
   await expect(page.locator(".toast")).toHaveCount(0, { timeout: 7000 });
   await expect(page.locator("app-notifications details")).toContainText(
     "Changes saved.",

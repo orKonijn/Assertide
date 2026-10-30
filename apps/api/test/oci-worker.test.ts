@@ -21,6 +21,11 @@ test(
     await prepareSource();
     const snapshot = await verifySource(catalogRevision);
     const output = await mkdtemp(path.join(tmpdir(), "assertide-oci-"));
+    if (
+      path.dirname(output) !== path.resolve(tmpdir()) ||
+      !path.basename(output).startsWith("assertide-oci-")
+    )
+      throw new Error("Unsafe cleanup path");
     const id = randomUUID();
     const invoke = (args: string[], input?: unknown) =>
       new Promise<{ code: number; log: string }>((resolve, reject) => {
@@ -106,11 +111,6 @@ test(
       );
     } finally {
       await stopContainer(id);
-      if (
-        path.dirname(output) !== path.resolve(tmpdir()) ||
-        !path.basename(output).startsWith("assertide-oci-")
-      )
-        throw new Error("Unsafe cleanup path");
       await rm(output, { recursive: true, force: true });
     }
   },

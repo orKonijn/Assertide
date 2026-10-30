@@ -1,17 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { readFile } from "node:fs/promises";
-import { z } from "zod";
 
 test("analytics filters persist in the URL and charts provide table alternatives", async ({
   page,
 }) => {
-  const credentials = z
-    .object({ password: z.string() })
-    .parse(JSON.parse(await readFile("../../.local/credentials.json", "utf8")));
   await page.goto("/");
-  await page.getByRole("link", { name: "Continue with SSO" }).click();
-  await page.getByLabel("Password").fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Quality at a glance" }),
   ).toBeVisible();

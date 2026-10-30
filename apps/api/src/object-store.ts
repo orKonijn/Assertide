@@ -101,7 +101,7 @@ export class ObjectStore {
   async deleteVersions(prefix: string, exact = false) {
     safeKey(prefix.endsWith("/") ? `${prefix}placeholder` : prefix);
     let deleted = 0;
-    do {
+    for (;;) {
       const page = await this.client.send(
         new ListObjectVersionsCommand({ Bucket: this.bucket, Prefix: prefix }),
       );
@@ -120,8 +120,8 @@ export class ObjectStore {
           throw new Error("Evidence version deletion incomplete");
         deleted += objects.length;
       }
-    } while (true);
-    do {
+    }
+    for (;;) {
       const page = await this.client.send(
         new ListMultipartUploadsCommand({
           Bucket: this.bucket,
@@ -141,7 +141,7 @@ export class ObjectStore {
             UploadId: upload.UploadId,
           }),
         );
-    } while (true);
+    }
     return deleted;
   }
 }

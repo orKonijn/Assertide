@@ -374,6 +374,62 @@ pre {
   .hide-mobile {
     display: none;
   }
+  .mobile-result-cards,
+  .mobile-result-cards tbody,
+  .mobile-result-cards thead {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+  .mobile-result-cards thead tr {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .mobile-result-cards th {
+    padding: 4px;
+  }
+  .mobile-result-cards tbody tr {
+    display: grid;
+    margin-block: 12px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .mobile-result-cards td {
+    display: block;
+    border: 0;
+    overflow-wrap: anywhere;
+  }
+  .mobile-result-cards td.hide-mobile {
+    display: none;
+  }
+  .mobile-result-cards td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+  }
+  .catalog-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    overflow: hidden;
+  }
+  .catalog-cards tbody tr {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+  .catalog-cards td:first-child {
+    grid-row: 1 / 3;
+    padding: 8px 0;
+  }
+  .catalog-cards td:last-child {
+    grid-column: 2;
+  }
+  .catalog-cards td[data-label]::before {
+    display: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   * {

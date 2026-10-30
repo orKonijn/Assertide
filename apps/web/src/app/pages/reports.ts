@@ -17,7 +17,7 @@ import { Api, Run, errorMessage } from '../core/api';
     }
     <section class="card">
       <div class="table-wrap">
-        <table>
+        <table class="mobile-result-cards" role="table">
           <thead>
             <tr>
               <th>Execution</th>
@@ -28,16 +28,16 @@ import { Api, Run, errorMessage } from '../core/api';
           <tbody>
             @for (run of runs(); track run.id) {
               <tr>
-                <td>
+                <td data-label="Execution">
                   <a [routerLink]="['/runs', run.id]">{{ run.id.slice(0, 8) }}</a>
                 </td>
-                <td>
+                <td data-label="Report">
                   {{ run.reportPhase }}
                   @if (run.reportExpiresAt) {
                     <p class="muted">Expires {{ run.reportExpiresAt | date: 'short' }}</p>
                   }
                 </td>
-                <td>
+                <td data-label="Action">
                   @if (run.reportPhase === 'ready') {
                     <a [href]="'/v1/runs/' + run.id + '/report'" target="_blank" rel="noopener"
                       >Open Allure</a

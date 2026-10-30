@@ -131,6 +131,7 @@ export async function archiveReport(
           } catch (error) {
             throw new Error(
               `Report asset ${item.name}: ${error instanceof Error ? error.name : "upload failed"}`,
+              { cause: error },
             );
           }
         }),

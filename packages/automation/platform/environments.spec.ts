@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -10,9 +10,6 @@ test("saved environment resolves a write-only credential during execution", asyn
     .object({ password: z.string() })
     .parse(JSON.parse(await readFile("../../.local/credentials.json", "utf8")));
   await page.goto("/settings");
-  await page.getByRole("link", { name: "Continue with SSO" }).click();
-  await page.getByLabel("Password", { exact: true }).fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   const suffix = randomUUID().slice(0, 8);
   const name = `Lab credential ${suffix}`;
   await page.getByLabel("Credential name", { exact: true }).fill(name);
@@ -52,11 +49,9 @@ test("saved environment resolves a write-only credential during execution", asyn
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await page
-    .locator("app-environments")
-    .screenshot({
-      path: "../../docs/changelog/assets/unreleased/environments-mobile.png",
-    });
+  await page.locator("app-environments").screenshot({
+    path: "../../docs/changelog/assets/unreleased/environments-mobile.png",
+  });
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/explorer");
   await page.getByLabel("Select LAB-001", { exact: true }).check();

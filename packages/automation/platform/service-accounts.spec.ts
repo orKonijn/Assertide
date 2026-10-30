@@ -1,20 +1,13 @@
-import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { test, expect } from "./fixtures";
+
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
 
 // Never capture a failure screenshot while a one-time credential may be displayed.
 test.use({ screenshot: "off", trace: "off" });
 test("administrator creates, rotates and revokes a CI credential", async ({
   page,
 }) => {
-  const credentials = z
-    .object({ password: z.string() })
-    .parse(JSON.parse(await readFile("../../.local/credentials.json", "utf8")));
   await page.goto("/settings");
-  await page.getByRole("link", { name: "Continue with SSO" }).click();
-  await page.getByLabel("Password").fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/settings$/);
   const name = `Pipeline ${randomUUID().slice(0, 8)}`;
   await page.getByLabel("Account name", { exact: true }).fill(name);

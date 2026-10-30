@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { readFile, rm, readdir } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
@@ -7,13 +7,7 @@ test("compatible reports retain history and authenticated links without duplicat
   page,
 }) => {
   test.setTimeout(60000);
-  const credentials = z
-    .object({ password: z.string() })
-    .parse(JSON.parse(await readFile("../../.local/credentials.json", "utf8")));
   await page.goto("/explorer");
-  await page.getByRole("link", { name: "Continue with SSO" }).click();
-  await page.getByLabel("Password", { exact: true }).fill(credentials.password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/explorer$/);
   const project = "00000000-0000-4000-8000-000000000010";
   const catalog = await (
@@ -59,7 +53,10 @@ test("compatible reports retain history and authenticated links without duplicat
     download.headers()["x-checksum-sha256"],
   );
   expect(download.headers()["x-report-generation"]).toBe(first.reportDirectory);
-  const anonymous = await page.context().browser()!.newContext();
+  const anonymous = await page
+    .context()
+    .browser()!
+    .newContext({ storageState: { cookies: [], origins: [] } });
   expect(
     (
       await anonymous.request.get(
