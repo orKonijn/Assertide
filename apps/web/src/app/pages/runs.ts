@@ -19,7 +19,7 @@ import { LoadingState } from '../core/loading-state';
       <p class="error" role="alert">{{ error() }}</p>
     }
     <section class="card">
-      <form class="toolbar" (ngSubmit)="apply()">
+      <form class="toolbar execution-filters" (ngSubmit)="apply()">
         <label
           >Phase<select name="phase" aria-label="Phase" [(ngModel)]="phase">
             @for (value of phases; track value) {
@@ -58,8 +58,10 @@ import { LoadingState } from '../core/loading-state';
             }
           </select></label
         >
-        <button type="submit" [disabled]="loading()">Apply filters</button
-        ><button type="button" (click)="load()">Refresh</button>
+        <div class="filter-actions">
+          <button type="submit" [disabled]="loading()">Apply filters</button>
+          <button type="button" [disabled]="loading()" (click)="load()">Refresh</button>
+        </div>
       </form>
       @if (loading() && !hasLoaded()) {
         <app-loading-state label="Loading history…" />

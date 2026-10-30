@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Compacted execution summaries with an expandable frozen-test selection, aligned history filters in a responsive grid, and grouped filter actions. Content links now look like clickable buttons while preserving navigation and evidence downloads. Local verification, 12 browser tests including 64 accessibility states, and light/dark layout checks at 320/390/768/1280px pass. See [execution layout and link comparisons](docs/ui-refresh.md#execution-summaries-filters-and-button-links).
+
 - Spaced report headings across a shared toolbar and moved Refresh to a labeled icon beside Action. Notification history now opens from a bottom-right bell; a red unread count clears when opened, and new actions restore it. Visual toast popups are replaced by the badge, while screen-reader announcements remain. Six browser tests, the 64-state accessibility matrix, open-panel accessibility checks, and local verification pass. See [report toolbar and notification evidence](docs/ui-refresh.md#report-toolbar-and-notification-bell).
 
 - Compacted test and report cards by grouping metadata, priority, and actions; report links now match workspace styling. Moved the mobile theme control beside Menu as a labeled sun/moon icon, with an icon control retained on desktop. Six browser tests including 64 accessibility states and light/dark layout checks at 320/390/768/1280px pass. See [card and header comparisons](docs/ui-refresh.md#compact-test-and-report-cards).

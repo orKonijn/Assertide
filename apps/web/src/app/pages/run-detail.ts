@@ -71,7 +71,7 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
       </p>
     }
     @if (run(); as current) {
-      <div class="grid">
+      <div class="grid execution-summary">
         <section class="card">
           <h2>Execution phase</h2>
           <p class="metric" role="status">{{ current.phase }}</p>
@@ -88,14 +88,23 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
         <section class="card">
           <h2>Frozen selection</h2>
           <p class="metric">{{ current.selection.testIds.length }}</p>
-          <p>{{ current.selection.testIds.join(', ') }}</p>
+          <details class="frozen-cases">
+            <summary>View selected tests</summary>
+            <div class="frozen-case-list" aria-label="Selected test identifiers">
+              @for (caseId of current.selection.testIds; track caseId) {
+                <span class="badge">{{ caseId }}</span>
+              }
+            </div>
+          </details>
           @if (current.source) {
             <p class="muted">Source revision {{ current.source.revision.slice(0, 12) }}</p>
           }
         </section>
         <section class="card">
           <h2>Allure report</h2>
-          <p>{{ current.reportPhase }}</p>
+          <p>
+            <span class="badge">{{ current.reportPhase }}</span>
+          </p>
           @if (current.reportExpiresAt) {
             <p class="muted">
               Report expires {{ current.reportExpiresAt | date: 'medium' }}. Traces and videos

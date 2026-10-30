@@ -215,3 +215,29 @@ Actual 390px captures after saving a sample project:
 ![Opened light notification panel](changelog/assets/unreleased/notification-panel-light.png)
 
 Verification: `npm run verify:quick` passed, including eight web unit tests; eight infrastructure checks are skipped on Windows. Six browser tests passed, covering the 64-state light/dark accessibility matrix, notification unread/history behavior, outside/Escape dismissal, and mobile navigation. Open notification panels also passed automated accessibility scans in both themes. Report refresh and overflow checks passed at 320/390/768/1280px. Page Object architecture and reporting/redaction checks passed. No product version is assigned; these are Unreleased development changes.
+
+
+## Execution summaries, filters, and button links
+
+Execution summaries use compact status text and independent card heights. Frozen selections keep the count visible and put the complete test identifiers in a keyboard-accessible disclosure with bounded scrolling. Report actions wrap as buttons without changing their destinations or download behavior.
+
+Actual running dark interface at 1280px, before and after:
+
+![Tall execution summary with expanded test identifiers](changelog/assets/unreleased/run-summary-before.png)
+![Compact execution summary with an expandable selection and report buttons](changelog/assets/unreleased/run-summary-after.png)
+
+Filters now use a responsive grid with equal-height fields and a separate action row. Suite names stay on one line in the closed selector; the option menu retains the full text.
+
+![Execution filters before alignment](changelog/assets/unreleased/run-filters-before.png)
+![Aligned execution filters and grouped actions](changelog/assets/unreleased/run-filters-after.png)
+
+Content links throughout the application now use bordered button surfaces, hover feedback, and visible keyboard focus. They remain semantic links so opening new tabs, copying destinations, and downloading evidence work normally. Primary actions, navigation items, and logo links keep their established presentation.
+
+Actual 390px mobile views:
+
+![Single-column light execution filters](changelog/assets/unreleased/run-filters-mobile-light.png)
+![Compact dark execution summary and report buttons](changelog/assets/unreleased/run-summary-mobile-dark.png)
+
+Verification: local lint, type checks, API tests, eight web unit tests, and production build pass; eight infrastructure tests remain skipped on Windows. Layout and link-style checks on overview, history, reports, explorer, and run details pass at 320/390/768/1280px in both themes, including opening the frozen selection. These are Unreleased development changes with no assigned product version.
+
+Twelve browser tests passed, including the 64-state accessibility matrix, filter/sort behavior, cancellation, execution, mobile evidence viewing, reruns, authenticated report downloads, and report-history/investigation workflows.

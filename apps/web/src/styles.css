@@ -1710,6 +1710,129 @@ th[aria-sort='descending'] .sort-indicator::before {
   }
 }
 
+/* Navigation retains link semantics with consistent button affordances. */
+.content a:not(.button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+.content a:not(.button):hover {
+  background: var(--soft);
+  border-color: var(--brand);
+  color: var(--text);
+  text-decoration: none;
+}
+.content a:not(.button):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+.execution-summary {
+  align-items: start;
+}
+.execution-summary > .card {
+  min-width: 0;
+}
+.execution-summary h2 {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.execution-summary .metric {
+  font-size: 28px;
+  line-height: 1.25;
+  margin: 0 0 16px;
+  overflow-wrap: anywhere;
+}
+.execution-summary p {
+  margin: 12px 0;
+  font-size: 13px;
+}
+.execution-summary a,
+.execution-summary button {
+  margin: 4px 4px 4px 0;
+}
+.frozen-cases summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  background: var(--soft);
+}
+.frozen-case-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 180px;
+  overflow: auto;
+  margin-top: 12px;
+}
+.frozen-cases summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+.toolbar.execution-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 16px;
+}
+.execution-filters > label {
+  min-width: 0;
+  margin: 0;
+  width: auto;
+}
+.execution-filters input,
+.execution-filters select {
+  min-width: 0;
+  width: 100%;
+  height: 44px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.execution-filters .filter-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 1100px) {
+  .toolbar.execution-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .toolbar.execution-filters {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .execution-filters .filter-actions > button {
+    flex: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
