@@ -43,16 +43,22 @@ test.describe('Disabled selection policies', () => {
   });
   test('API launch excludes disabled cases', async ({ page, api, isolatedProject }) => {
     await api.setEnabled(isolatedProject.id, [D.lifecycle], false);
+    const enabledApiIds = (await api.catalog(isolatedProject.id)).items
+      .filter((item) => item.kind === 'api' && item.enabled)
+      .map((item) => item.id);
     await workspace.goto();
-    await expect(workspace.executableCount(14)).toBeVisible();
+    await expect(workspace.executableCount(enabledApiIds.length)).toBeVisible();
     await workspace.runSuite();
     await expect(page).toHaveURL(/\/runs\/[^/]+$/);
     const run = await api.waitForCompletion(execution.id());
-    expect(run.selection.testIds).toHaveLength(14);
+    expect([...run.selection.testIds].sort()).toEqual([...enabledApiIds].sort());
     expect(run.selection.testIds).not.toContain(D.lifecycle);
   });
   test('empty executable selection disables launch', async ({ api, isolatedProject }) => {
-    await api.setEnabled(isolatedProject.id, D.apiIds, false);
+    const apiIds = (await api.catalog(isolatedProject.id)).items
+      .filter((item) => item.kind === 'api')
+      .map((item) => item.id);
+    await api.setEnabled(isolatedProject.id, apiIds, false);
     await workspace.goto();
     await expect(workspace.executableCount(0)).toBeVisible();
     await expect(workspace.runButton).toBeDisabled();
