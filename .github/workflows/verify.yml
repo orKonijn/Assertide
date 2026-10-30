@@ -162,9 +162,19 @@ jobs:
       - name: Verify Kubernetes Jobs and Vault workload identity
         if: ${{ !cancelled() }}
         run: bash scripts/verify-cluster.sh
+        env:
+          DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+          REDIS_URL: redis://127.0.0.1:6379
+          S3_BUCKET: assertide-test
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: assertide_test
+          AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
       - name: Build and scan service, web and worker images
         if: ${{ !cancelled() }}
         run: bash scripts/verify-images.sh
+        env:
+          DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
       - uses: actions/upload-artifact@v4
         if: always()
         with:

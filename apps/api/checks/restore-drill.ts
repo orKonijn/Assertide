@@ -152,6 +152,21 @@ try {
     /integrity/,
   );
   await writeFile(backup, original);
+  delete process.env["SECRET_ENCRYPTION_KEY"];
+  await assert.rejects(
+    backupDatabase(url(sourceName), `${backup}.missing-key`),
+    /encryption key separately/,
+  );
+  // Ciphertext format controls legacy-key requirements; Transit decryption is tested against real Vault separately.
+  await source.query(
+    "UPDATE secret_versions SET ciphertext='vault:v1:synthetic-backup-policy-fixture'",
+  );
+  const transitBackup = await backupDatabase(
+    url(sourceName),
+    `${backup}.vault`,
+  );
+  assert.equal(transitBackup.encryptionKeyFingerprint, null);
+  process.env["SECRET_ENCRYPTION_KEY"] = key;
   const result = {
     recordedAt: new Date().toISOString(),
     backupMs: Math.round(backupMs),
@@ -166,6 +181,8 @@ try {
       "wrong-key refusal",
       "nonempty-target refusal",
       "corrupt-backup refusal",
+      "legacy backup refuses missing key",
+      "Vault ciphertext does not require a legacy AES key",
     ],
     scope:
       "Synthetic PostgreSQL database drill; object versions are verified separately; no production RPO claimed",

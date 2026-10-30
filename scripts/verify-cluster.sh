@@ -71,3 +71,7 @@ export NODE_ENV=test TEST_VAULT=true VAULT_ADDR=http://127.0.0.1:18200 VAULT_JWT
 (cd apps/api && npx tsx --test test/production-adapters.test.ts)
 (cd apps/api && SECRET_BACKEND=vault npx tsx --test test/environments.test.ts)
 kill "$FORWARD_PID"
+
+# Exercise the connected application against the Kubernetes adapter as well as OCI.
+export WORKER_RUNTIME=kubernetes SEPARATE_WORKERS=true
+(cd packages/automation && KUBECONFIG="$RUNNER_TEMP/scoped-kubeconfig" npx playwright test --config platform.config.ts)
