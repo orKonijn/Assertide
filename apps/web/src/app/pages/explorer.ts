@@ -132,6 +132,12 @@ import { Api, TestCase, Environment, errorMessage } from '../core/api';
         <h2>Configure execution</h2>
         <p>{{ selected().length }} tests selected</p>
         @if (hasUi()) {
+          @if (canHeaded()) {
+            <label
+              ><input type="checkbox" [(ngModel)]="headed" />Headed browser in a virtual
+              display</label
+            >
+          }
           <label
             >Video<select [(ngModel)]="video">
               <option value="off">Off</option>
@@ -238,6 +244,15 @@ export class Explorer {
   browser = 'chromium';
   environmentId = 'local-lab';
   readonly environments = signal<Environment[]>([]);
+  readonly headedAvailable = signal(false);
+  headed = false;
+  canHeaded() {
+    return (
+      this.headedAvailable() &&
+      !!this.environments().find((environment) => environment.id === this.environmentId)
+        ?.allowHeaded
+    );
+  }
   video: 'off' | 'retain-on-failure' = 'off';
   readonly hasUi = computed(() => this.selected().some((id) => id.startsWith('UI-')));
   private key = crypto.randomUUID();
@@ -266,13 +281,12 @@ export class Explorer {
       this.selected.update((ids) =>
         ids.filter((id) => catalog.items.some((item) => item.id === id && item.enabled)),
       );
-      this.environments.set(
-        (
-          await this.api.get<{ items: Environment[] }>(
-            `/projects/${this.api.projectId()}/environments`,
-          )
-        ).items,
-      );
+      const environments = await this.api.get<{
+        items: Environment[];
+        capabilities?: { headed: boolean };
+      }>(`/projects/${this.api.projectId()}/environments`);
+      this.environments.set(environments.items);
+      this.headedAvailable.set(environments.capabilities?.headed ?? false);
       this.revision.set(catalog.revision);
       this.error.set(catalog.discoveryError ?? '');
     } catch (error) {
@@ -320,6 +334,7 @@ export class Explorer {
         this.revision(),
         this.video,
         this.environmentId,
+        this.hasUi() && this.canHeaded() && this.headed,
       );
       await this.router.navigate(['/runs', run.id]);
     } catch (error) {

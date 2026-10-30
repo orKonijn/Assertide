@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added environment-controlled headed execution for isolated Linux workers, using a private virtual display per run. Policy tests verify local-runtime and API-only refusal and authorized OCI launch; the environment browser workflow passes locally. Linux execution is covered by the OCI integration gate. See [worker setup](docs/isolated-workers.md).
+
 - Added automated accessibility checks across login, primary routes, configuration, live execution and result investigation in light/dark desktop/mobile states. Fixed undersized result targets, audit-table keyboard scrolling and skip-link route changes; mobile navigation now supports focus containment and Escape. All 44 local view/state scans and keyboard checks pass; [coverage and limitations](docs/accessibility.md).
 - Results now retain nested attempt steps, versioned failure categories, supported expected/actual assertion values, comparable prior-result links and authored investigation notes. Notes are scoped, audited and separate from immutable outcomes. Database and browser checks pass, including note persistence and desktop/mobile investigation views.
 - Added a guarded PostgreSQL backup/restore command with checksum and encryption-key verification, empty-target protection and a successful CI recovery drill. See [recovery setup and measured scope](docs/database-recovery.md).

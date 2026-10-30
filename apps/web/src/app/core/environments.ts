@@ -62,7 +62,11 @@ interface Secret {
           <label
             >Lab password reference<select name="secret" [(ngModel)]="reference">
               <option value="">Generated local credential</option>
-              @if (oldReference()) { <option [value]="draft.passwordRef!.id + ':' + draft.passwordRef!.version">Saved credential · version {{ draft.passwordRef!.version }}</option> }
+              @if (oldReference()) {
+                <option [value]="draft.passwordRef!.id + ':' + draft.passwordRef!.version">
+                  Saved credential · version {{ draft.passwordRef!.version }}
+                </option>
+              }
               @for (secret of secrets(); track secret.id) {
                 <option [value]="secret.id + ':' + secret.version">
                   {{ secret.name }} · version {{ secret.version }}
@@ -90,6 +94,10 @@ interface Secret {
         <label
           ><input name="video" type="checkbox" [(ngModel)]="draft.allowVideo" />Allow failure
           video</label
+        >
+        <label
+          ><input name="headed" type="checkbox" [(ngModel)]="draft.allowHeaded" />Allow headed
+          execution in isolated virtual displays</label
         >
         <button [disabled]="busy()">Save environment</button>
       </form>
@@ -139,7 +147,16 @@ export class Environments {
   readonly notice = signal('');
   draft: Environment = this.empty();
   reference = '';
-  oldReference() { return this.draft.passwordRef && !this.secrets().some((secret) => secret.id === this.draft.passwordRef?.id && secret.version === this.draft.passwordRef.version); }
+  oldReference() {
+    return (
+      this.draft.passwordRef &&
+      !this.secrets().some(
+        (secret) =>
+          secret.id === this.draft.passwordRef?.id &&
+          secret.version === this.draft.passwordRef.version,
+      )
+    );
+  }
   rotation = '';
   secretName = '';
   secretValue = '';
@@ -158,6 +175,7 @@ export class Environments {
       maxRetries: 0,
       browsers: ['chromium'],
       allowVideo: false,
+      allowHeaded: false,
     };
   }
   fresh() {

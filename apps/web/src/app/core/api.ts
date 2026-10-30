@@ -25,6 +25,7 @@ export interface Environment {
   maxRetries: number;
   browsers: string[];
   allowVideo: boolean;
+  allowHeaded: boolean;
   passwordRef?: { id: string; version: number };
 }
 export interface TestCase {
@@ -195,6 +196,7 @@ export class Api {
     revision?: string,
     video: 'off' | 'retain-on-failure' = 'off',
     environmentId = 'local-lab',
+    headed = false,
   ) {
     const catalogRevision =
       revision ??
@@ -208,7 +210,7 @@ export class Api {
         browserProjects: testIds.some((id) => id.startsWith('UI-')) ? [browser] : [],
         workers,
         retries,
-        headed: false,
+        headed,
         video,
       },
       key,

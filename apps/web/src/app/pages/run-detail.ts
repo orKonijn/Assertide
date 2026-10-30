@@ -99,7 +99,8 @@ import { ResultSteps, ResultNotes } from '../core/result-investigation';
           }
           @if (current.workerImage) {
             <p class="muted">
-              Isolated worker image: <code>{{ current.workerImage }}</code>
+              Isolated worker image:
+              <code style="overflow-wrap: anywhere">{{ current.workerImage }}</code>
             </p>
           }
         </section>

@@ -132,6 +132,15 @@ test("environment policies freeze versioned encrypted credentials and reject for
       randomUUID(),
     );
     assert.equal(JSON.stringify(run).includes(secretValue), false);
+    await assert.rejects(
+      platform.launch(
+        principal,
+        localProjectId,
+        { ...input, headed: true },
+        randomUUID(),
+      ),
+      /policy/,
+    );
     assert.equal(
       (
         await request(
@@ -160,6 +169,42 @@ test("environment policies freeze versioned encrypted credentials and reject for
       passwordRef: { id: string; version: number };
     };
     assert.equal(snapshot.passwordRef.version, 1);
+    const runtime = process.env["WORKER_RUNTIME"];
+    try {
+      assert.equal(
+        (
+          await request(
+            "environments",
+            { ...env, id: "headed", allowHeaded: true },
+            0,
+          )
+        ).status,
+        200,
+      );
+      const headedInput = {
+        ...input,
+        environmentId: "headed",
+        headed: true,
+        selection: { testIds: ["UI-001"] },
+        browserProjects: ["chromium"],
+      };
+      process.env["WORKER_RUNTIME"] = "local";
+      await assert.rejects(
+        platform.launch(principal, localProjectId, headedInput, randomUUID()),
+        /policy/,
+      );
+      process.env["WORKER_RUNTIME"] = "oci";
+      const headedRun = await platform.launch(
+        principal,
+        localProjectId,
+        headedInput,
+        randomUUID(),
+      );
+      assert.equal((headedRun["config"] as { headed: boolean }).headed, true);
+    } finally {
+      if (runtime === undefined) delete process.env["WORKER_RUNTIME"];
+      else process.env["WORKER_RUNTIME"] = runtime;
+    }
     assert.equal(
       (await request("environments", { ...env, enabled: false }, 1)).status,
       200,

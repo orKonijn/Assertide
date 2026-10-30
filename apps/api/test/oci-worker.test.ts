@@ -65,6 +65,22 @@ test(
       ) as { stats: { expected: number; unexpected: number } };
       assert.equal(results.stats.expected, 3);
       assert.equal(results.stats.unexpected, 0);
+      const headed = await invoke(command.args, {
+        testIds: ["UI-001"],
+        workers: 1,
+        retries: 0,
+        projects: ["chromium"],
+        headed: true,
+        video: "off",
+        password: randomBytes(24).toString("hex"),
+        signingKey: randomBytes(32).toString("hex"),
+      });
+      assert.equal(headed.code, 0, headed.log);
+      const headedResults = JSON.parse(
+        await readFile(path.join(output, "results.json"), "utf8"),
+      );
+      assert.equal(headedResults.stats.expected, 1);
+      assert.equal(headedResults.stats.unexpected, 0);
       const inspect = await invoke(["inspect", `assertide-worker-${id}`]);
       assert.notEqual(inspect.code, 0, "container must be removed");
       const sleeper = [...command.args];

@@ -56,6 +56,7 @@ const root = fileURLToPath(new URL("../../../", import.meta.url));
 export const runRoot = path.join(root, ".local", "runs");
 const automationRoot = path.join(root, "packages", "automation");
 const configuration = z.object({
+  headed: z.boolean().default(false),
   environmentId: z.string().default("local-lab"),
   catalogRevision: z.string(),
   workers: z.number().int().min(1).max(4),
@@ -503,6 +504,7 @@ export class LocalRunner {
                   ...run.config.browserProjects,
                 ],
                 video: run.config.video,
+                headed: run.config.headed,
                 password:
                   password ||
                   process.env["LAB_PASSWORD"] ||

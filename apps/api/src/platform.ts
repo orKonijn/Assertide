@@ -93,7 +93,7 @@ const runInput = z
     browserProjects: z.array(z.enum(["chromium", "firefox", "webkit"])).max(3),
     workers: z.number().int().min(1).max(4),
     retries: z.number().int().min(0).max(2),
-    headed: z.literal(false),
+    headed: z.boolean().default(false),
     video: z.enum(["off", "retain-on-failure"]),
     commitSha: z
       .string()
@@ -544,7 +544,11 @@ export class PlatformService {
       config.browserProjects.some(
         (browser) => !environment?.browsers.includes(browser),
       ) ||
-      (config.video !== "off" && !environment.allowVideo)
+      (config.video !== "off" && !environment.allowVideo) ||
+      (config.headed &&
+        (!environment.allowHeaded ||
+          process.env["WORKER_RUNTIME"] !== "oci" ||
+          !config.selection.testIds.some((id) => id.startsWith("UI-"))))
     )
       throw new ApiError(
         422,
@@ -831,6 +835,7 @@ export function mountPlatform(
           principal.organizationId,
           String(req.params["project"]),
         ),
+        capabilities: { headed: process.env["WORKER_RUNTIME"] === "oci" },
       });
     }),
   );

@@ -20,6 +20,7 @@ const spec = z
       .min(1)
       .max(4),
     video: z.enum(["off", "retain-on-failure"]),
+    headed: z.boolean().default(false),
     password: z.string().min(12),
     signingKey: z.string().min(32),
   })
@@ -56,24 +57,36 @@ const args = [
   "--retries",
   String(spec.retries),
   ...spec.projects.flatMap((project) => ["--project", project]),
+  ...(spec.headed ? ["--headed"] : []),
 ];
-const child = spawn(process.execPath, args, {
-  cwd: work,
-  stdio: "inherit",
-  env: {
-    PATH: process.env.PATH,
-    HOME: "/tmp",
-    NODE_ENV: "development",
-    PLAYWRIGHT_BROWSERS_PATH: "/ms-playwright",
-    RUN_OUTPUT: "/output",
-    RUN_VIDEO: spec.video,
-    RUN_API_URL: "http://127.0.0.1:4010/lab/v1/",
-    RUN_BROWSER_URL: "http://127.0.0.1:4013",
-    LAB_PASSWORD: spec.password,
-    LAB_SIGNING_KEY: spec.signingKey,
-    CI: "true",
+const child = spawn(
+  spec.headed ? "xvfb-run" : process.execPath,
+  spec.headed
+    ? [
+        "--auto-servernum",
+        "--server-args=-screen 0 1280x720x24",
+        process.execPath,
+        ...args,
+      ]
+    : args,
+  {
+    cwd: work,
+    stdio: "inherit",
+    env: {
+      PATH: process.env.PATH,
+      HOME: "/tmp",
+      NODE_ENV: "development",
+      PLAYWRIGHT_BROWSERS_PATH: "/ms-playwright",
+      RUN_OUTPUT: "/output",
+      RUN_VIDEO: spec.video,
+      RUN_API_URL: "http://127.0.0.1:4010/lab/v1/",
+      RUN_BROWSER_URL: "http://127.0.0.1:4013",
+      LAB_PASSWORD: spec.password,
+      LAB_SIGNING_KEY: spec.signingKey,
+      CI: "true",
+    },
   },
-});
+);
 for (const signal of ["SIGTERM", "SIGINT"])
   process.on(signal, () => child.kill(signal));
 const code = await new Promise((resolve, reject) => {

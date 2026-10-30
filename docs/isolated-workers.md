@@ -1,5 +1,7 @@
 # Isolated workers
 
+Environments can opt into headed browser execution in Settings. Explorer exposes the headed option only when that policy permits it and the API uses OCI workers. Each headed run starts its own Xvfb display inside the same network-isolated container; API-only and Windows local-process launches reject headed mode. Existing environments default to headless. The OCI integration check exercises a real headed Chromium case; inspect the latest PR checks for Linux verification.
+
 Linux workers can execute the approved fixture snapshot in a Docker container. First run `node scripts/setup-sandbox.mjs`, then build `docker build -f workers/Dockerfile -t assertide-worker:local .`. Set `WORKER_RUNTIME=oci` and set `OCI_WORKER_IMAGE` to the immutable ID returned by `docker image inspect --format '{{.Id}}' assertide-worker:local`. Use a non-root supervisor account with access to Docker. Treat that account and the Docker daemon as privileged infrastructure.
 
 Runs freeze the image identifier; a worker refuses a run assigned to a different image. The image contains the installed dependency lock and pinned local store fixture. Entry validates that the approved source lock matches the image before executing it. Changing dependencies requires rebuilding the image. Source is mounted read-only and copied into temporary storage; only the run output directory is writable on the host.

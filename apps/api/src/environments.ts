@@ -24,6 +24,7 @@ export const environmentSchema = z
       .min(1)
       .max(3),
     allowVideo: z.boolean(),
+    allowHeaded: z.boolean().default(false),
     passwordRef: z
       .object({ id: z.uuid(), version: z.number().int().positive() })
       .strict()
@@ -137,12 +138,10 @@ export function mountEnvironments(
         }
         await work(req, res, principal, project);
       } catch {
-        res
-          .status(500)
-          .json({
-            title: "Environment operation failed",
-            correlationId: randomUUID(),
-          });
+        res.status(500).json({
+          title: "Environment operation failed",
+          correlationId: randomUUID(),
+        });
       }
     };
   app.post(
@@ -150,12 +149,10 @@ export function mountEnvironments(
     handle(async (req, res, principal, project) => {
       const input = environmentSchema.safeParse(req.body);
       if (!input.success) {
-        res
-          .status(422)
-          .json({
-            title:
-              "Only the approved local sandbox destinations and worker limits are permitted",
-          });
+        res.status(422).json({
+          title:
+            "Only the approved local sandbox destinations and worker limits are permitted",
+        });
         return;
       }
       const version = /^"(\d+)"$/.exec(req.get("If-Match") ?? "");
@@ -175,11 +172,9 @@ export function mountEnvironments(
           ],
         );
         if (!found.rows.length) {
-          res
-            .status(422)
-            .json({
-              title: "Credential reference is unavailable in this project",
-            });
+          res.status(422).json({
+            title: "Credential reference is unavailable in this project",
+          });
           return;
         }
       }
