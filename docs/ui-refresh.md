@@ -241,3 +241,18 @@ Actual 390px mobile views:
 Verification: local lint, type checks, API tests, eight web unit tests, and production build pass; eight infrastructure tests remain skipped on Windows. Layout and link-style checks on overview, history, reports, explorer, and run details pass at 320/390/768/1280px in both themes, including opening the frozen selection. These are Unreleased development changes with no assigned product version.
 
 Twelve browser tests passed, including the 64-state accessibility matrix, filter/sort behavior, cancellation, execution, mobile evidence viewing, reruns, authenticated report downloads, and report-history/investigation workflows.
+
+
+## Notification panel refinement
+
+The activity panel uses a compact title and session subtitle, a quiet icon-only close control with a 44px target, and notification rows with a small confirmation icon and timestamp. The bell has a subtle active state while the panel is open. Opening and closing use a short slide/fade; reduced-motion preferences disable transitions. Unread counting, keyboard focus, outside-click dismissal, and session history behavior are preserved.
+
+Actual running interface at 390px after saving a sample project:
+
+![Previous dark notification panel](changelog/assets/unreleased/notification-polish-dark-before.png)
+![Refined dark notification panel with compact rows and close icon](changelog/assets/unreleased/notification-polish-dark-after.png)
+![Refined light notification panel](changelog/assets/unreleased/notification-polish-light-after.png)
+
+Local verification passes, including lint, type checks, API tests, eight web unit tests, and production build. Eight infrastructure checks remain skipped on Windows. Open-panel accessibility scans pass in light and dark mode. No product version is assigned; this remains an Unreleased UI refinement.
+
+Three browser tests passed, including 64 accessibility states and notification unread/history dismissal behavior. The first attempt was interrupted by the local server becoming unavailable; the rerun passed once the server was available.

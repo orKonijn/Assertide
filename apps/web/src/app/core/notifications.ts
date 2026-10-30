@@ -84,24 +84,56 @@ export class Notifications {
       (beforetoggle)="onToggle($event)"
     >
       <header>
-        <h2>Notifications</h2>
+        <div class="notification-heading">
+          <h2>Notifications</h2>
+          <p>Activity from this session</p>
+        </div>
         <button
           class="icon-button"
           popovertarget="notification-history"
           popovertargetaction="hide"
           aria-label="Close notifications"
         >
-          &#215;
+          <svg
+            aria-hidden="true"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+          >
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
         </button>
       </header>
       <div class="notification-items">
         @for (item of notices.history(); track item.id) {
           <article>
-            <p>{{ item.message }}</p>
-            <time [attr.datetime]="item.at">{{ item.at | date: 'shortTime' }}</time>
+            <span class="notification-event-icon" aria-hidden="true"
+              ><svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="m6 12 4 4 8-8" /></svg
+            ></span>
+            <div class="notification-event-text">
+              <p>{{ item.message }}</p>
+              <time [attr.datetime]="item.at">{{ item.at | date: 'shortTime' }}</time>
+            </div>
           </article>
         } @empty {
-          <p class="muted">No actions recorded in this session.</p>
+          <div class="notification-empty">
+            <strong>You’re all caught up</strong>
+            <p>New activity will appear here.</p>
+          </div>
         }
       </div>
     </section>
