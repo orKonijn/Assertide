@@ -27,7 +27,11 @@ test.describe('Catalog metadata', () => {
     await catalog.editMetadata(D.latency);
     await expect(catalog.quarantined).toBeChecked();
   });
-  test('pagination preserves selection and select all includes every page', async () => {
+  test('pagination preserves selection and select all includes every page', async ({
+    api,
+    isolatedProject,
+  }) => {
+    const items = (await api.catalog(isolatedProject.id)).items;
     await expect(catalog.cases).toHaveCount(10);
     await expect(catalog.startButtons).toHaveCount(2);
     await expect(catalog.startButtons.first()).toBeDisabled();
@@ -37,13 +41,15 @@ test.describe('Catalog metadata', () => {
     await catalog.goToPage(1);
     await expect(catalog.selection(D.lifecycle)).toBeChecked();
     await catalog.selectAll();
-    await expect(catalog.selectedCount).toHaveText('27 tests selected');
+    await expect(catalog.selectedCount).toHaveText(
+      `${items.filter((item) => item.enabled).length} tests selected`,
+    );
     await catalog.deselectAll();
     await expect(catalog.selectedCount).toHaveText('0 tests selected');
     await expect(catalog.startButtons.first()).toBeDisabled();
     await catalog.selectAll();
     await catalog.goToPage(3);
-    await expect(catalog.cases).toHaveCount(7);
+    await expect(catalog.cases).toHaveCount(Math.min(10, items.length - 20));
     await expect(catalog.startButtons.first()).toBeEnabled();
     await catalog.search(D.lifecycle);
     await expect(catalog.cases).toHaveCount(1);

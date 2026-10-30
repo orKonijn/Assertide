@@ -2028,7 +2028,7 @@ th[aria-sort='descending'] .sort-indicator::before {
   min-height: 44px;
   cursor: pointer;
 }
-.case-selection input[type='checkbox'] {
+input[type='checkbox'] {
   appearance: none;
   width: 20px;
   height: 20px;
@@ -2041,7 +2041,7 @@ th[aria-sort='descending'] .sort-indicator::before {
   place-content: center;
   cursor: pointer;
 }
-.case-selection input[type='checkbox']::before {
+input[type='checkbox']::before {
   content: '';
   width: 9px;
   height: 5px;
@@ -2049,26 +2049,26 @@ th[aria-sort='descending'] .sort-indicator::before {
   border-width: 0 0 2px 2px;
   transform: rotate(-45deg) scale(0);
 }
-.case-selection input[type='checkbox']:checked {
+input[type='checkbox']:checked {
   background: var(--brand);
   border-color: var(--brand);
 }
-.case-selection input[type='checkbox']:checked::before {
+input[type='checkbox']:checked::before {
   transform: rotate(-45deg) scale(1);
 }
-.case-selection input[type='checkbox']:focus-visible {
+input[type='checkbox']:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 3px;
 }
-.case-selection input[type='checkbox']:disabled {
+input[type='checkbox']:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 @media (forced-colors: active) {
-  .case-selection input[type='checkbox'] {
+  input[type='checkbox'] {
     appearance: auto;
   }
-  .case-selection input[type='checkbox']::before {
+  input[type='checkbox']::before {
     content: none;
   }
 }
@@ -2260,6 +2260,103 @@ th[aria-sort='descending'] .sort-indicator::before {
   }
   aside .account > span {
     padding-block: 4px;
+  }
+}
+
+/* Shared table headers align with their own cells, never a separate grid. */
+th {
+  text-align: left;
+  vertical-align: middle;
+}
+@media (min-width: 851px) {
+  .catalog-cards th:first-child {
+    width: 88px;
+    white-space: nowrap;
+  }
+  .reports-panel {
+    position: relative;
+  }
+  .reports-panel .report-toolbar {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: block;
+    width: 44px;
+    padding: 0;
+    border: 0;
+  }
+  .reports-panel .report-toolbar > span {
+    display: none;
+  }
+  .reports-panel .report-cards thead {
+    display: table-header-group;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+  .report-cards th {
+    height: 60px;
+    background: transparent;
+  }
+  .report-cards th:first-child {
+    width: 30%;
+  }
+  .report-cards th:nth-child(2) {
+    width: 40%;
+  }
+  .report-cards th:last-child {
+    padding-right: 60px;
+  }
+}
+input[type='checkbox']:indeterminate {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+input[type='checkbox']:indeterminate::before {
+  width: 10px;
+  height: 0;
+  border: 0;
+  border-top: 2px solid var(--surface);
+  transform: none;
+}
+@media (max-width: 850px) {
+  .mobile-header {
+    padding-inline: 20px;
+    box-shadow: 0 2px 12px #00000008;
+  }
+  .mobile-header .brand-logo {
+    width: 150px;
+    height: 36px;
+  }
+  .mobile-header .brand-logo img {
+    width: 182px;
+    left: -16px;
+    top: -15px;
+  }
+  .mobile-header .header-actions {
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--canvas);
+  }
+  .mobile-header .header-actions button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+    border-radius: 10px;
+  }
+  .mobile-header .header-actions button:hover,
+  .mobile-header .menu-toggle[aria-expanded='true'] {
+    background: var(--soft);
+    color: var(--brand);
   }
 }
 

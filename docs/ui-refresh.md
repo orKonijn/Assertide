@@ -338,3 +338,20 @@ Actual running captures at 1280px:
 Browser geometry checks confirm identical column positions and widths across all three pages at 1024/1280/1440px in both themes. The sidebar has no overflow at 740px height and remains scrollable at 500px. This is an Unreleased layout fix with no version change.
 
 Local verification passed (lint, formatting, type checks, API/web unit tests, and production build; eight infrastructure checks skipped on Windows). Four browser tests passed, including the 64-state accessibility matrix, catalog metadata, and pagination/selection behavior.
+
+## Header controls, shared checkboxes, and aligned table headings
+
+The mobile/tablet bar now uses a compact logo and a grouped pair of theme/menu icons. Both controls retain accessible names and 44px targets; the menu icon changes to a close symbol while expanded. The header keeps its existing height so the drawer and backdrop remain aligned.
+
+Checkboxes across the application share themed borders, checkmarks, disabled/focus states, and an indeterminate indicator. Forced-colors mode retains native checkbox rendering. The explorer Select column has enough width and does not wrap its title. Reports use their actual table headers on desktop, with refresh beside Action, removing the mismatch between a separate header grid and the data columns.
+
+Actual running captures:
+
+![Compact dark header controls](changelog/assets/unreleased/header-icons-dark.png)
+![Compact light header controls](changelog/assets/unreleased/header-icons-light.png)
+![Explorer headers with unwrapped Select label](changelog/assets/unreleased/catalog-headings-dark.png)
+![Reports with headings aligned to data columns](changelog/assets/unreleased/report-headings-dark.png)
+
+Geometry checks confirm report heading/cell alignment and no horizontal overflow at 320/390/768/1280px in both themes. Local lint, formatting, type checks, API/web tests, and production build pass; eight infrastructure checks remain skipped on Windows. This is an Unreleased UI update with no version change.
+
+Eight browser scenarios pass, including the 64-state accessibility matrix, catalog selection, suite checkbox workflows, and mobile drawer/project-picker behavior. The initial catalog test expected 27 fixtures but the local catalog had expanded to 127; it now derives expected selection/page counts from the catalog API, and both catalog tests pass on rerun. The changed test also passes lint, type checks, and Page Object architecture checks.

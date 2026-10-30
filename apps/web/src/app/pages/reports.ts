@@ -16,7 +16,7 @@ import { Api, errorMessage } from '../core/api';
     @if (error()) {
       <p class="error" role="alert">{{ error() }}</p>
     }
-    <section class="card">
+    <section class="card reports-panel">
       <div class="report-toolbar">
         <span aria-hidden="true">Execution</span><span aria-hidden="true">Report</span
         ><span aria-hidden="true">Action</span>

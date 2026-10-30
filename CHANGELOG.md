@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Simplified the mobile/tablet header with grouped theme/menu icons, standardized checkboxes across the site, and prevented the explorer Select heading from wrapping. Desktop report headings now align with their data columns. Local verification, eight browser scenarios including 64 accessibility states, and light/dark geometry checks pass. See [header, checkbox, and table evidence](docs/ui-refresh.md#header-controls-shared-checkboxes-and-aligned-table-headings).
+
 - Catalog columns now retain their widths when switching pages. Desktop navigation uses tighter spacing in shorter windows to avoid unnecessary scrollbars while retaining scrolling when content truly overflows. Local verification, four browser tests including 64 accessibility states, and sidebar/column geometry checks pass. See [sidebar and pagination evidence](docs/ui-refresh.md#stable-catalog-columns-and-sidebar-fit).
 
 - Configure execution now stays visible while scrolling the desktop test catalog. Tall configurations scroll inside the panel; mobile keeps normal document scrolling. Local verification and browser checks for pinning, short viewports, and mobile overflow pass. See [sticky configuration evidence](docs/ui-refresh.md#sticky-execution-configuration).
