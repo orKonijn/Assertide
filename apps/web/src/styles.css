@@ -2526,6 +2526,149 @@ input[type='checkbox']:indeterminate::before {
   }
 }
 
+/* Compact catalog and execution tables with quiet headers and distinct row states. */
+.catalog-cards th,
+.history-table th {
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+}
+.catalog-cards td,
+.history-table td {
+  padding-block: 14px;
+  vertical-align: middle;
+  font-size: 13px;
+}
+.catalog-cards tbody tr,
+.history-table tbody tr {
+  background: transparent;
+}
+.catalog-cards tbody tr:hover,
+.history-table tbody tr:hover {
+  background: var(--soft);
+}
+.catalog-cards tbody tr.case-selected {
+  background: color-mix(in srgb, var(--brand) 8%, var(--surface));
+}
+.catalog-cards tbody tr.case-selected td:first-child {
+  box-shadow: inset 3px 0 var(--brand);
+}
+.catalog-cards .case-heading {
+  justify-content: flex-start;
+  min-height: 32px;
+  gap: 8px;
+}
+.catalog-cards .case-heading > strong {
+  color: var(--muted);
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+.catalog-cards .case-edit {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.catalog-cards .case-edit:hover {
+  color: var(--brand);
+  border-color: var(--border);
+  background: var(--surface);
+}
+.catalog-cards .case-title {
+  margin-top: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.catalog-cards .case-source {
+  margin: 5px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.catalog-cards .badge {
+  font-size: 10px;
+  padding: 3px 8px;
+}
+.history-table th button {
+  font-size: 10px;
+  font-weight: 650;
+}
+.content .history-table .run-reference {
+  min-height: 36px;
+  padding: 7px 10px;
+  font-family: monospace;
+  font-size: 12px;
+  gap: 12px;
+}
+.run-reference > span {
+  color: var(--muted);
+}
+.run-count {
+  display: inline-block;
+  min-width: 28px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+.phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 4px 9px;
+}
+.phase-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+.phase-badge[data-phase='completed']::before {
+  background: #38a979;
+}
+.phase-badge[data-phase='running']::before,
+.phase-badge[data-phase='provisioning']::before {
+  background: var(--brand);
+}
+.phase-badge[data-phase='infrastructure_error']::before,
+.phase-badge[data-phase='timed_out']::before {
+  background: #db6775;
+}
+@media (max-width: 850px) {
+  .catalog-cards tbody tr,
+  .history-table tbody tr {
+    background: var(--surface);
+    border-radius: 12px;
+  }
+  .catalog-cards tbody tr.case-selected td:first-child {
+    box-shadow: none;
+  }
+  .catalog-cards tbody tr.case-selected {
+    border-color: var(--brand);
+  }
+  .catalog-cards .case-edit {
+    width: 36px;
+    height: 36px;
+  }
+  .history-table td[data-label]::before {
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

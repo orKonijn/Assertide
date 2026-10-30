@@ -102,15 +102,21 @@ import { LoadingState } from '../core/loading-state';
               @for (run of sorted(); track run.id) {
                 <tr>
                   <td data-label="Run">
-                    <a [routerLink]="['/runs', run.id]">{{ run.id.slice(0, 8) }}</a>
+                    <a class="run-reference" [routerLink]="['/runs', run.id]"
+                      >{{ run.id.slice(0, 8) }} <span aria-hidden="true">↗</span></a
+                    >
                     @if (run.parentRunId) {
                       <br /><span class="muted">Rerun</span>
                     }
                   </td>
                   <td data-label="Phase">
-                    <span class="badge">{{ run.phase }}</span>
+                    <span class="badge phase-badge" [attr.data-phase]="run.phase">{{
+                      run.phase
+                    }}</span>
                   </td>
-                  <td data-label="Selected">{{ run.selection.testIds.length }}</td>
+                  <td data-label="Selected">
+                    <span class="run-count">{{ run.selection.testIds.length }}</span>
+                  </td>
                   <td data-label="Created">{{ run.createdAt | date: 'short' }}</td>
                 </tr>
               } @empty {

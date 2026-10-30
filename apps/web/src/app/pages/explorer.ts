@@ -152,7 +152,7 @@ import { LoadingState } from '../core/loading-state';
               </thead>
               <tbody>
                 @for (test of pageTests(); track test.id) {
-                  <tr>
+                  <tr [class.case-selected]="selected().includes(test.id)">
                     <td data-label="Select">
                       <label class="case-selection">
                         <input
@@ -168,21 +168,36 @@ import { LoadingState } from '../core/loading-state';
                       <div class="case-heading">
                         <strong>{{ test.id }}</strong
                         ><span class="badge mobile-priority">{{ test.priority }}</span>
+                        @if (canEdit()) {
+                          <button
+                            class="case-edit icon-button"
+                            (click)="edit(test)"
+                            [attr.aria-label]="'Edit ' + test.id"
+                            [title]="'Edit ' + test.id"
+                          >
+                            <svg
+                              aria-hidden="true"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="1.8"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            >
+                              <path d="m16 3 5 5-12 12-6 1 1-6Z M14 5l5 5" />
+                            </svg>
+                          </button>
+                        }
                       </div>
                       <div class="case-title">{{ test.title }}</div>
                       <p class="muted case-source">
                         {{ test.file }}:{{ test.line }} · {{ test.tags.join(', ') }}
                       </p>
-                      <div class="actions catalog-actions">
-                        @if (!test.enabled) {
-                          <span class="badge">Disabled</span>
-                        }
-                        @if (canEdit()) {
-                          <button (click)="edit(test)" [attr.aria-label]="'Edit ' + test.id">
-                            Edit
-                          </button>
-                        }
-                      </div>
+                      @if (!test.enabled) {
+                        <span class="badge">Disabled</span>
+                      }
                     </td>
                     <td class="hide-mobile">{{ test.feature }}</td>
                     <td class="hide-mobile" data-label="Priority">

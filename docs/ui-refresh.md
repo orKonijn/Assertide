@@ -371,3 +371,21 @@ Actual running implementation:
 Layout checks pass at 320/390/768/1280px in both themes. Local lint, formatting, type checks, API/web unit tests, production build, and Page Object architecture/reporting checks pass. Eight infrastructure tests remain skipped on Windows. No product version is assigned; the redesign is Unreleased.
 
 Six browser scenarios pass, including the 64-state accessibility matrix, execution/evidence flows, and the expanded API workspace test for ten-row pagination, preserved inspected evidence, JSON inspection, and redacted downloads. An initial multi-case launch returned only one selected case during development; its isolated rerun passed with all 18 results.
+
+## Catalog and execution table redesign
+
+Test explorer now emphasizes the test title, with a secondary case ID/source line and a compact labeled edit icon. Selected rows receive a tinted background and accent edge. Executions use compact run buttons, aligned counts, and phase badges with a status dot and readable text. Both tables have lighter headers, tighter spacing, and mobile cards; selection, pagination, keyboard sorting, and accessible control names are retained.
+
+Actual desktop captures at the same viewport and theme:
+
+![Explorer table before the redesign](changelog/assets/unreleased/table-redesign-explorer-before.png)
+![Explorer table with compact test rows and edit icons](changelog/assets/unreleased/table-redesign-explorer-after.png)
+![Execution table before the redesign](changelog/assets/unreleased/table-redesign-runs-before.png)
+![Execution table with compact run buttons and phase badges](changelog/assets/unreleased/table-redesign-runs-after.png)
+
+Mobile views:
+
+![Compact test cards on a phone](changelog/assets/unreleased/table-redesign-explorer-mobile.png)
+![Execution cards on a phone](changelog/assets/unreleased/table-redesign-runs-mobile.png)
+
+Local lint, formatting, type checks, API/web tests, and production build pass; eight infrastructure checks remain skipped on Windows. Six browser scenarios pass, including 64 accessibility states, catalog editing/selection/pagination, and execution filtering/sorting. Both tables fit 320/390/768/1280px viewports in light and dark themes without horizontal page overflow. This remains Unreleased with no product version assigned or changed.

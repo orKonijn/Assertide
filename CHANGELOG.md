@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Redesigned Test explorer and Executions tables with compact rows, lighter headers, icon edit actions, selected-row highlighting, and clearer phase badges. Selection, pagination, and sorting remain available. Local verification, six browser tests including 64 accessibility states, and light/dark responsive checks pass. See [table redesign evidence](docs/ui-refresh.md#catalog-and-execution-table-redesign).
+
 - Redesigned API workspace with a compact execution summary, clearer exchange rows, and a focused evidence inspector. Recorded exchanges now paginate ten at a time; paging preserves the selected evidence and changing executions resets it. Local verification, six browser scenarios including 64 accessibility states, evidence-download/pagination checks, and mobile/dark layout checks pass. See [API workspace screenshots](docs/ui-refresh.md#api-workspace-and-exchange-pagination).
 
 - Simplified the mobile/tablet header with grouped theme/menu icons, standardized checkboxes across the site, and prevented the explorer Select heading from wrapping. Desktop report headings now align with their data columns. Local verification, eight browser scenarios including 64 accessibility states, and light/dark geometry checks pass. See [header, checkbox, and table evidence](docs/ui-refresh.md#header-controls-shared-checkboxes-and-aligned-table-headings).
@@ -127,6 +129,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - Added an offline Figma development plugin intended to create editable screens, components, styles, variables and prototype links. Native Figma execution and visual validation remain blocked by the connected provider quota.
 
 ### Fixed
+
+- Redesigned Test explorer and Executions tables with compact rows, lighter headers, icon edit actions, selected-row highlighting, and clearer phase badges. Selection, pagination, and sorting remain available. Local verification, six browser tests including 64 accessibility states, and light/dark responsive checks pass. See [table redesign evidence](docs/ui-refresh.md#catalog-and-execution-table-redesign).
 
 - Execution supervisors now prepare verified source snapshots before accepting work. Kubernetes API/execution pods share a durable source claim so retained revisions survive pod replacement; provision the claim and retain matching worker images as described in [deployment setup](docs/production-deployment.md). Independent-directory integrity checks pass locally; fresh-container startup is checked in CI.
 - Disabled cases already saved in a suite can be removed, and API-suite launches include only enabled cases. The API workspace shows the executable count and disables launch when none remain. The browser regression verifies removal, saved membership, successful launches and the empty selection state.
