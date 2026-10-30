@@ -1,7 +1,9 @@
+import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DatePipe } from '@angular/common';
-import { Api, Run, errorMessage } from '../core/api';
+
+import type { Run } from '../core/api';
+import { Api, errorMessage } from '../core/api';
 @Component({
   imports: [RouterLink, DatePipe],
   template: `<header class="page-header">
@@ -67,12 +69,12 @@ import { Api, Run, errorMessage } from '../core/api';
 })
 export class Reports {
   private readonly api = inject(Api);
-  readonly runs = signal<Run[]>([]);
-  readonly error = signal('');
-  constructor() {
+  public readonly runs = signal<Run[]>([]);
+  public readonly error = signal('');
+  public constructor() {
     void this.load();
   }
-  async load() {
+  public async load(): Promise<void> {
     try {
       this.runs.set(
         (await this.api.get<{ items: Run[] }>(`/runs?projectId=${this.api.projectId()}`)).items,

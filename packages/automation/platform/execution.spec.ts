@@ -1,20 +1,20 @@
-import { test, expect } from "./fixtures";
-import { CatalogPage } from "../ui/pages/catalog.page";
-import { ExecutionPage } from "../ui/pages/execution.page";
-import { ApiWorkspacePage } from "../ui/pages/api-workspace.page";
-import { TestData as D, Timeouts } from "../ui/types/test-data";
-import { ApiRoutes } from "../ui/types/routes";
-import { downloadText } from "../ui/utils/file.utils";
-import { localPassword } from "../ui/utils/credentials.utils";
-import { viewport, fitsViewport } from "../ui/utils/viewport.utils";
-import { screenshot } from "../ui/utils/allure.utils";
-test.describe("Execution and evidence", () => {
+import { ApiWorkspacePage } from '../ui/pages/api-workspace.page';
+import { CatalogPage } from '../ui/pages/catalog.page';
+import { ExecutionPage } from '../ui/pages/execution.page';
+import { ApiRoutes } from '../ui/types/routes';
+import { TestData as D, Timeouts } from '../ui/types/test-data';
+import { screenshot } from '../ui/utils/allure.utils';
+import { localPassword } from '../ui/utils/credentials.utils';
+import { downloadText } from '../ui/utils/file.utils';
+import { fitsViewport, viewport } from '../ui/utils/viewport.utils';
+import { expect, test } from './fixtures';
+test.describe('Execution and evidence', () => {
   test.setTimeout(90000);
   let execution: ExecutionPage;
   test.beforeEach(({ page }) => {
     execution = new ExecutionPage(page);
   });
-  test("selected API and browser cases complete with immutable source evidence", async ({
+  test('selected API and browser cases complete with immutable source evidence', async ({
     page,
     api,
   }) => {
@@ -24,25 +24,23 @@ test.describe("Execution and evidence", () => {
     const started = Date.now();
     await catalog.startExecution();
     await expect(page).toHaveURL(/\/runs\/[a-f0-9-]+$/);
-    await expect(execution.status).toHaveText("completed", {
+    await expect(execution.status).toHaveText('completed', {
       timeout: Timeouts.execution,
     });
     console.log(
       JSON.stringify({
-        verification: "18-case-execution",
-        runtime: process.env["WORKER_RUNTIME"] ?? "local",
+        verification: '18-case-execution',
+        runtime: process.env['WORKER_RUNTIME'] ?? 'local',
         elapsedMs: Date.now() - started,
       }),
     );
     const run = await api.run(execution.id());
     expect(run.results).toHaveLength(18);
-    expect(run.results.every((result) => result.status === "passed")).toBe(
-      true,
-    );
+    expect(run.results.every((result) => result.status === 'passed')).toBe(true);
     expect(run.source.revision).toMatch(/^[a-f0-9]{64}$/);
-    await expect(execution.outcome(D.lifecycle, "passed")).toBeVisible();
+    await expect(execution.outcome(D.lifecycle, 'passed')).toBeVisible();
   });
-  test("attempt screenshot opens, scales on mobile and restores keyboard focus", async ({
+  test('attempt screenshot opens, scales on mobile and restores keyboard focus', async ({
     page,
     api,
   }) => {
@@ -52,17 +50,14 @@ test.describe("Execution and evidence", () => {
     await execution.openScreenshot();
     await expect(execution.screenshotDialog).toBeVisible();
     await expect.poll(() => execution.screenshotWidth()).toBeGreaterThan(0);
-    await screenshot(page, "attempt-screenshot", execution.screenshotDialog);
-    await viewport(page, "mobile");
+    await screenshot(page, 'attempt-screenshot', execution.screenshotDialog);
+    await viewport(page, 'mobile');
     expect(await fitsViewport(page)).toBe(true);
     await execution.closeScreenshot();
     await expect(execution.screenshotDialog).not.toBeVisible();
     await expect(execution.screenshotButton).toBeFocused();
   });
-  test("reviewed rerun preserves lineage and selected source revision", async ({
-    page,
-    api,
-  }) => {
+  test('reviewed rerun preserves lineage and selected source revision', async ({ page, api }) => {
     const parent = await api.completed([D.lifecycle]);
     await execution.goto(parent.id);
     const original = page.url();
@@ -78,15 +73,13 @@ test.describe("Execution and evidence", () => {
     expect(child.selection.testIds).toEqual([D.lifecycle]);
     expect(child.source.revision).toBe(parent.source.revision);
     expect(child.artifacts.length).toBeGreaterThan(0);
-    const evidence = await api.get(
-      ApiRoutes.artifact(child.id, child.artifacts[0]!.id),
-    );
+    const evidence = await api.get(ApiRoutes.artifact(child.id, child.artifacts[0]!.id));
     expect(evidence).toMatchObject({
-      request: { method: "POST", path: "orders" },
+      request: { method: 'POST', path: 'orders' },
       response: { status: 201 },
     });
   });
-  test("API workspace inspects and downloads redacted exchange evidence", async ({
+  test('API workspace inspects and downloads redacted exchange evidence', async ({
     page,
     api,
     diagnostics,
@@ -102,16 +95,14 @@ test.describe("Execution and evidence", () => {
     await expect(workspace.evidence).toContainText('"method": "POST"');
     expect(
       (await workspace.evidence.innerText()).includes(password),
-      "visible evidence excludes credentials",
+      'visible evidence excludes credentials',
     ).toBe(false);
     const downloaded = await downloadText(await workspace.download());
-    expect(downloaded.includes(password), "download excludes credentials").toBe(
-      false,
-    );
-    expect(JSON.parse(downloaded).request.method).toBe("POST");
-    await workspace.inspectPointer("/response/body/quantity");
-    await expect(workspace.selectedValue).toHaveText("2");
-    await viewport(page, "mobile");
+    expect(downloaded.includes(password), 'download excludes credentials').toBe(false);
+    expect(JSON.parse(downloaded).request.method).toBe('POST');
+    await workspace.inspectPointer('/response/body/quantity');
+    await expect(workspace.selectedValue).toHaveText('2');
+    await viewport(page, 'mobile');
     expect(await fitsViewport(page)).toBe(true);
   });
 });

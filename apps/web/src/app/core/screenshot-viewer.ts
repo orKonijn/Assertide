@@ -1,4 +1,5 @@
-import { Component, ElementRef, input, signal, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { Component, input, signal, viewChild } from '@angular/core';
 @Component({
   selector: 'app-screenshot-viewer',
   template: `
@@ -32,12 +33,12 @@ import { Component, ElementRef, input, signal, viewChild } from '@angular/core';
   ],
 })
 export class ScreenshotViewer {
-  readonly url = input.required<string>();
-  readonly description = input.required<string>();
-  readonly opened = signal(false);
-  readonly failed = signal(false);
+  public readonly url = input.required<string>();
+  public readonly description = input.required<string>();
+  public readonly opened = signal(false);
+  public readonly failed = signal(false);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
-  open() {
+  public open(): void {
     this.failed.set(false);
     this.opened.set(true);
     this.dialog().nativeElement.showModal();

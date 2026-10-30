@@ -1,102 +1,26 @@
-import { readFile } from "node:fs/promises";
-import { z } from "zod";
+import { readFile } from 'node:fs/promises';
+
+import { z } from 'zod';
 
 // Transit keeps durable ciphertext in our versioned database; Vault owns keys.
 export class VaultTransit {
-  private token = "";
+  private token = '';
   private expires = 0;
   private login: Promise<string> | undefined;
-  constructor(private readonly env: NodeJS.ProcessEnv = process.env) {}
-  private async request(endpoint: string, body: unknown, token?: string) {
-    const url = new URL(this.env["VAULT_ADDR"] ?? "");
-    if (
-      url.username ||
-      url.password ||
-      url.search ||
-      url.hash ||
-      url.pathname !== "/"
-    )
-      throw new Error("Invalid Vault address");
-    if (
-      url.protocol !== "https:" &&
-      !(
-        this.env["NODE_ENV"] === "test" &&
-        url.protocol === "http:" &&
-        ["127.0.0.1", "localhost"].includes(url.hostname)
-      )
-    )
-      throw new Error("Vault requires HTTPS");
-    const response = await fetch(new URL(`/v1/${endpoint}`, url), {
-      method: "POST",
-      redirect: "error",
-      signal: AbortSignal.timeout(10000),
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-Vault-Token": token } : {}),
-        ...(this.env["VAULT_NAMESPACE"]
-          ? { "X-Vault-Namespace": this.env["VAULT_NAMESPACE"] }
-          : {}),
-      },
-      body: JSON.stringify(body),
-    });
-    if (!response.ok) {
-      if (response.status === 403) {
-        this.token = "";
-        this.expires = 0;
-      }
-      throw Object.assign(new Error("Vault operation failed"), {
-        code: "VAULT_OPERATION_FAILED",
-      });
-    }
-    return (await response.json()) as unknown;
-  }
-  private async authenticate(): Promise<string> {
-    if (this.token && Date.now() < this.expires) return this.token;
-    if (this.login) return this.login;
-    this.login = (async () => {
-      const jwt = await readFile(
-        this.env["VAULT_JWT_FILE"] ?? "/var/run/secrets/vault/token",
-        "utf8",
-      );
-      const mount = z
-        .string()
-        .regex(/^[a-zA-Z0-9_-]+$/)
-        .parse(this.env["VAULT_AUTH_MOUNT"] ?? "kubernetes");
-      const role = z.string().min(1).parse(this.env["VAULT_ROLE"]);
-      const result = z
-        .object({
-          auth: z.object({
-            client_token: z.string().min(1),
-            lease_duration: z.number().positive(),
-          }),
-        })
-        .parse(
-          await this.request(`auth/${mount}/login`, { role, jwt: jwt.trim() }),
-        );
-      this.token = result.auth.client_token;
-      this.expires =
-        Date.now() + Math.max(0, result.auth.lease_duration - 30) * 1000;
-      return this.token;
-    })();
-    try {
-      return await this.login;
-    } finally {
-      this.login = undefined;
-    }
-  }
-  async transform(
-    operation: "encrypt" | "decrypt",
+  public constructor(private readonly env: NodeJS.ProcessEnv = process.env) {}
+  public async transform(
+    operation: 'encrypt' | 'decrypt',
     value: string,
     context: Buffer,
-  ) {
+  ): Promise<string> {
     const mount = z
       .string()
       .regex(/^[a-zA-Z0-9_-]+$/)
-      .parse(this.env["VAULT_TRANSIT_MOUNT"] ?? "transit");
+      .parse(this.env['VAULT_TRANSIT_MOUNT'] ?? 'transit');
     const key = z
       .string()
       .regex(/^[a-zA-Z0-9_-]+$/)
-      .parse(this.env["VAULT_TRANSIT_KEY"] ?? "assertide");
+      .parse(this.env['VAULT_TRANSIT_KEY'] ?? 'assertide');
     const token = await this.authenticate();
     const data = z
       .object({
@@ -109,32 +33,109 @@ export class VaultTransit {
         await this.request(
           `${mount}/${operation}/${key}`,
           {
-            context: context.toString("base64"),
-            ...(operation === "encrypt"
-              ? { plaintext: Buffer.from(value).toString("base64") }
+            context: context.toString('base64'),
+            ...(operation === 'encrypt'
+              ? { plaintext: Buffer.from(value).toString('base64') }
               : { ciphertext: value }),
           },
           token,
         ),
       ).data;
-    if (operation === "encrypt")
+    if (operation === 'encrypt') {
       return z
         .string()
         .regex(/^vault:v\d+:/)
         .parse(data.ciphertext);
-    return Buffer.from(z.string().parse(data.plaintext), "base64").toString(
-      "utf8",
-    );
+    }
+    return Buffer.from(z.string().parse(data.plaintext), 'base64').toString('utf8');
+  }
+  private async request(endpoint: string, body: unknown, token?: string): Promise<unknown> {
+    const url = new URL(this.env['VAULT_ADDR'] ?? '');
+    if (url.username || url.password || url.search || url.hash || url.pathname !== '/') {
+      throw new Error('Invalid Vault address');
+    }
+    if (
+      url.protocol !== 'https:' &&
+      !(
+        this.env['NODE_ENV'] === 'test' &&
+        url.protocol === 'http:' &&
+        ['127.0.0.1', 'localhost'].includes(url.hostname)
+      )
+    ) {
+      throw new Error('Vault requires HTTPS');
+    }
+    const response = await fetch(new URL(`/v1/${endpoint}`, url), {
+      method: 'POST',
+      redirect: 'error',
+      signal: AbortSignal.timeout(10000),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'X-Vault-Token': token } : {}),
+        ...(this.env['VAULT_NAMESPACE']
+          ? { 'X-Vault-Namespace': this.env['VAULT_NAMESPACE'] }
+          : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      if (response.status === 403) {
+        this.token = '';
+        this.expires = 0;
+      }
+      throw Object.assign(new Error('Vault operation failed'), {
+        code: 'VAULT_OPERATION_FAILED',
+      });
+    }
+    return (await response.json()) as unknown;
+  }
+  private async authenticate(): Promise<string> {
+    if (this.token && Date.now() < this.expires) {
+      return this.token;
+    }
+    if (this.login) {
+      return this.login;
+    }
+    this.login = (async () => {
+      const jwt = await readFile(
+        this.env['VAULT_JWT_FILE'] ?? '/var/run/secrets/vault/token',
+        'utf8',
+      );
+      const mount = z
+        .string()
+        .regex(/^[a-zA-Z0-9_-]+$/)
+        .parse(this.env['VAULT_AUTH_MOUNT'] ?? 'kubernetes');
+      const role = z.string().min(1).parse(this.env['VAULT_ROLE']);
+      const result = z
+        .object({
+          auth: z.object({
+            client_token: z.string().min(1),
+            lease_duration: z.number().positive(),
+          }),
+        })
+        .parse(await this.request(`auth/${mount}/login`, { role, jwt: jwt.trim() }));
+      this.token = result.auth.client_token;
+      this.expires = Date.now() + Math.max(0, result.auth.lease_duration - 30) * 1000;
+      return this.token;
+    })();
+    try {
+      return await this.login;
+    } finally {
+      this.login = undefined;
+    }
   }
 }
 export const vaultTransit = new VaultTransit();
 
-export async function vaultHealth() {
-  const url = new URL(process.env["VAULT_ADDR"] ?? "");
-  if (url.protocol !== "https:") throw new Error("Vault requires HTTPS");
-  const response = await fetch(
-    new URL("/v1/sys/health?standbyok=true&perfstandbyok=true", url),
-    { redirect: "error", signal: AbortSignal.timeout(2000) },
-  );
-  if (!response.ok) throw new Error("Vault unavailable");
+export async function vaultHealth(): Promise<void> {
+  const url = new URL(process.env['VAULT_ADDR'] ?? '');
+  if (url.protocol !== 'https:') {
+    throw new Error('Vault requires HTTPS');
+  }
+  const response = await fetch(new URL('/v1/sys/health?standbyok=true&perfstandbyok=true', url), {
+    redirect: 'error',
+    signal: AbortSignal.timeout(2000),
+  });
+  if (!response.ok) {
+    throw new Error('Vault unavailable');
+  }
 }

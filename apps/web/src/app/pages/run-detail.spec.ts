@@ -1,22 +1,29 @@
-import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import type { ParamMap } from '@angular/router';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { vi } from 'vitest';
-import { Api, Run } from '../core/api';
+
+import type { Run } from '../core/api';
+import { Api } from '../core/api';
 import { RunDetail } from './run-detail';
 
 class Stream extends EventTarget {
-  static latest: Stream;
-  onopen = null;
-  onerror = null;
-  constructor() {
+  public static latest: Stream;
+  public onopen = null;
+  public onerror = null;
+  public constructor() {
     super();
     Stream.latest = this;
   }
-  close() {}
+  public close(): void {}
 }
-function deferred<T>() {
+function deferred<T>(): {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (reason: unknown) => void;
+} {
   let resolve!: (value: T) => void;
   let reject!: (reason: unknown) => void;
   const promise = new Promise<T>((yes, no) => {
@@ -39,7 +46,15 @@ describe('Run detail response ordering', () => {
     TestBed.resetTestingModule();
     vi.unstubAllGlobals();
   });
-  function setup() {
+  function setup(): {
+    component: RunDetail;
+    pending: {
+      promise: Promise<unknown>;
+      resolve: (value: unknown) => void;
+      reject: (reason: unknown) => void;
+    }[];
+    params: BehaviorSubject<ParamMap>;
+  } {
     vi.stubGlobal('EventSource', Stream);
     const pending: ReturnType<typeof deferred<unknown>>[] = [];
     const params = new BehaviorSubject(convertToParamMap({ id: 'run-1' }));

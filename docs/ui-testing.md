@@ -4,13 +4,13 @@ The [owner-supplied architecture](playwright-ui-architecture.md) applies to new 
 
 ## Where changes belong
 
-| Layer | Location | Responsibility |
-| --- | --- | --- |
-| Scenarios | `packages/automation/platform`, `tests/store.spec.ts`, `practice/web.spec.ts` | Domain groups, independent setup, actions, visible assertions |
-| Pages/components | `packages/automation/ui/pages`, `ui/components` | Typed locators and focused domain actions; no complete scenario methods |
-| Contracts | `packages/automation/ui/types` | Feature selectors, routes, execution data, viewport and timeout constants |
-| Utilities | `packages/automation/ui/utils` | API prerequisites, downloads, accessibility, redaction and Allure metadata |
-| Fixtures | `packages/automation/ui/fixtures` | Fresh test-scoped browser state and POM construction in beforeEach; in-memory worker authentication |
+| Layer            | Location                                                                      | Responsibility                                                                                      |
+| ---------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Scenarios        | `packages/automation/platform`, `tests/store.spec.ts`, `practice/web.spec.ts` | Domain groups, independent setup, actions, visible assertions                                       |
+| Pages/components | `packages/automation/ui/pages`, `ui/components`                               | Typed locators and focused domain actions; no complete scenario methods                             |
+| Contracts        | `packages/automation/ui/types`                                                | Feature selectors, routes, execution data, viewport and timeout constants                           |
+| Utilities        | `packages/automation/ui/utils`                                                | API prerequisites, downloads, accessibility, redaction and Allure metadata                          |
+| Fixtures         | `packages/automation/ui/fixtures`                                             | Fresh test-scoped browser state and POM construction in beforeEach; in-memory worker authentication |
 
 The Node-based private trace-viewer security harness also uses focused Page Objects in `apps/api/test/support`; its database/server lifecycle remains in Node test fixtures rather than the Playwright acceptance runner.
 

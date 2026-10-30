@@ -1,16 +1,17 @@
-import { test, expect } from "./fixtures";
-import { localPassword } from "../ui/utils/credentials.utils";
-import { createHash } from "node:crypto";
-import { ExecutionPage } from "../ui/pages/execution.page";
-import { LoginPage } from "../ui/pages/login.page";
-import { AllureReportPage } from "../ui/pages/report.page";
-import { ApiRoutes } from "../ui/types/routes";
-import { TestData as D, Timeouts } from "../ui/types/test-data";
-import { reportMetadata, removeLocalRawCopy } from "../ui/utils/file.utils";
-import { uniqueName } from "../ui/utils/test-data.utils";
-import { viewport, fitsViewport } from "../ui/utils/viewport.utils";
+import { createHash } from 'node:crypto';
+
+import { ExecutionPage } from '../ui/pages/execution.page';
+import { LoginPage } from '../ui/pages/login.page';
+import { AllureReportPage } from '../ui/pages/report.page';
+import { ApiRoutes } from '../ui/types/routes';
+import { TestData as D, Timeouts } from '../ui/types/test-data';
+import { localPassword } from '../ui/utils/credentials.utils';
+import { removeLocalRawCopy, reportMetadata } from '../ui/utils/file.utils';
+import { uniqueName } from '../ui/utils/test-data.utils';
+import { fitsViewport, viewport } from '../ui/utils/viewport.utils';
+import { expect, test } from './fixtures';
 test.use({ storageState: { cookies: [], origins: [] } });
-test.describe("Allure report history", () => {
+test.describe('Allure report history', () => {
   test.setTimeout(120000);
   let execution: ExecutionPage;
   test.beforeEach(async ({ page }) => {
@@ -18,7 +19,7 @@ test.describe("Allure report history", () => {
     await new LoginPage(page).login(await localPassword());
     await expect(new LoginPage(page).signInLink).toHaveCount(0);
   });
-  test("compatible history and restored raw evidence rebuild without duplicate entries", async ({
+  test('compatible history and restored raw evidence rebuild without duplicate entries', async ({
     page,
     api,
     isolatedProject,
@@ -31,15 +32,15 @@ test.describe("Allure report history", () => {
     expect(comparison.previous.runId).toBe(first.id);
     expect(second.historyStream).toBe(first.historyStream);
     expect(second.historyEntries).toBe(first.historyEntries + 1);
-    const lineage = await api.get<{ items: { runId: string }[] }>(
-      ApiRoutes.history(second.id),
-    );
+    const lineage = await api.get<{ items: { runId: string }[] }>(ApiRoutes.history(second.id));
     expect(lineage.items.some((item) => item.runId === first.id)).toBe(true);
     await execution.goto(second.id);
     await execution.openHistory(first.id);
     await expect(page).toHaveURL(new RegExp(`/runs/${first.id}$`));
     await expect(execution.heading(first.id)).toBeVisible();
-    if (first.rawArchive) await removeLocalRawCopy(first.id);
+    if (first.rawArchive) {
+      await removeLocalRawCopy(first.id);
+    }
     await execution.rebuildReport();
     await expect
       .poll(async () => (await api.run(first.id)).historyVersion, {
@@ -52,11 +53,11 @@ test.describe("Allure report history", () => {
     expect(rebuilt.reportDirectory).not.toBe(first.reportDirectory);
     const report = new AllureReportPage(await page.context().newPage());
     await report.goto(first.id);
-    await expect(report.page).toHaveURL(/localhost:4012\/reports\//);
+    expect(report.url()).toMatch(/localhost:4012\/reports\//);
     await expect(report.expandButton).toBeVisible();
     await report.close();
   });
-  test("report ZIP is authenticated and matches its recorded checksum and toolchain", async ({
+  test('report ZIP is authenticated and matches its recorded checksum and toolchain', async ({
     page,
     api,
     browser,
@@ -65,63 +66,53 @@ test.describe("Allure report history", () => {
     const download = await page.request.get(ApiRoutes.download(run.id));
     expect(download.status()).toBe(200);
     const archive = await download.body();
-    expect(archive.subarray(0, 4).toString("hex")).toBe("504b0304");
-    expect(createHash("sha256").update(archive).digest("hex")).toBe(
-      download.headers()["x-checksum-sha256"],
+    expect(archive.subarray(0, 4).toString('hex')).toBe('504b0304');
+    expect(createHash('sha256').update(archive).digest('hex')).toBe(
+      download.headers()['x-checksum-sha256'],
     );
-    expect(download.headers()["x-report-generation"]).toBe(run.reportDirectory);
+    expect(download.headers()['x-report-generation']).toBe(run.reportDirectory);
     const anonymous = await browser.newContext({
       storageState: { cookies: [], origins: [] },
     });
     try {
-      expect(
-        (
-          await anonymous.request.get(D.origin + ApiRoutes.download(run.id))
-        ).status(),
-      ).toBe(401);
+      expect((await anonymous.request.get(D.origin + ApiRoutes.download(run.id))).status()).toBe(
+        401,
+      );
     } finally {
       await anonymous.close();
     }
-    expect(run.toolchain.playwright).toBe("1.64.1");
+    expect(run.toolchain.playwright).toBe('1.64.1');
     expect(run.results[0]!.attempts[0]!.steps.length).toBeGreaterThan(0);
     const raw = await reportMetadata(run.id);
-    expect(raw.environment).toContain("Playwright=1.64.1");
-    expect(raw.result.labels.some((label) => label.name === "severity")).toBe(
-      true,
-    );
+    expect(raw.environment).toContain('Playwright=1.64.1');
+    expect(raw.result.labels.some((label) => label.name === 'severity')).toBe(true);
     await execution.goto(run.id);
     await expect(execution.reportLink).toBeVisible({
       timeout: Timeouts.report,
     });
     const report = await execution.openReport();
     await report.expand();
-    await expect(
-      report.testTitle("LAB-002 Missing authentication"),
-    ).toBeVisible();
+    await expect(report.testTitle('LAB-002 Missing authentication')).toBeVisible();
     const login = new LoginPage(page);
     await login.signOut();
     await expect(login.signInLink).toBeVisible();
-    expect((await report.page.request.get(report.page.url())).status()).toBe(
-      403,
-    );
+    expect(await report.responseStatus()).toBe(403);
     await report.close();
   });
-  test("investigation notes survive reload and report environment remains accessible on mobile", async ({
+  test('investigation notes survive reload and report environment remains accessible on mobile', async ({
     page,
     api,
   }) => {
     const run = await api.readyReport(D.historyIds);
     await execution.goto(run.id, run.results[0]!.id);
-    const note = uniqueName(
-      "Investigation: verified recorded request contract",
-    );
+    const note = uniqueName('Investigation: verified recorded request contract');
     await execution.addNote(note);
     await expect(execution.note(note)).toBeVisible();
     await page.reload();
     await expect(execution.note(note)).toBeVisible();
     await expect(execution.download).toBeVisible();
-    await expect(execution.section("Execution environment")).toBeVisible();
-    await viewport(page, "mobile");
+    await expect(execution.section('Execution environment')).toBeVisible();
+    await viewport(page, 'mobile');
     expect(await fitsViewport(page)).toBe(true);
   });
 });

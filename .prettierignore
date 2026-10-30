@@ -1,0 +1,13 @@
+**/node_modules/
+**/dist/
+**/.angular/
+.local/
+.local-db/
+**/coverage/
+**/test-results/
+**/playwright-report/
+**/allure-results/
+**/allure-report/
+**/package-lock.json
+# Archived reference deliverables are not maintained application source.
+deliverables/

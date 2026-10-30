@@ -14,6 +14,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Changed
 
+- Development checks now enforce explicit TypeScript APIs, intentional class visibility, handled promises, safe production boundaries and consistent formatting across maintained source. CI rejects lint warnings and formatting drift. Contributors should run `npm run lint:fix` followed by `npm run format`; see [code quality conventions](docs/code-quality.md). Verified locally with strict type checks, API/domain/web tests, production build, 36 browser tests, and the UI architecture/reporting checks. No product version or database migration is assigned.
+
 - GitHub verification now runs for pushes to `main` as well as pull requests and the existing feature branch. UI regression tests use the established Page Objects and no longer regenerate committed screenshots during routine runs.
 
 ### Added
@@ -150,7 +152,6 @@ The same controls stack at 390px, with the member table horizontally scrollable.
 
 Suite edits retain a revision and reject stale saves.
 
-
 ### Historical design previews
 
 The following three images were captured from the running local HTML design preview. They are not screenshots of a deployed platform or the Figma canvas.
@@ -170,4 +171,3 @@ The 390px preview stacks metrics and turns execution rows into labeled details.
 ### Known issues
 
 - The editable Figma design is incomplete: the file was created, but Figma's Starter-plan tool limit blocked further access before screens could be added. The local generator is provided for recovery, but its output has not been executed or inspected in Figma.
-

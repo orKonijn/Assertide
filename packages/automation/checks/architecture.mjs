@@ -1,38 +1,30 @@
-import ts from "typescript";
-import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-const root = fileURLToPath(new URL("../", import.meta.url));
+import ts from 'typescript';
+import assert from 'node:assert/strict';
+import { readFile, readdir } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+const root = fileURLToPath(new URL('../', import.meta.url));
 const files = [
-  ...(await readdir(path.join(root, "platform")))
-    .filter((name) => name.endsWith(".spec.ts"))
+  ...(await readdir(path.join(root, 'platform')))
+    .filter((name) => name.endsWith('.spec.ts'))
     .map((name) => `platform/${name}`),
-  "tests/store.spec.ts",
-  "practice/web.spec.ts",
+  'tests/store.spec.ts',
+  'practice/web.spec.ts',
 ];
 const violations = [];
 for (const file of files) {
-  const text = await readFile(path.join(root, file), "utf8");
+  const text = await readFile(path.join(root, file), 'utf8');
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   function visit(node) {
-    if (
-      ts.isCallExpression(node) &&
-      ts.isPropertyAccessExpression(node.expression)
-    ) {
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
       const method = node.expression.name.text;
       if (
         /^(getByRole|getByLabel|getByText|getByTestId|locator|waitForTimeout|waitForSelector)$/.test(
           method,
         )
       )
-        violations.push(
-          `${file}: ${method} belongs in a Page Object, or is an unsafe wait`,
-        );
-      if (
-        method === "goto" &&
-        node.expression.expression.getText(source) === "page"
-      )
+        violations.push(`${file}: ${method} belongs in a Page Object, or is an unsafe wait`);
+      if (method === 'goto' && node.expression.expression.getText(source) === 'page')
         violations.push(`${file}: raw page navigation`);
     }
     ts.forEachChild(node, visit);

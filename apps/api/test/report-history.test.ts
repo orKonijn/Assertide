@@ -1,21 +1,22 @@
-import { test } from "node:test";
-import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
-import { testDatabase } from "./database.ts";
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { test } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
+
 import {
-  initializeHistory,
   claimHistory,
   commitHistory,
+  historyStream,
+  initializeHistory,
+  readHistory,
   releaseHistory,
   visibleHistory,
-  historyStream,
-  readHistory,
-} from "../src/report-history.ts";
-import { setTimeout as delay } from "node:timers/promises";
-test("compatible report history serializes writers, rejects stale commits and clears expired links", async () => {
+} from '../src/report-history.ts';
+import { testDatabase } from './database.ts';
+await test('compatible report history serializes writers, rejects stale commits and clears expired links', async () => {
   const db = await testDatabase();
   await initializeHistory(db);
-  const stream = "test-stream";
+  const stream = 'test-stream';
   const first = randomUUID();
   const second = randomUUID();
   try {
@@ -33,36 +34,30 @@ test("compatible report history serializes writers, rejects stale commits and cl
       point: {
         uuid: randomUUID(),
         timestamp: Date.now(),
-        url: "https://private.invalid/report/",
+        url: 'https://private.invalid/report/',
         testResults: {
           sample: {
-            url: "https://private.invalid/report/",
-            reportLinks: [{ href: "https://private.invalid/report/" }],
+            url: 'https://private.invalid/report/',
+            reportLinks: [{ href: 'https://private.invalid/report/' }],
           },
         },
       },
     };
-    await assert.rejects(
-      commitHistory(db, stream, contender, 0, [entry]),
-      /Stale/,
-    );
+    await assert.rejects(commitHistory(db, stream, contender, 0, [entry]), /Stale/);
     await commitHistory(db, stream, owner, 0, [entry]);
     const next = await claimHistory(db, stream, contender);
     assert.equal(next?.version, 1);
     assert.equal(next.entries.length, 1);
     await assert.rejects(commitHistory(db, stream, owner, 0, []), /Stale/);
     const visible = visibleHistory(next.entries, randomUUID());
-    assert.equal(visible[0]?.["url"], "");
-    assert.equal(
-      (visible[0]?.testResults["sample"] as { url: string }).url,
-      "",
-    );
+    assert.equal(visible[0]?.['url'], '');
+    assert.equal((visible[0]?.testResults['sample'] as { url: string }).url, '');
     assert.deepEqual(visibleHistory(next.entries, entry.runId), []);
     await db.transaction(async (tx) => {
       await commitHistory(tx, stream, contender, 1, [entry]);
     });
     await releaseHistory(db, stream, contender);
-    const builder = async () => {
+    const builder = async (): Promise<void> => {
       const writer = randomUUID();
       let lease = await claimHistory(db, stream, writer);
       while (!lease) {
@@ -80,18 +75,18 @@ test("compatible report history serializes writers, rejects stale commits and cl
     const base = {
       organizationId: randomUUID(),
       projectId: randomUUID(),
-      config: { environmentId: "local-lab", browserProjects: ["chromium"] },
-      selection: { testIds: ["UI-001", "UI-005"] },
+      config: { environmentId: 'local-lab', browserProjects: ['chromium'] },
+      selection: { testIds: ['UI-001', 'UI-005'] },
     };
     assert.equal(
       historyStream(base),
-      historyStream({ ...base, selection: { testIds: ["UI-005", "UI-001"] } }),
+      historyStream({ ...base, selection: { testIds: ['UI-005', 'UI-001'] } }),
     );
     assert.notEqual(
       historyStream(base),
       historyStream({
         ...base,
-        config: { ...base.config, browserProjects: ["firefox"] },
+        config: { ...base.config, browserProjects: ['firefox'] },
       }),
     );
   } finally {

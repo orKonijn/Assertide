@@ -1,30 +1,32 @@
-import { HeadBucketCommand } from "@aws-sdk/client-s3";
-import { Redis } from "ioredis";
-import type { Express } from "express";
-import type { SqlConnection } from "./database.ts";
-import type { IdentityService } from "./identity.ts";
-import { objectStore } from "./object-store.ts";
-import { executionLimits } from "./scheduler.ts";
-import { vaultHealth } from "./vault.ts";
+import { HeadBucketCommand } from '@aws-sdk/client-s3';
+import type { Express } from 'express';
+import { Redis } from 'ioredis';
 
-export async function readiness(db: SqlConnection) {
+import type { SqlConnection } from './database.ts';
+import type { IdentityService } from './identity.ts';
+import { objectStore } from './object-store.ts';
+import { executionLimits } from './scheduler.ts';
+import { vaultHealth } from './vault.ts';
+
+export async function readiness(
+  db: SqlConnection,
+): Promise<{ status: string; checkedAt: string; dependencies: Record<string, string> }> {
   const checks: Record<string, () => Promise<unknown>> = {
-    database: () => db.query("SELECT 1"),
+    database: () => db.query('SELECT 1'),
   };
-  if (
-    process.env["SECRET_BACKEND"] === "vault" &&
-    process.env["WORKER_ROLE"] !== "report"
-  )
-    checks["vault"] = vaultHealth;
+  if (process.env['SECRET_BACKEND'] === 'vault' && process.env['WORKER_ROLE'] !== 'report') {
+    checks['vault'] = vaultHealth;
+  }
   const store = objectStore;
-  if (store)
-    checks["storage"] = () =>
+  if (store) {
+    checks['storage'] = () =>
       store.client.send(new HeadBucketCommand({ Bucket: store.bucket }), {
         abortSignal: AbortSignal.timeout(2000),
       });
-  if (process.env["REDIS_URL"])
-    checks["queue"] = async () => {
-      const redis = new Redis(process.env["REDIS_URL"]!, {
+  }
+  if (process.env['REDIS_URL']) {
+    checks['queue'] = async () => {
+      const redis = new Redis(process.env['REDIS_URL']!, {
         lazyConnect: true,
         connectTimeout: 1500,
         commandTimeout: 1500,
@@ -32,7 +34,7 @@ export async function readiness(db: SqlConnection) {
         retryStrategy: () => null,
         maxRetriesPerRequest: 0,
       });
-      redis.on("error", () => {});
+      redis.on('error', () => {});
       try {
         await redis.connect();
         await redis.ping();
@@ -40,6 +42,7 @@ export async function readiness(db: SqlConnection) {
         redis.disconnect();
       }
     };
+  }
   const entries = await Promise.all(
     Object.entries(checks).map(async ([name, probe]) => {
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -47,42 +50,40 @@ export async function readiness(db: SqlConnection) {
         await Promise.race([
           probe(),
           new Promise((_, reject) => {
-            timer = setTimeout(() => reject(new Error("timeout")), 2500);
+            timer = setTimeout(() => reject(new Error('timeout')), 2500);
           }),
         ]);
-        return [name, "ok"];
+        return [name, 'ok'] as const;
       } catch {
-        return [name, "unavailable"];
+        return [name, 'unavailable'] as const;
       } finally {
         clearTimeout(timer);
       }
     }),
   );
   return {
-    status: entries.every(([, state]) => state === "ok")
-      ? "ready"
-      : "unavailable",
+    status: entries.every(([, state]) => state === 'ok') ? 'ready' : 'unavailable',
     checkedAt: new Date().toISOString(),
     dependencies: Object.fromEntries(entries),
   };
 }
-export function mountOperations(
-  app: Express,
-  db: SqlConnection,
-  identity: IdentityService,
-) {
+export function mountOperations(app: Express, db: SqlConnection, identity: IdentityService): void {
   let cached: ReturnType<typeof readiness> | undefined;
   let until = 0;
-  const check = () => {
+  const check = (): Promise<{
+    status: string;
+    checkedAt: string;
+    dependencies: Record<string, string>;
+  }> => {
     if (!cached || Date.now() > until) {
       cached = readiness(db);
       until = Date.now() + 5000;
     }
     return cached;
   };
-  if (process.env["METRICS_ENABLED"] === "true") {
+  if (process.env['METRICS_ENABLED'] === 'true') {
     // Internal service endpoint: intentionally absent from the public web proxy.
-    app.get("/internal/metrics", async (_req, res) => {
+    app.get('/internal/metrics', async (_req, res) => {
       try {
         const row = (
           await db.query<{
@@ -102,36 +103,35 @@ export function mountOperations(
         };
         const lines = Object.entries(values).flatMap(([name, raw]) => {
           const value = Number(raw ?? 0);
-          if (!Number.isFinite(value)) throw new Error("Invalid metric");
-          return [
-            `# TYPE assertide_${name} gauge`,
-            `assertide_${name} ${Math.max(0, value)}`,
-          ];
+          if (!Number.isFinite(value)) {
+            throw new Error('Invalid metric');
+          }
+          return [`# TYPE assertide_${name} gauge`, `assertide_${name} ${Math.max(0, value)}`];
         });
         res
-          .set("Cache-Control", "no-store")
-          .type("text/plain")
-          .send(lines.join("\n") + "\n");
+          .set('Cache-Control', 'no-store')
+          .type('text/plain')
+          .send(lines.join('\n') + '\n');
       } catch {
         res.status(503).end();
       }
     });
   }
-  app.get("/ready", async (_req, res) => {
+  app.get('/ready', async (_req, res) => {
     const state = await check();
     res
-      .set("Cache-Control", "no-store")
-      .status(state.status === "ready" ? 200 : 503)
+      .set('Cache-Control', 'no-store')
+      .status(state.status === 'ready' ? 200 : 503)
       .json({ status: state.status });
   });
-  app.get("/v1/operations", async (req, res) => {
-    res.set("Cache-Control", "no-store");
+  app.get('/v1/operations', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
     const principal = await identity.principal(req);
     if (!principal) {
       res.status(401).end();
       return;
     }
-    if (principal.role !== "administrator" || principal.machine) {
+    if (principal.role !== 'administrator' || principal.machine) {
       res.status(403).end();
       return;
     }
@@ -155,7 +155,7 @@ export function mountOperations(
     const condition = conditions.rows[0];
     res.json({
       ...state,
-      scope: "Authorized projects",
+      scope: 'Authorized projects',
       phases: rows.rows.map((row) => ({
         phase: row.phase,
         count: Number(row.count),

@@ -1,8 +1,10 @@
-import { Component, inject, signal, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { RouterLink, Router, ActivatedRoute } from '@angular/router';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Api, Run, Suite, Environment, errorMessage } from '../core/api';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+
+import type { Environment, Run, Suite } from '../core/api';
+import { Api, errorMessage } from '../core/api';
 import { LoadingState } from '../core/loading-state';
 @Component({
   imports: [RouterLink, DatePipe, FormsModule, LoadingState],
@@ -119,7 +121,7 @@ export class Runs {
   private readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  readonly phases = [
+  public readonly phases = [
     'all',
     'queued',
     'running',
@@ -128,20 +130,20 @@ export class Runs {
     'infrastructure_error',
     'timed_out',
   ];
-  phase = this.route.snapshot.queryParamMap.get('phase') ?? 'all';
-  browser = this.route.snapshot.queryParamMap.get('browser') ?? 'all';
-  from = this.route.snapshot.queryParamMap.get('from') ?? '';
-  to = this.route.snapshot.queryParamMap.get('to') ?? '';
-  suite = this.route.snapshot.queryParamMap.get('suite') ?? '';
-  environment = this.route.snapshot.queryParamMap.get('environment') ?? '';
-  outcome = this.route.snapshot.queryParamMap.get('outcome') ?? 'all';
-  readonly suites = signal<Suite[]>([]);
-  readonly environments = signal<Environment[]>([]);
-  readonly nextCursor = signal<string | null>(null);
-  readonly runs = signal<Run[]>([]);
-  readonly sortKey = signal<'id' | 'phase' | 'selected' | 'createdAt'>('createdAt');
-  readonly ascending = signal(false);
-  readonly sorted = computed(() =>
+  public phase = this.route.snapshot.queryParamMap.get('phase') ?? 'all';
+  public browser = this.route.snapshot.queryParamMap.get('browser') ?? 'all';
+  public from = this.route.snapshot.queryParamMap.get('from') ?? '';
+  public to = this.route.snapshot.queryParamMap.get('to') ?? '';
+  public suite = this.route.snapshot.queryParamMap.get('suite') ?? '';
+  public environment = this.route.snapshot.queryParamMap.get('environment') ?? '';
+  public outcome = this.route.snapshot.queryParamMap.get('outcome') ?? 'all';
+  public readonly suites = signal<Suite[]>([]);
+  public readonly environments = signal<Environment[]>([]);
+  public readonly nextCursor = signal<string | null>(null);
+  public readonly runs = signal<Run[]>([]);
+  public readonly sortKey = signal<'id' | 'phase' | 'selected' | 'createdAt'>('createdAt');
+  public readonly ascending = signal(false);
+  public readonly sorted = computed(() =>
     [...this.runs()].sort((a, b) => {
       const key = this.sortKey();
       const order =
@@ -151,23 +153,28 @@ export class Runs {
       return (this.ascending() ? 1 : -1) * order;
     }),
   );
-  sortBy(key: 'id' | 'phase' | 'selected' | 'createdAt') {
-    if (this.sortKey() === key) this.ascending.update((value) => !value);
-    else {
+  public readonly loading = signal(true);
+  public readonly hasLoaded = signal(false);
+  public readonly error = signal('');
+  private requestVersion = 0;
+  public constructor() {
+    void this.load();
+  }
+  public sortBy(key: 'id' | 'phase' | 'selected' | 'createdAt'): void {
+    if (this.sortKey() === key) {
+      this.ascending.update((value) => !value);
+    } else {
       this.sortKey.set(key);
       this.ascending.set(true);
     }
   }
-  sortState(key: string) {
-    return this.sortKey() === key ? (this.ascending() ? 'ascending' : 'descending') : 'none';
+  public sortState(key: string): 'ascending' | 'descending' | 'none' {
+    if (this.sortKey() !== key) {
+      return 'none';
+    }
+    return this.ascending() ? 'ascending' : 'descending';
   }
-  readonly loading = signal(true);
-  readonly hasLoaded = signal(false);
-  readonly error = signal('');
-  constructor() {
-    void this.load();
-  }
-  async apply() {
+  public async apply(): Promise<void> {
     this.loading.set(true);
     this.requestVersion++;
     await this.router.navigate([], {
@@ -185,7 +192,7 @@ export class Runs {
     });
     await this.load();
   }
-  async load(more = false) {
+  public async load(more = false): Promise<void> {
     const version = ++this.requestVersion;
     this.loading.set(true);
     this.error.set('');
@@ -196,27 +203,42 @@ export class Runs {
         browser: this.browser,
         outcome: this.outcome,
       });
-      if (this.from) query.set('from', this.from);
-      if (this.to) query.set('to', this.to);
-      if (this.suite) query.set('suite', this.suite);
-      if (this.environment) query.set('environment', this.environment);
-      if (more && this.nextCursor()) query.set('cursor', this.nextCursor()!);
+      if (this.from) {
+        query.set('from', this.from);
+      }
+      if (this.to) {
+        query.set('to', this.to);
+      }
+      if (this.suite) {
+        query.set('suite', this.suite);
+      }
+      if (this.environment) {
+        query.set('environment', this.environment);
+      }
+      if (more && this.nextCursor()) {
+        query.set('cursor', this.nextCursor()!);
+      }
       const [result, suites, environments] = await Promise.all([
         this.api.get<{ items: Run[]; nextCursor: string | null }>(`/runs?${query}`),
         this.api.get<{ items: Suite[] }>(`/projects/${this.api.projectId()}/suites`),
         this.api.get<{ items: Environment[] }>(`/projects/${this.api.projectId()}/environments`),
       ]);
-      if (version !== this.requestVersion) return;
+      if (version !== this.requestVersion) {
+        return;
+      }
       this.hasLoaded.set(true);
       this.suites.set(suites.items);
       this.environments.set(environments.items);
       this.runs.set(more ? [...this.runs(), ...result.items] : result.items);
       this.nextCursor.set(result.nextCursor);
     } catch (error) {
-      if (version === this.requestVersion) this.error.set(errorMessage(error));
+      if (version === this.requestVersion) {
+        this.error.set(errorMessage(error));
+      }
     } finally {
-      if (version === this.requestVersion) this.loading.set(false);
+      if (version === this.requestVersion) {
+        this.loading.set(false);
+      }
     }
   }
-  private requestVersion = 0;
 }

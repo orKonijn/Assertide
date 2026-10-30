@@ -1,5 +1,7 @@
-import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+
 import { Api } from './api';
 
 @Component({
@@ -69,32 +71,53 @@ import { Api } from './api';
 })
 export class ProjectPicker {
   private backdropPointer = false;
-  readonly api = inject(Api);
-  readonly query = signal('');
-  readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
-  readonly currentName = computed(
+  public readonly api = inject(Api);
+  public readonly query = signal('');
+  public readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  public readonly currentName = computed(
     () =>
       this.api.projects().find((p) => p.id === this.api.projectId())?.name ?? 'Choose a project',
   );
-  readonly matches = computed(() => {
+  public readonly matches = computed(() => {
     const query = this.query().trim().toLocaleLowerCase();
     return this.api
       .projects()
       .filter((p) => p.name.toLocaleLowerCase().includes(query))
       .slice()
       .sort((a, b) => {
-        if (a.id === this.api.projectId()) return -1;
-        if (b.id === this.api.projectId()) return 1;
+        if (a.id === this.api.projectId()) {
+          return -1;
+        }
+        if (b.id === this.api.projectId()) {
+          return 1;
+        }
         return a.name.localeCompare(b.name);
       });
   });
-  open() {
+  public open(): void {
     this.backdropPointer = false;
     this.query.set('');
     this.dialog().nativeElement.showModal();
     this.dialog().nativeElement.querySelector('input')?.focus();
   }
-  private outside(event: PointerEvent) {
+  public backdropStart(event: PointerEvent): void {
+    this.backdropPointer = event.button === 0 && this.outside(event);
+  }
+  public backdropEnd(event: PointerEvent): void {
+    if (this.backdropPointer && this.outside(event)) {
+      this.dialog().nativeElement.close();
+    }
+    this.backdropPointer = false;
+  }
+  public choose(id: string): void {
+    this.dialog().nativeElement.close();
+    if (id === this.api.projectId()) {
+      return;
+    }
+    this.api.selectProject(id);
+    location.assign('/');
+  }
+  private outside(event: PointerEvent): boolean {
     const dialog = this.dialog().nativeElement;
     const box = dialog.getBoundingClientRect();
     return (
@@ -104,18 +127,5 @@ export class ProjectPicker {
         event.clientY < box.top ||
         event.clientY > box.bottom)
     );
-  }
-  backdropStart(event: PointerEvent) {
-    this.backdropPointer = event.button === 0 && this.outside(event);
-  }
-  backdropEnd(event: PointerEvent) {
-    if (this.backdropPointer && this.outside(event)) this.dialog().nativeElement.close();
-    this.backdropPointer = false;
-  }
-  choose(id: string) {
-    this.dialog().nativeElement.close();
-    if (id === this.api.projectId()) return;
-    this.api.selectProject(id);
-    location.assign('/');
   }
 }

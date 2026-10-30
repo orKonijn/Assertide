@@ -1,7 +1,9 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Api, TestCase, Environment, errorMessage } from '../core/api';
+
+import type { Environment, TestCase } from '../core/api';
+import { Api, errorMessage } from '../core/api';
 import { LoadingState } from '../core/loading-state';
 @Component({
   imports: [FormsModule, LoadingState],
@@ -187,31 +189,54 @@ import { LoadingState } from '../core/loading-state';
   `,
 })
 export class Explorer {
-  readonly api = inject(Api);
+  public readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  readonly tests = signal<TestCase[]>([]);
-  readonly revision = signal('');
-  readonly kind = signal(this.route.snapshot.queryParamMap.get('kind') ?? 'all');
-  readonly priority = signal(this.route.snapshot.queryParamMap.get('priority') ?? 'all');
-  readonly query = signal(this.route.snapshot.queryParamMap.get('query') ?? '');
-  readonly selected = signal<string[]>([]);
-  readonly loading = signal(true);
-  readonly starting = signal(false);
-  readonly error = signal('');
-  readonly editing = signal<TestCase | null>(null);
-  readonly saving = signal(false);
-  feature = '';
-  module = '';
-  owner = '';
-  tags = '';
-  editPriority = 'P1';
-  enabled = true;
-  quarantined = false;
-  canEdit() {
+  public readonly tests = signal<TestCase[]>([]);
+  public readonly revision = signal('');
+  public readonly kind = signal(this.route.snapshot.queryParamMap.get('kind') ?? 'all');
+  public readonly priority = signal(this.route.snapshot.queryParamMap.get('priority') ?? 'all');
+  public readonly query = signal(this.route.snapshot.queryParamMap.get('query') ?? '');
+  public readonly selected = signal<string[]>([]);
+  public readonly loading = signal(true);
+  public readonly starting = signal(false);
+  public readonly error = signal('');
+  public readonly editing = signal<TestCase | null>(null);
+  public readonly saving = signal(false);
+  public feature = '';
+  public module = '';
+  public owner = '';
+  public tags = '';
+  public editPriority = 'P1';
+  public enabled = true;
+  public quarantined = false;
+  public workers = 1;
+  public retries = 0;
+  public browser = 'chromium';
+  public environmentId = 'local-lab';
+  public readonly environments = signal<Environment[]>([]);
+  public readonly headedAvailable = signal(false);
+  public headed = false;
+  public video: 'off' | 'retain-on-failure' = 'off';
+  public readonly hasUi = computed(() => this.selected().some((id) => id.startsWith('UI-')));
+  private key = crypto.randomUUID();
+  public readonly filtered = computed(() =>
+    this.tests().filter(
+      (test) =>
+        `${test.id} ${test.title} ${test.feature} ${test.module} ${test.owner} ${test.tags.join(' ')}`
+          .toLowerCase()
+          .includes(this.query().toLowerCase()) &&
+        (this.kind() === 'all' || test.kind === this.kind()) &&
+        (this.priority() === 'all' || test.priority === this.priority()),
+    ),
+  );
+  public constructor() {
+    void this.load();
+  }
+  public canEdit(): boolean {
     return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');
   }
-  edit(test: TestCase) {
+  public edit(test: TestCase): void {
     this.editing.set(test);
     this.feature = test.feature;
     this.module = test.module;
@@ -221,9 +246,11 @@ export class Explorer {
     this.enabled = test.enabled;
     this.quarantined = test.quarantined ?? false;
   }
-  async saveMetadata() {
+  public async saveMetadata(): Promise<void> {
     const current = this.editing();
-    if (!current) return;
+    if (!current) {
+      return;
+    }
     this.saving.set(true);
     this.error.set('');
     try {
@@ -251,37 +278,14 @@ export class Explorer {
       this.saving.set(false);
     }
   }
-  workers = 1;
-  retries = 0;
-  browser = 'chromium';
-  environmentId = 'local-lab';
-  readonly environments = signal<Environment[]>([]);
-  readonly headedAvailable = signal(false);
-  headed = false;
-  canHeaded() {
+  public canHeaded(): boolean {
     return (
       this.headedAvailable() &&
       !!this.environments().find((environment) => environment.id === this.environmentId)
         ?.allowHeaded
     );
   }
-  video: 'off' | 'retain-on-failure' = 'off';
-  readonly hasUi = computed(() => this.selected().some((id) => id.startsWith('UI-')));
-  private key = crypto.randomUUID();
-  readonly filtered = computed(() =>
-    this.tests().filter(
-      (test) =>
-        `${test.id} ${test.title} ${test.feature} ${test.module} ${test.owner} ${test.tags.join(' ')}`
-          .toLowerCase()
-          .includes(this.query().toLowerCase()) &&
-        (this.kind() === 'all' || test.kind === this.kind()) &&
-        (this.priority() === 'all' || test.priority === this.priority()),
-    ),
-  );
-  constructor() {
-    void this.load();
-  }
-  async load() {
+  public async load(): Promise<void> {
     this.loading.set(true);
     try {
       const catalog = await this.api.get<{
@@ -307,7 +311,7 @@ export class Explorer {
       this.loading.set(false);
     }
   }
-  search(value: string) {
+  public search(value: string): void {
     this.query.set(value);
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -319,13 +323,13 @@ export class Explorer {
       replaceUrl: true,
     });
   }
-  toggle(id: string) {
+  public toggle(id: string): void {
     this.selected.update((ids) =>
       ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
     );
     this.key = crypto.randomUUID();
   }
-  selectAll() {
+  public selectAll(): void {
     this.selected.set(
       this.filtered()
         .filter((test) => test.enabled)
@@ -333,7 +337,7 @@ export class Explorer {
     );
     this.key = crypto.randomUUID();
   }
-  async start() {
+  public async start(): Promise<void> {
     this.starting.set(true);
     this.error.set('');
     try {

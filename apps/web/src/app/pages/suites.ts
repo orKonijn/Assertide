@@ -1,7 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Api, Suite, TestCase, errorMessage } from '../core/api';
+
+import type { Suite, TestCase } from '../core/api';
+import { Api, errorMessage } from '../core/api';
 @Component({
   imports: [FormsModule],
   template: `<header class="page-header">
@@ -94,23 +96,26 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
     </div>`,
 })
 export class Suites {
-  readonly api = inject(Api);
+  public readonly api = inject(Api);
   private readonly router = inject(Router);
-  readonly suites = signal<Suite[]>([]);
-  readonly tests = signal<TestCase[]>([]);
-  readonly selected = signal<string[]>([]);
-  readonly error = signal('');
-  readonly busy = signal(false);
-  readonly editing = signal<Suite | null>(null);
-  name = '';
-  description = '';
-  owner = '';
-  priority = 'P1';
-  tags = '';
-  canEdit() {
+  public readonly suites = signal<Suite[]>([]);
+  public readonly tests = signal<TestCase[]>([]);
+  public readonly selected = signal<string[]>([]);
+  public readonly error = signal('');
+  public readonly busy = signal(false);
+  public readonly editing = signal<Suite | null>(null);
+  public name = '';
+  public description = '';
+  public owner = '';
+  public priority = 'P1';
+  public tags = '';
+  public constructor() {
+    void this.load();
+  }
+  public canEdit(): boolean {
     return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');
   }
-  edit(suite: Suite) {
+  public edit(suite: Suite): void {
     this.editing.set(suite);
     this.name = suite.name;
     this.description = suite.description;
@@ -120,7 +125,7 @@ export class Suites {
     this.selected.set([...suite.testIds]);
     this.error.set('');
   }
-  reset() {
+  public reset(): void {
     this.editing.set(null);
     this.name = '';
     this.description = '';
@@ -129,10 +134,7 @@ export class Suites {
     this.tags = '';
     this.selected.set([]);
   }
-  constructor() {
-    void this.load();
-  }
-  async load() {
+  public async load(): Promise<void> {
     try {
       const [suites, tests] = await Promise.all([
         this.api.get<{ items: Suite[] }>(`/projects/${this.api.projectId()}/suites`),
@@ -144,12 +146,12 @@ export class Suites {
       this.error.set(errorMessage(error));
     }
   }
-  toggle(id: string) {
+  public toggle(id: string): void {
     this.selected.update((ids) =>
       ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
     );
   }
-  async save() {
+  public async save(): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     try {
@@ -165,8 +167,11 @@ export class Suites {
           .filter(Boolean),
       };
       const current = this.editing();
-      if (current) await this.api.patch(`/suites/${current.id}`, body, current.version);
-      else await this.api.post(`/projects/${this.api.projectId()}/suites`, body);
+      if (current) {
+        await this.api.patch(`/suites/${current.id}`, body, current.version);
+      } else {
+        await this.api.post(`/projects/${this.api.projectId()}/suites`, body);
+      }
       this.reset();
       await this.load();
     } catch (error) {
@@ -175,7 +180,7 @@ export class Suites {
       this.busy.set(false);
     }
   }
-  async run(suite: Suite) {
+  public async run(suite: Suite): Promise<void> {
     this.busy.set(true);
     try {
       const run = await this.api.launch(

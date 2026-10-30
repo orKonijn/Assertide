@@ -1,10 +1,6 @@
-import { test as base, expect } from "@playwright/test";
-import {
-  metadata,
-  failureContext,
-  redact,
-  resetSecrets,
-} from "../utils/allure.utils";
+import { expect, test as base } from '@playwright/test';
+
+import { failureContext, metadata, redact, resetSecrets } from '../utils/allure.utils';
 export const test = base.extend<{
   diagnostics: { errors: string[]; secrets: string[] };
   sensitive: boolean;
@@ -16,24 +12,22 @@ export const test = base.extend<{
       const errors: string[] = [];
       const secrets: string[] = [];
       const consoleErrors: string[] = [];
-      const capture = (value: string) => {
-        if (consoleErrors.length < 20)
+      const capture = (value: string): void => {
+        if (consoleErrors.length < 20) {
           consoleErrors.push(redact(value, secrets));
+        }
       };
-      page.on("pageerror", (error) => {
+      page.on('pageerror', (error) => {
         errors.push(redact(error.message, secrets));
       });
-      page.on("console", (message) => {
-        if (message.type() === "error") capture(message.text());
+      page.on('console', (message) => {
+        if (message.type() === 'error') {
+          capture(message.text());
+        }
       });
       await metadata(info, `${browserName} ${browser.version()}`);
       await use({ errors, secrets });
-      await failureContext(
-        page,
-        info,
-        sensitive ? [] : [...errors, ...consoleErrors],
-        secrets,
-      );
+      await failureContext(page, info, sensitive ? [] : [...errors, ...consoleErrors], secrets);
     },
     { auto: true },
   ],

@@ -1,5 +1,5 @@
-import { Component, Injectable, inject, signal, DestroyRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Component, DestroyRef, inject, Injectable, signal } from '@angular/core';
 interface Notice {
   id: number;
   message: string;
@@ -7,14 +7,14 @@ interface Notice {
 }
 @Injectable({ providedIn: 'root' })
 export class Notifications {
-  readonly history = signal<Notice[]>([]);
-  readonly active = signal<Notice[]>([]);
+  public readonly history = signal<Notice[]>([]);
+  public readonly active = signal<Notice[]>([]);
   private nextId = 0;
   private readonly timers = new Set<ReturnType<typeof setTimeout>>();
-  constructor() {
+  public constructor() {
     inject(DestroyRef).onDestroy(() => this.clear());
   }
-  success(message: string) {
+  public success(message: string): void {
     const item = { id: ++this.nextId, message, at: new Date().toISOString() };
     this.history.update((items) => [item, ...items].slice(0, 50));
     this.active.set([item]);
@@ -24,11 +24,13 @@ export class Notifications {
     }, 5000);
     this.timers.add(timer);
   }
-  dismiss(id: number) {
+  public dismiss(id: number): void {
     this.active.update((items) => items.filter((item) => item.id !== id));
   }
-  clear() {
-    for (const timer of this.timers) clearTimeout(timer);
+  public clear(): void {
+    for (const timer of this.timers) {
+      clearTimeout(timer);
+    }
     this.timers.clear();
     this.history.set([]);
     this.active.set([]);
@@ -66,5 +68,5 @@ export class Notifications {
   ],
 })
 export class NotificationLog {
-  readonly notices = inject(Notifications);
+  public readonly notices = inject(Notifications);
 }

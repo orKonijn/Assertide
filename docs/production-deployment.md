@@ -38,12 +38,12 @@ Create the TLS certificate secret through the deployment's certificate manager. 
 
 Provision these **private** Kubernetes Secrets through your infrastructure secret operator; the renderer never emits secret values:
 
-| Secret | Required configuration |
-| --- | --- |
-| `assertide-api-config` | `DATABASE_URL`, `REDIS_URL`, `S3_BUCKET`, `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`; object-store region/endpoint and workload credentials if needed |
-| `assertide-execution-config` | `DATABASE_URL`, `REDIS_URL`, `S3_BUCKET`; object-store configuration; legacy encryption key only when historical AES credentials remain |
-| `assertide-report-config` | `DATABASE_URL`, `S3_BUCKET`; object-store configuration (no OIDC or Vault permissions required) |
-| `assertide-backup-config` | Read-only backup `DATABASE_URL`, `BACKUP_S3_BUCKET`, object-store configuration with access only to the backup bucket; legacy encryption key when a backup must record its fingerprint |
+| Secret                       | Required configuration                                                                                                                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `assertide-api-config`       | `DATABASE_URL`, `REDIS_URL`, `S3_BUCKET`, `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`; object-store region/endpoint and workload credentials if needed                       |
+| `assertide-execution-config` | `DATABASE_URL`, `REDIS_URL`, `S3_BUCKET`; object-store configuration; legacy encryption key only when historical AES credentials remain                                                |
+| `assertide-report-config`    | `DATABASE_URL`, `S3_BUCKET`; object-store configuration (no OIDC or Vault permissions required)                                                                                        |
+| `assertide-backup-config`    | Read-only backup `DATABASE_URL`, `BACKUP_S3_BUCKET`, object-store configuration with access only to the backup bucket; legacy encryption key when a backup must record its fingerprint |
 
 The API also needs the legacy key if administrators rotate existing AES credentials during migration. Bind the Vault role to `assertide-api` and `assertide-execution` in the chosen namespace. Use separate database/storage principals with the minimum role-specific access. Configure provider workload-identity annotations on service accounts when using cloud-native credentials. CA certificate mounts and `NODE_EXTRA_CA_CERTS` are deployment overlays, not secrets embedded in images.
 

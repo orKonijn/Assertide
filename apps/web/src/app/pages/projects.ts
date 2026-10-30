@@ -1,7 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Api, Project, errorMessage } from '../core/api';
+import { RouterLink } from '@angular/router';
+
+import type { Project } from '../core/api';
+import { Api, errorMessage } from '../core/api';
 @Component({
   imports: [RouterLink, FormsModule],
   template: `<header class="page-header">
@@ -55,31 +57,39 @@ import { Api, Project, errorMessage } from '../core/api';
     </div>`,
 })
 export class Projects {
-  readonly api = inject(Api);
-  readonly projects = signal<Project[]>([]);
-  readonly error = signal('');
-  readonly busy = signal(false);
-  editing: Project | null = null;
-  name = '';
-  description = '';
-  edit(project: Project) {
+  public readonly api = inject(Api);
+  public readonly projects = signal<Project[]>([]);
+  public readonly error = signal('');
+  public readonly busy = signal(false);
+  public editing: Project | null = null;
+  public name = '';
+  public description = '';
+  public constructor() {
+    void this.api
+      .get<{ items: Project[] }>('/projects')
+      .then((data) => this.projects.set(data.items))
+      .catch((error) => this.error.set(errorMessage(error)));
+  }
+  public edit(project: Project): void {
     this.editing = project;
     this.name = project.name;
     this.description = project.description;
   }
-  reset() {
+  public reset(): void {
     this.editing = null;
     this.name = '';
     this.description = '';
   }
-  async save() {
+  public async save(): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     try {
       const body = { name: this.name, description: this.description };
-      if (this.editing)
+      if (this.editing) {
         await this.api.patch(`/projects/${this.editing.id}`, body, this.editing.version);
-      else await this.api.post('/projects', body);
+      } else {
+        await this.api.post('/projects', body);
+      }
       await this.api.loadIdentity();
       this.projects.set(this.api.projects());
       this.reset();
@@ -88,11 +98,5 @@ export class Projects {
     } finally {
       this.busy.set(false);
     }
-  }
-  constructor() {
-    void this.api
-      .get<{ items: Project[] }>('/projects')
-      .then((data) => this.projects.set(data.items))
-      .catch((error) => this.error.set(errorMessage(error)));
   }
 }

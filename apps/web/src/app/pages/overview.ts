@@ -1,10 +1,12 @@
-import { Component, inject, signal, computed } from '@angular/core';
-import { RouterLink, Router, ActivatedRoute } from '@angular/router';
+import { DatePipe, DecimalPipe, PercentPipe } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TrendChart } from '../core/trend-chart';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+
+import type { Environment, Run, Suite } from '../core/api';
+import { Api, errorMessage } from '../core/api';
 import { LoadingState } from '../core/loading-state';
-import { Api, Run, Environment, Suite, errorMessage } from '../core/api';
-import { PercentPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { TrendChart } from '../core/trend-chart';
 interface Analytics {
   timeZone: string;
   quarantined: number;
@@ -511,36 +513,39 @@ export class Overview {
   private readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  days = Number(this.route.snapshot.queryParamMap.get('days') ?? 7);
-  browser = this.route.snapshot.queryParamMap.get('browser') ?? 'all';
-  from = this.route.snapshot.queryParamMap.get('from') ?? '';
-  to = this.route.snapshot.queryParamMap.get('to') ?? '';
-  environment = this.route.snapshot.queryParamMap.get('environment') ?? '';
-  suite = this.route.snapshot.queryParamMap.get('suite') ?? '';
-  readonly suites = signal<Suite[]>([]);
-  status = this.route.snapshot.queryParamMap.get('status') ?? 'all';
-  readonly environments = signal<Environment[]>([]);
-  readonly notice = signal('');
-  readonly runs = signal<Run[]>([]);
-  readonly analytics = signal<Analytics | null>(null);
-  readonly loading = signal(true);
-  readonly error = signal('');
-  readonly completed = computed(() => this.runs().filter((run) => run.phase === 'completed'));
-  readonly live = computed(() =>
+  public days = Number(this.route.snapshot.queryParamMap.get('days') ?? 7);
+  public browser = this.route.snapshot.queryParamMap.get('browser') ?? 'all';
+  public from = this.route.snapshot.queryParamMap.get('from') ?? '';
+  public to = this.route.snapshot.queryParamMap.get('to') ?? '';
+  public environment = this.route.snapshot.queryParamMap.get('environment') ?? '';
+  public suite = this.route.snapshot.queryParamMap.get('suite') ?? '';
+  public readonly suites = signal<Suite[]>([]);
+  public status = this.route.snapshot.queryParamMap.get('status') ?? 'all';
+  public readonly environments = signal<Environment[]>([]);
+  public readonly notice = signal('');
+  public readonly runs = signal<Run[]>([]);
+  public readonly analytics = signal<Analytics | null>(null);
+  public readonly loading = signal(true);
+  public readonly error = signal('');
+  public readonly completed = computed(() =>
+    this.runs().filter((run) => run.phase === 'completed'),
+  );
+  public readonly live = computed(() =>
     this.runs().filter((run) =>
       ['queued', 'provisioning', 'running', 'finalizing'].includes(run.phase),
     ),
   );
-  readonly failed = computed(
+  public readonly failed = computed(
     () =>
       this.completed()
         .flatMap((run) => run.results ?? [])
         .filter((result) => ['failed', 'broken'].includes(result.status)).length,
   );
-  constructor() {
+  private requestVersion = 0;
+  public constructor() {
     void this.load();
   }
-  async filter() {
+  public async filter(): Promise<void> {
     this.loading.set(true);
     this.requestVersion++;
     await this.router.navigate([], {
@@ -550,7 +555,15 @@ export class Overview {
     });
     await this.load();
   }
-  filters() {
+  public filters(): {
+    status: string;
+    suite?: string | undefined;
+    environment?: string | undefined;
+    to?: string | undefined;
+    from?: string | undefined;
+    days: number;
+    browser: string;
+  } {
     return {
       days: this.days,
       browser: this.browser,
@@ -561,7 +574,7 @@ export class Overview {
       status: this.status,
     };
   }
-  reset() {
+  public reset(): void {
     this.days = 7;
     this.browser = 'all';
     this.from = '';
@@ -571,12 +584,12 @@ export class Overview {
     this.status = 'all';
     void this.filter();
   }
-  selectDay(day: string) {
+  public selectDay(day: string): void {
     this.from = day;
     this.to = day;
     void this.filter();
   }
-  saveFilters() {
+  public saveFilters(): void {
     try {
       localStorage.setItem(
         `assertide.analytics.${this.api.identity()?.subject}.${this.api.projectId()}`,
@@ -587,7 +600,7 @@ export class Overview {
       this.notice.set('This browser could not save filters.');
     }
   }
-  restoreFilters() {
+  public restoreFilters(): void {
     try {
       const saved: unknown = JSON.parse(
         localStorage.getItem(
@@ -600,20 +613,17 @@ export class Overview {
       }
       const value = saved as Record<string, unknown>;
       this.days = typeof value['days'] === 'number' ? value['days'] : 7;
-      for (const key of ['browser', 'from', 'to', 'environment', 'suite', 'status'] as const)
-        this[key] =
-          typeof value[key] === 'string'
-            ? value[key]
-            : key === 'browser' || key === 'status'
-              ? 'all'
-              : '';
+      for (const key of ['browser', 'from', 'to', 'environment', 'suite', 'status'] as const) {
+        const fallback = key === 'browser' || key === 'status' ? 'all' : '';
+        this[key] = typeof value[key] === 'string' ? value[key] : fallback;
+      }
       void this.filter();
       this.notice.set('Saved filters restored.');
     } catch {
       this.notice.set('Saved filters could not be restored.');
     }
   }
-  exportMetrics() {
+  public exportMetrics(): void {
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(this.analytics(), null, 2)], { type: 'application/json' }),
     );
@@ -623,8 +633,7 @@ export class Overview {
     link.click();
     URL.revokeObjectURL(url);
   }
-  private requestVersion = 0;
-  async load() {
+  public async load(): Promise<void> {
     const version = ++this.requestVersion;
     const project = this.api.projectId();
     const query = new URLSearchParams(
@@ -639,15 +648,21 @@ export class Overview {
         this.api.get<Analytics>(`/projects/${project}/analytics?${query}`),
         this.api.get<{ items: Suite[] }>(`/projects/${project}/suites`),
       ]);
-      if (version !== this.requestVersion) return;
+      if (version !== this.requestVersion) {
+        return;
+      }
       this.environments.set(environments.items);
       this.suites.set(suites.items);
       this.runs.set(runs.items);
       this.analytics.set(analytics);
     } catch (error) {
-      if (version === this.requestVersion) this.error.set(errorMessage(error));
+      if (version === this.requestVersion) {
+        this.error.set(errorMessage(error));
+      }
     } finally {
-      if (version === this.requestVersion) this.loading.set(false);
+      if (version === this.requestVersion) {
+        this.loading.set(false);
+      }
     }
   }
 }
