@@ -1,88 +1,65 @@
-import { test, expect } from "@playwright/test";
-const origin = "https://the-internet.herokuapp.com";
-test.beforeEach(async ({ context }) => {
-  let stopped = false;
-  await context.route("**/*", async (route) => {
-    const url = new URL(route.request().url());
-    if (stopped || url.origin !== origin) return route.abort();
-    const response = await route.fetch({ maxRedirects: 0, maxRetries: 0 });
-    if ([403, 429].includes(response.status())) {
-      stopped = true;
-      await route.abort();
-      throw new Error(`Public practice stopped: HTTP ${response.status()}`);
-    }
-    await route.fulfill({ response });
+import { test, expect } from "../ui/fixtures/base.fixture";
+import { PracticePage } from "../ui/pages/practice.page";
+import {
+  PracticeRoutes as R,
+  PracticeData as D,
+} from "../ui/types/practice.selectors";
+import { Timeouts } from "../ui/types/test-data";
+import { restrictPractice } from "../ui/utils/practice-network.utils";
+test.describe("Manual public browser practice", () => {
+  let practice: PracticePage;
+  test.beforeEach(async ({ page, context }) => {
+    practice = new PracticePage(page);
+    await restrictPractice(context);
   });
-});
-test.afterEach(async ({ context }) => {
-  await context.unrouteAll({ behavior: "wait" });
-});
-test("WEB-001 Dynamic loading waits for content", async ({ page }) => {
-  await page.goto(`${origin}/dynamic_loading/1`);
-  await page.getByRole("button", { name: "Start", exact: true }).click();
-  await expect(page.locator("#finish")).toHaveText("Hello World!", {
-    timeout: 15000,
+  test.afterEach(async ({ context }) => {
+    await context.unrouteAll({ behavior: "wait" });
   });
-  await expect(page.locator("#finish")).toBeVisible({ timeout: 15000 });
-});
-test("WEB-002 Checkbox state persists within page", async ({ page }) => {
-  await page.goto(`${origin}/checkboxes`);
-  const boxes = page.getByRole("checkbox");
-  await boxes.nth(0).check();
-  await boxes.nth(1).uncheck();
-  await expect(boxes.nth(0)).toBeChecked();
-  await expect(boxes.nth(1)).not.toBeChecked();
-});
-test("WEB-003 Dropdown selects requested option", async ({ page }) => {
-  await page.goto(`${origin}/dropdown`);
-  await page.getByRole("combobox").selectOption("2");
-  await expect(page.getByRole("combobox")).toHaveValue("2");
-  await expect(page.locator("option:checked")).toHaveText("Option 2");
-});
-test("WEB-004 Alert confirmation accepts and dismisses", async ({ page }) => {
-  await page.goto(`${origin}/javascript_alerts`);
-  page.once("dialog", (dialog) => dialog.dismiss());
-  await page
-    .getByRole("button", { name: "Click for JS Confirm", exact: true })
-    .click();
-  await expect(page.locator("#result")).toHaveText("You clicked: Cancel");
-  page.once("dialog", (dialog) => dialog.accept());
-  await page
-    .getByRole("button", { name: "Click for JS Confirm", exact: true })
-    .click();
-  await expect(page.locator("#result")).toHaveText("You clicked: Ok");
-});
-test("WEB-005 New window isolation", async ({ page }) => {
-  await page.goto(`${origin}/windows`);
-  const popupPromise = page.waitForEvent("popup");
-  await page.getByRole("link", { name: "Click Here", exact: true }).click();
-  const popup = await popupPromise;
-  await expect(
-    popup.getByRole("heading", { name: "New Window", exact: true }),
-  ).toBeVisible();
-  await popup.waitForLoadState("load");
-  await popup.close();
-  await expect(
-    page.getByRole("heading", { name: "Opening a new window" }),
-  ).toBeVisible();
-});
-test("WEB-006 Upload synthetic text file", async ({ page }) => {
-  await page.goto(`${origin}/upload`);
-  await page
-    .locator("#file-upload")
-    .setInputFiles({
-      name: "hello.txt",
-      mimeType: "text/plain",
-      buffer: Buffer.from("Assertide test file!\n"),
+  test("WEB-001 Dynamic loading waits for content", async () => {
+    await practice.goto(R.loading);
+    await practice.startLoading();
+    await expect(practice.finish).toHaveText("Hello World!", {
+      timeout: Timeouts.practice,
     });
-  await page.getByRole("button", { name: "Upload", exact: true }).click();
-  await expect(page.locator("#uploaded-files")).toHaveText("hello.txt");
-});
-test("WEB-007 Dynamic input enablement", async ({ page }) => {
-  await page.goto(`${origin}/dynamic_controls`);
-  await page.getByRole("button", { name: "Enable", exact: true }).click();
-  const input = page.locator("#input-example input");
-  await expect(input).toBeEnabled({ timeout: 15000 });
-  await input.fill("demo");
-  await expect(input).toHaveValue("demo");
+    await expect(practice.finish).toBeVisible({ timeout: Timeouts.practice });
+  });
+  test("WEB-002 Checkbox state persists within page", async () => {
+    await practice.goto(R.checkboxes);
+    await practice.setCheckboxes();
+    await expect(practice.boxes.nth(0)).toBeChecked();
+    await expect(practice.boxes.nth(1)).not.toBeChecked();
+  });
+  test("WEB-003 Dropdown selects requested option", async () => {
+    await practice.goto(R.dropdown);
+    await practice.selectOption();
+    await expect(practice.dropdown).toHaveValue(D.option);
+    await expect(practice.selectedOption).toHaveText(D.optionText);
+  });
+  test("WEB-004 Alert confirmation accepts and dismisses", async () => {
+    await practice.goto(R.alerts);
+    await practice.confirm(false);
+    await expect(practice.result).toHaveText("You clicked: Cancel");
+    await practice.confirm(true);
+    await expect(practice.result).toHaveText("You clicked: Ok");
+  });
+  test("WEB-005 New window isolation", async () => {
+    await practice.goto(R.windows);
+    const popup = await practice.openWindow();
+    await expect(popup.heading).toBeVisible();
+    await popup.page.waitForLoadState("load");
+    await popup.page.close();
+    await expect(practice.heading).toBeVisible();
+  });
+  test("WEB-006 Upload synthetic text file", async () => {
+    await practice.goto(R.upload);
+    await practice.upload();
+    await expect(practice.uploaded).toHaveText(D.fileName);
+  });
+  test("WEB-007 Dynamic input enablement", async () => {
+    await practice.goto(R.controls);
+    await practice.enable();
+    await expect(practice.input).toBeEnabled({ timeout: Timeouts.practice });
+    await practice.enterText();
+    await expect(practice.input).toHaveValue(D.input);
+  });
 });

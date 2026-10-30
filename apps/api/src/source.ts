@@ -27,6 +27,7 @@ function files(directory: string): string[] {
 }
 const entries = [
   ...files("tests"),
+  ...files("ui"),
   "playwright.config.ts",
   "checkpoint-reporter.ts",
   "package.json",

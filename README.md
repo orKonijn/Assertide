@@ -29,6 +29,8 @@ The local OIDC provider is a development fixture with ephemeral signing keys. Pr
 
 The infrastructure baseline requires Docker, PostgreSQL 17, Redis and private S3-compatible storage. Follow [the architecture](deliverables/02-architecture-and-automation.md) and [implementation order](deliverables/05-roadmap.md).
 
+See [UI automation and Allure reports](docs/ui-testing.md) for Page Object boundaries, focused test commands, CI artifacts and credential-safe diagnostics.
+
 ## Versions
 
 No product release is assigned. The private web package uses `0.0.0` as a tooling placeholder, not a released application version. A documented pre-1.0 compatibility policy must precede the first product release. Completed changes remain under `Unreleased` in the changelog.

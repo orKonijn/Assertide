@@ -12,5 +12,12 @@
     "types": ["node"],
     "lib": ["ES2023", "DOM"]
   },
-  "include": ["*.ts", "tests/**/*.ts", "platform/**/*.ts", "practice/**/*.ts"]
+  "include": [
+    "*.ts",
+    "tests/**/*.ts",
+    "platform/**/*.ts",
+    "practice/**/*.ts",
+    "ui/**/*.ts",
+    "checks/**/*.ts"
+  ]
 }

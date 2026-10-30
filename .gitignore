@@ -11,3 +11,4 @@ allure-results/
 *.log
 .local-db/
 .local/
+allure-report/

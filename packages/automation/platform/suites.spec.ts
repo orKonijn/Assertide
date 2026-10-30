@@ -1,61 +1,42 @@
 import { test, expect } from "./fixtures";
-
-import { randomUUID } from "node:crypto";
-
-test("saved suite metadata and membership survive editing and reload", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await page.getByRole("link", { name: "Test suites", exact: true }).click();
-  const name = `Regression ${randomUUID().slice(0, 8)}`;
-  await page.getByLabel("Name", { exact: true }).fill(name);
-  await page
-    .getByLabel("Description", { exact: true })
-    .fill("Saved contract checks");
-  await page.getByLabel("Owner", { exact: true }).fill("Quality team");
-  await page.getByLabel("Tags (comma separated)").fill("regression, api");
-  await page
-    .getByRole("checkbox", {
-      name: "LAB-001 Persistent order lifecycle",
-      exact: true,
-    })
-    .check();
-  await page.getByRole("button", { name: "Save suite", exact: true }).click();
-  await page.getByRole("button", { name: `Edit ${name}`, exact: true }).click();
-  await expect(page.getByLabel("Owner", { exact: true })).toHaveValue(
-    "Quality team",
-  );
-  await page
-    .getByLabel("Description", { exact: true })
-    .fill("Updated contract checks");
-  await page
-    .getByRole("checkbox", {
-      name: "LAB-002 Missing authentication",
-      exact: true,
-    })
-    .check();
-  await page.getByRole("button", { name: "Save suite", exact: true }).click();
-  const card = page
-    .getByRole("article")
-    .filter({ has: page.getByRole("heading", { name, exact: true }) });
-  await expect(card).toContainText("2 tests · revision 2");
-  await expect(page.locator(".toast")).toContainText("Changes saved.");
-  await page.getByText(/Notification history \(2\)/).click();
-  await expect(page.locator("app-notifications details")).toContainText(
-    "Changes saved.",
-  );
-  await page.locator("app-notifications").screenshot({
-    path: "../../docs/changelog/assets/unreleased/notifications.png",
+import { SuitesPage } from "../ui/pages/suites.page";
+import { NotificationsComponent } from "../ui/components/notifications.component";
+import { uniqueName } from "../ui/utils/test-data.utils";
+import { TestData as D, Timeouts } from "../ui/types/test-data";
+test.describe("Saved suites", () => {
+  let suites: SuitesPage;
+  let notifications: NotificationsComponent;
+  test.beforeEach(async ({ page }) => {
+    suites = new SuitesPage(page);
+    notifications = new NotificationsComponent(page);
+    await suites.goto();
   });
-  await expect(page.locator(".toast")).toHaveCount(0, { timeout: 7000 });
-  await expect(page.locator("app-notifications details")).toContainText(
-    "Changes saved.",
-  );
-  await page.reload();
-  await expect(card).toContainText("Updated contract checks");
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.screenshot({
-    path: "../../docs/changelog/assets/unreleased/suite-editing.png",
-    fullPage: true,
+  test("metadata and membership survive editing and reload", async ({
+    page,
+  }) => {
+    const name = uniqueName("Regression");
+    await suites.fillDetails({
+      name,
+      description: "Saved contract checks",
+      owner: "Quality team",
+      tags: "regression, api",
+    });
+    await suites.setMember(D.lifecycle, true);
+    await suites.save();
+    await suites.edit(name);
+    await expect(suites.owner).toHaveValue("Quality team");
+    await suites.updateDescription("Updated contract checks");
+    await suites.setMember(D.unauthorized, true);
+    await suites.save();
+    await expect(suites.card(name)).toContainText("2 tests · revision 2");
+    await expect(notifications.toast).toContainText("Changes saved.");
+    await notifications.openHistory();
+    await expect(notifications.history).toContainText("Changes saved.");
+    await expect(notifications.toast).toHaveCount(0, {
+      timeout: Timeouts.toast,
+    });
+    await expect(notifications.history).toContainText("Changes saved.");
+    await page.reload();
+    await expect(suites.card(name)).toContainText("Updated contract checks");
   });
 });
