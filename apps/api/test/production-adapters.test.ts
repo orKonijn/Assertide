@@ -24,6 +24,14 @@ test("production startup refuses development identity, insecure origins and muta
   };
   assert.doesNotThrow(() => validateProduction(env));
   assert.throws(
+    () =>
+      validateProduction({
+        ...env,
+        S3_ENDPOINT: "http://objects.example.test",
+      }),
+    /HTTPS/,
+  );
+  assert.throws(
     () => validateProduction({ ...env, LOCAL_IDENTITY: "true" }),
     /cannot be enabled/,
   );

@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+export function validateStorageTransport(env: NodeJS.ProcessEnv = process.env) {
+  if (
+    env["NODE_ENV"] === "production" &&
+    env["S3_ENDPOINT"] &&
+    new URL(env["S3_ENDPOINT"]).protocol !== "https:"
+  )
+    throw new Error("Production object storage requires HTTPS");
+}
+
 export function validateProduction(env: NodeJS.ProcessEnv = process.env) {
   if (env["NODE_ENV"] !== "production") return;
   for (const name of [
@@ -23,6 +32,7 @@ export function validateProduction(env: NodeJS.ProcessEnv = process.env) {
     if (url.protocol !== "https:" || url.username || url.password)
       throw new Error(`${name} requires HTTPS`);
   }
+  validateStorageTransport(env);
   if (
     new URL(env["APP_ORIGIN"]!).origin === new URL(env["REPORT_ORIGIN"]!).origin
   )

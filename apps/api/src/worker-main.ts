@@ -1,8 +1,10 @@
 import { createServer } from "node:http";
+import { validateStorageTransport } from "./production-config.ts";
 import { readiness } from "./operations.ts";
 import { connectDatabase } from "./database.ts";
 import { LocalRunner } from "./local-runner.ts";
 
+validateStorageTransport();
 const role = process.env["WORKER_ROLE"];
 if (role !== "execution" && role !== "report")
   throw new Error("WORKER_ROLE must be execution or report");

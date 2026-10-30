@@ -9,11 +9,13 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { backupDatabase } from "../src/database-backup.ts";
+import { validateStorageTransport } from "../src/production-config.ts";
 
 const bucket = process.env["BACKUP_S3_BUCKET"];
 const database = process.env["DATABASE_URL"];
 if (!bucket || !database)
   throw new Error("Private backup bucket and database required");
+validateStorageTransport();
 const client = new S3Client({
   ...(process.env["S3_ENDPOINT"]
     ? { endpoint: process.env["S3_ENDPOINT"], forcePathStyle: true }

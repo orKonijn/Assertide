@@ -33,7 +33,7 @@ RUN npm ci
 COPY apps/web ./
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1.29-alpine AS web
+FROM ghcr.io/nginx/nginx-unprivileged:1.30.6-alpine AS web
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=web-build /build/dist/assertide-web/browser /usr/share/nginx/html
 EXPOSE 8080

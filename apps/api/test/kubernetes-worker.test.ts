@@ -81,7 +81,7 @@ test(
           testIds: ["LAB-001", "LAB-002", "UI-001"],
           workers: 1,
           retries: 0,
-          projects: ["api", "chromium"],
+          projects: ["api", "chromium", "firefox", "webkit"],
           headed: true,
           video: "off",
           password: randomBytes(24).toString("hex"),
@@ -92,7 +92,7 @@ test(
       const results = JSON.parse(
         await readFile(path.join(output, "results.json"), "utf8"),
       );
-      assert.equal(results.stats.expected, 3);
+      assert.equal(results.stats.expected, 5);
       assert.equal(results.stats.unexpected, 0);
       const cancelId = randomUUID();
       try {
