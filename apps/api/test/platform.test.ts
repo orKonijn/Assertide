@@ -150,6 +150,24 @@ test("platform authorization, suite concurrency, launch deduplication and cancel
       suiteConfig,
       randomUUID(),
     );
+    assert.equal(
+      (
+        await service.history(admin, localProjectId, {
+          suite: suite.id,
+          environment: "local-lab",
+        })
+      ).items.length,
+      1,
+    );
+    assert.equal(
+      (
+        await service.history(admin, localProjectId, {
+          suite: suite.id,
+          environment: "other",
+        })
+      ).items.length,
+      0,
+    );
     assert.equal((suiteRun["suite"] as { name: string }).name, "Smoke");
     await assert.rejects(
       service.launch(

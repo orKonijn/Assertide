@@ -16,9 +16,19 @@ async function addBackpack(page: Page) {
   await expect(page.getByTestId("checkout")).toBeVisible();
 }
 async function customer(page: Page) {
-  await page.getByTestId("firstName").fill("Ada");
-  await page.getByTestId("lastName").fill("Test");
-  await page.getByTestId("postalCode").fill("10001");
+  for (const [field, value] of [
+    ["firstName", "Ada"],
+    ["lastName", "Test"],
+    ["postalCode", "10001"],
+  ] as const) {
+    let entered = "";
+    for (const character of value) {
+      await page.getByTestId(field).press("End");
+      await page.getByTestId(field).pressSequentially(character);
+      entered += character;
+      await expect(page.getByTestId(field)).toHaveValue(entered);
+    }
+  }
   await page.getByTestId("continue").click();
   await expect(page.getByTestId("finish")).toBeVisible();
 }
@@ -124,6 +134,19 @@ test("UI-011 Product detail matches catalog", async ({ page }) => {
   await expect(page.locator(".inventory_details_price")).toHaveText(
     price ?? "",
   );
+  await page.getByRole("button", { name: "Add to cart", exact: true }).click();
+  await page.locator(".shopping_cart_link").click();
+  await expect(page.locator(".inventory_item_name")).toHaveText(
+    "Sauce Labs Backpack",
+  );
+  await expect(page.locator(".inventory_item_price")).toHaveText(price ?? "");
+  await expect(page.locator(".cart_quantity")).toHaveText("1");
+  await test
+    .info()
+    .attach("screenshot", {
+      body: await page.screenshot(),
+      contentType: "image/png",
+    });
 });
 test("UI-012 Checkout total arithmetic", async ({ page }) => {
   await login(page);

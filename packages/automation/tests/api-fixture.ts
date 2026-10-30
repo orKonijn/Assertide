@@ -15,7 +15,9 @@ const redact = (text: string) =>
     .join("[REDACTED]");
 export const test = base.extend<{ request: APIRequestContext }>({
   request: async ({ playwright, baseURL }, use, info) => {
-    const context = await playwright.request.newContext({ baseURL });
+    const context = await playwright.request.newContext(
+      baseURL ? { baseURL } : {},
+    );
     const methods = new Set(["get", "post", "put", "patch", "delete", "head"]);
     const observed = new Proxy(context, {
       get(target, property) {

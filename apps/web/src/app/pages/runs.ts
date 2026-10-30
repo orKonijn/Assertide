@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Api, Run, errorMessage } from '../core/api';
+import { Api, Run, Suite, Environment, errorMessage } from '../core/api';
 @Component({
   imports: [RouterLink, DatePipe, FormsModule],
   template: `
@@ -35,6 +35,22 @@ import { Api, Run, errorMessage } from '../core/api';
         >
         <label>From (UTC)<input type="date" name="from" [(ngModel)]="from" /></label
         ><label>Through (UTC)<input type="date" name="to" [(ngModel)]="to" /></label>
+        <label
+          >Suite<select name="suite" [(ngModel)]="suite">
+            <option value="">All suites and selections</option>
+            @for (item of suites(); track item.id) {
+              <option [value]="item.id">{{ item.name }}</option>
+            }
+          </select></label
+        >
+        <label
+          >Environment<select name="environment" [(ngModel)]="environment">
+            <option value="">All environments</option>
+            @for (item of environments(); track item.id) {
+              <option [value]="item.id">{{ item.name }}</option>
+            }
+          </select></label
+        >
         <button type="submit" [disabled]="loading()">Apply filters</button
         ><button type="button" (click)="load()">Refresh</button>
       </form>
@@ -98,6 +114,10 @@ export class Runs {
   browser = this.route.snapshot.queryParamMap.get('browser') ?? 'all';
   from = this.route.snapshot.queryParamMap.get('from') ?? '';
   to = this.route.snapshot.queryParamMap.get('to') ?? '';
+  suite = this.route.snapshot.queryParamMap.get('suite') ?? '';
+  environment = this.route.snapshot.queryParamMap.get('environment') ?? '';
+  readonly suites = signal<Suite[]>([]);
+  readonly environments = signal<Environment[]>([]);
   readonly nextCursor = signal<string | null>(null);
   readonly runs = signal<Run[]>([]);
   readonly loading = signal(true);
@@ -113,12 +133,15 @@ export class Runs {
         browser: this.browser,
         from: this.from || null,
         to: this.to || null,
+        suite: this.suite || null,
+        environment: this.environment || null,
       },
       replaceUrl: true,
     });
     await this.load();
   }
   async load(more = false) {
+    const version = ++this.requestVersion;
     this.loading.set(true);
     this.error.set('');
     try {
@@ -129,16 +152,24 @@ export class Runs {
       });
       if (this.from) query.set('from', this.from);
       if (this.to) query.set('to', this.to);
+      if (this.suite) query.set('suite', this.suite);
+      if (this.environment) query.set('environment', this.environment);
       if (more && this.nextCursor()) query.set('cursor', this.nextCursor()!);
-      const result = await this.api.get<{ items: Run[]; nextCursor: string | null }>(
-        `/runs?${query}`,
-      );
+      const [result, suites, environments] = await Promise.all([
+        this.api.get<{ items: Run[]; nextCursor: string | null }>(`/runs?${query}`),
+        this.api.get<{ items: Suite[] }>(`/projects/${this.api.projectId()}/suites`),
+        this.api.get<{ items: Environment[] }>(`/projects/${this.api.projectId()}/environments`),
+      ]);
+      if (version !== this.requestVersion) return;
+      this.suites.set(suites.items);
+      this.environments.set(environments.items);
       this.runs.set(more ? [...this.runs(), ...result.items] : result.items);
       this.nextCursor.set(result.nextCursor);
     } catch (error) {
-      this.error.set(errorMessage(error));
+      if (version === this.requestVersion) this.error.set(errorMessage(error));
     } finally {
-      this.loading.set(false);
+      if (version === this.requestVersion) this.loading.set(false);
     }
   }
+  private requestVersion = 0;
 }

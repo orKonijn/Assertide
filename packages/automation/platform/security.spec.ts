@@ -72,3 +72,36 @@ test("viewer cannot launch, forged origin is rejected and logout expires access"
   ).toBeVisible();
   expect((await page.request.get("/v1/me")).status()).toBe(401);
 });
+
+test("idle session revocation clears protected content and preserves the return URL", async ({
+  page,
+}) => {
+  const credentials = z
+    .object({ password: z.string() })
+    .parse(JSON.parse(await readFile("../../.local/credentials.json", "utf8")));
+  await page.goto("/explorer?query=LAB");
+  await page.getByRole("link", { name: "Continue with SSO" }).click();
+  await page.getByLabel("Password").fill(credentials.password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Test explorer", exact: true }),
+  ).toBeVisible();
+  const identity = await (await page.request.get("/v1/me")).json();
+  expect(Date.parse(identity.sessionExpiresAt)).toBeGreaterThan(Date.now());
+  await page.request.post("/auth/logout", {
+    headers: { Origin: "http://127.0.0.1:4200" },
+    data: {},
+  });
+  await page.evaluate(() =>
+    document.dispatchEvent(new Event("visibilitychange")),
+  );
+  await expect(
+    page.getByRole("link", { name: "Continue with SSO" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Test explorer", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Continue with SSO" }),
+  ).toHaveAttribute("href", /returnTo=%2Fexplorer%3Fquery%3DLAB/);
+});

@@ -1,6 +1,14 @@
-import { Component, inject, signal, viewChild, ElementRef } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  viewChild,
+  ElementRef,
+  DestroyRef,
+  effect,
+} from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { Api } from './core/api';
+import { Api, Identity } from './core/api';
 import { HttpErrorResponse } from '@angular/common/http';
 import { errorMessage } from './core/api';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +18,11 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
-  host: { '(document:keydown)': 'onKeydown($event)', '(window:resize)': 'onResize()' },
+  host: {
+    '(document:keydown)': 'onKeydown($event)',
+    '(window:resize)': 'onResize()',
+    '(document:visibilitychange)': 'onVisibility()',
+  },
 })
 export class App {
   readonly api = inject(Api);
@@ -66,6 +78,39 @@ export class App {
   constructor() {
     this.applyTheme();
     void this.connect();
+    effect((onCleanup) => {
+      const expiry = this.api.identity()?.sessionExpiresAt;
+      if (!expiry) return;
+      const timer = setTimeout(
+        () => this.api.identity.set(null),
+        Math.max(0, Date.parse(expiry) - Date.now()),
+      );
+      onCleanup(() => clearTimeout(timer));
+    });
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') void this.revalidate();
+    }, 15000);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+  }
+  onVisibility() {
+    if (document.visibilityState === 'visible') void this.revalidate();
+  }
+  private validating = false;
+  async revalidate() {
+    if (!this.api.identity() || this.validating) return;
+    this.validating = true;
+    try {
+      const identity = await this.api.get<Identity>('/me');
+      if (!identity.projectIds.includes(this.api.projectId())) {
+        this.api.identity.set(null);
+        return;
+      }
+      this.api.identity.set(identity);
+    } catch {
+      /* A 401 clears the protected shell in Api.get; transient outages retain the known expiry. */
+    } finally {
+      this.validating = false;
+    }
   }
   loginUrl() {
     return `/auth/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`;

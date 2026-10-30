@@ -75,6 +75,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
       - run: npm ci
         working-directory: packages/automation
+      - run: npm run typecheck
+        working-directory: packages/automation
       - run: npm test
         working-directory: apps/api
       - run: npm test

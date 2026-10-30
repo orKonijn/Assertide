@@ -251,7 +251,22 @@ export class IdentityService {
         failure(res, 401, "Authentication required");
         return;
       }
-      res.json(principal);
+      const binding = this.credential(req);
+      const session =
+        binding?.kind === "session"
+          ? (
+              await this.db.query<{ expires_at: Date | string }>(
+                "SELECT expires_at FROM sessions WHERE digest=$1",
+                [binding.digest],
+              )
+            ).rows[0]
+          : undefined;
+      res.json({
+        ...principal,
+        ...(session
+          ? { sessionExpiresAt: new Date(session.expires_at).toISOString() }
+          : {}),
+      });
     });
   }
 }

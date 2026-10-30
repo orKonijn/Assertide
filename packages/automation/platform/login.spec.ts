@@ -60,6 +60,9 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
     .getByRole("checkbox", { name: "Select UI-005", exact: true })
     .check();
   await page
+    .getByRole("checkbox", { name: "Select UI-011", exact: true })
+    .check();
+  await page
     .getByRole("button", { name: "Start execution", exact: true })
     .click();
   await expect(page).toHaveURL(/\/runs\/[a-f0-9-]+$/);
@@ -94,7 +97,36 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
   const runUrl = page.url();
   const endpoint = new URL(runUrl).pathname.replace("/runs/", "/v1/runs/");
   const before = await (await page.request.get(endpoint)).json();
-  expect(before.results).toHaveLength(17);
+  expect(before.results).toHaveLength(18);
+  await page.getByText("UI-011:chromium · passed", { exact: false }).click();
+  await page
+    .getByRole("button", { name: "View screenshot", exact: true })
+    .click();
+  const screenshotDialog = page.getByRole("dialog", {
+    name: "Attempt screenshot",
+    exact: true,
+  });
+  await expect(screenshotDialog).toBeVisible();
+  await expect
+    .poll(() =>
+      screenshotDialog
+        .locator("img")
+        .evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await screenshotDialog.screenshot({
+    path: "../../docs/changelog/assets/unreleased/screenshot-viewer.png",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await screenshotDialog.screenshot({
+    path: "../../docs/changelog/assets/unreleased/screenshot-viewer-mobile.png",
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.keyboard.press("Escape");
+  await expect(screenshotDialog).not.toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "View screenshot", exact: true }),
+  ).toBeFocused();
   expect(
     before.results.every(
       (result: { status: string }) => result.status === "passed",
@@ -161,6 +193,17 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
   await expect(
     page.getByLabel("Recorded request and response"),
   ).not.toContainText(credentials.password);
+  const evidenceDownloadPromise = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Download redacted JSON", exact: true })
+    .click();
+  const evidenceDownload = await evidenceDownloadPromise;
+  const downloadedEvidence = await readFile(
+    (await evidenceDownload.path())!,
+    "utf8",
+  );
+  expect(downloadedEvidence).not.toContain(credentials.password);
+  expect(JSON.parse(downloadedEvidence).request.method).toBe("POST");
   await page.screenshot({
     path: "../../docs/changelog/assets/unreleased/api-evidence.png",
     fullPage: true,

@@ -4,8 +4,9 @@ import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Api, Run, errorMessage } from '../core/api';
 import { ResultSteps, ResultNotes } from '../core/result-investigation';
+import { ScreenshotViewer } from '../core/screenshot-viewer';
 @Component({
-  imports: [RouterLink, DatePipe, ResultSteps, ResultNotes],
+  imports: [RouterLink, DatePipe, ResultSteps, ResultNotes, ScreenshotViewer],
   template: `
     <header class="page-header">
       <div>
@@ -100,7 +101,7 @@ import { ResultSteps, ResultNotes } from '../core/result-investigation';
           @if (current.workerImage) {
             <p class="muted">
               Isolated worker image:
-              <code style="overflow-wrap: anywhere">{{ current.workerImage }}</code>
+              <code class="wrap-anywhere">{{ current.workerImage }}</code>
             </p>
           }
         </section>
@@ -176,6 +177,12 @@ import { ResultSteps, ResultNotes } from '../core/result-investigation';
                   @if (artifact.unavailableReason) {
                     <p>{{ artifact.name }}: {{ artifact.unavailableReason }}</p>
                   } @else {
+                    @if (artifact.name === 'screenshot') {
+                      <app-screenshot-viewer
+                        [url]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
+                        [description]="result.title + ' · attempt ' + artifact.attempt"
+                      />
+                    }
                     @if (artifact.name === 'trace') {
                       <a
                         [href]="'/v1/runs/' + id + '/traces/' + artifact.id"

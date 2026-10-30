@@ -3,6 +3,7 @@ await completed(
   command(process.execPath, ["--test", "packages/domain/execution.test.ts"]),
 );
 for (const [directory, args] of [
+  ["packages/automation", ["run", "typecheck"]],
   ["apps/api", ["run", "typecheck"]],
   ["apps/api", ["test"]],
   ["apps/web", ["test", "--", "--watch=false"]],

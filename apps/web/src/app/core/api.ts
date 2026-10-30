@@ -7,6 +7,7 @@ export interface Identity {
   name: string;
   role: string;
   projectIds: string[];
+  sessionExpiresAt?: string;
 }
 export interface Project {
   id: string;

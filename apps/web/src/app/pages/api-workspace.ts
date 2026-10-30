@@ -3,9 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { Api, Run, TestCase, errorMessage } from '../core/api';
+import { JsonEvidence } from '../core/json-evidence';
 
 @Component({
-  imports: [FormsModule, DatePipe, RouterLink],
+  imports: [FormsModule, DatePipe, RouterLink, JsonEvidence],
   styles: [
     `
       .split {
@@ -88,7 +89,7 @@ import { Api, Run, TestCase, errorMessage } from '../core/api';
           <h2>Request and response</h2>
           @if (evidence()) {
             <p class="muted">Recorded evidence; opening this view does not repeat the request.</p>
-            <pre tabindex="0" aria-label="Recorded request and response">{{ evidence() }}</pre>
+            <app-json-evidence [value]="evidence()" />
           } @else {
             <p class="empty">
               Choose an exchange to inspect its method, path, body, status and duration.
@@ -127,24 +128,24 @@ export class ApiWorkspace {
     }
   }
   choose(id: string) {
+    this.inspectionVersion++;
     this.selectedRun.set(this.runs().find((run) => run.id === id) ?? null);
     this.evidence.set('');
   }
   async inspect(runId: string, artifactId: string) {
+    const version = ++this.inspectionVersion;
+    this.evidence.set('');
     this.error.set('');
     try {
-      this.evidence.set(
-        JSON.stringify(
-          await this.api.get<unknown>(`/runs/${runId}/artifacts/${artifactId}`),
-          null,
-          2,
-        ),
-      );
+      const evidence = await this.api.get<unknown>(`/runs/${runId}/artifacts/${artifactId}`);
+      if (version === this.inspectionVersion) this.evidence.set(JSON.stringify(evidence, null, 2));
     } catch (error) {
+      if (version !== this.inspectionVersion) return;
       this.evidence.set('');
       this.error.set(errorMessage(error));
     }
   }
+  private inspectionVersion = 0;
   async start() {
     this.busy.set(true);
     try {

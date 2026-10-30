@@ -289,6 +289,11 @@ export class PlatformService {
           .default("all"),
         from: z.iso.date().optional(),
         to: z.iso.date().optional(),
+        suite: z.uuid().optional(),
+        environment: z
+          .string()
+          .regex(/^[a-z][a-z0-9-]{0,63}$/)
+          .optional(),
         cursor: z.string().max(500).optional(),
         limit: z.coerce.number().int().min(1).max(200).default(50),
       })
@@ -312,7 +317,7 @@ export class PlatformService {
       throw new ApiError(422, "Start date must precede end date");
     const rows = (
       await this.db.query<Row>(
-        `SELECT body,version FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind='run' AND ($3='all' OR body->>'phase'=$3) AND ($4='all' OR body->'config'->'browserProjects' ? $4 OR ($4='api' AND EXISTS(SELECT 1 FROM jsonb_array_elements_text(body->'selection'->'testIds') t WHERE t LIKE 'LAB-%'))) AND ($5::text IS NULL OR (body->>'createdAt',id)<($5,$6)) AND ($7::timestamptz IS NULL OR (body->>'createdAt')::timestamptz >= $7) AND ($8::timestamptz IS NULL OR (body->>'createdAt')::timestamptz < $8) ORDER BY body->>'createdAt' DESC,id DESC LIMIT $9`,
+        `SELECT body,version FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind='run' AND ($3='all' OR body->>'phase'=$3) AND ($4='all' OR body->'config'->'browserProjects' ? $4 OR ($4='api' AND EXISTS(SELECT 1 FROM jsonb_array_elements_text(body->'selection'->'testIds') t WHERE t LIKE 'LAB-%'))) AND ($5::text IS NULL OR (body->>'createdAt',id)<($5,$6)) AND ($7::timestamptz IS NULL OR (body->>'createdAt')::timestamptz >= $7) AND ($8::timestamptz IS NULL OR (body->>'createdAt')::timestamptz < $8) AND ($10::text IS NULL OR body->'config'->'suite'->>'id'=$10) AND ($11::text IS NULL OR body->'config'->>'environmentId'=$11) ORDER BY body->>'createdAt' DESC,id DESC LIMIT $9`,
         [
           principal.organizationId,
           projectId,
@@ -327,6 +332,8 @@ export class PlatformService {
               ).toISOString()
             : null,
           filters.limit + 1,
+          filters.suite ?? null,
+          filters.environment ?? null,
         ],
       )
     ).rows;
@@ -598,6 +605,15 @@ export class PlatformService {
         .array(z.string())
         .parse(parent["historyFamily"] ?? parentConfig.selection.testIds);
       workerImage = z.string().optional().parse(parent["workerImage"]);
+      const availableImage =
+        process.env["WORKER_RUNTIME"] === "oci"
+          ? process.env["OCI_WORKER_IMAGE"]
+          : undefined;
+      if (workerImage !== availableImage)
+        throw new ApiError(
+          409,
+          "Original worker image is unavailable; restore a matching worker deployment before rerunning",
+        );
       if (Array.isArray(parent["metadata"]))
         metadata = parent["metadata"].filter((item: { id: string }) =>
           config.selection.testIds.includes(item.id),

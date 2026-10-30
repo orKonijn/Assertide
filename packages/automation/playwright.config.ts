@@ -1,6 +1,6 @@
 import { defineConfig } from "@playwright/test";
 import path from "node:path";
-const output = process.env["RUN_OUTPUT"] ?? "test-results";
+const output = process.env["RUN_OUTPUT"] ?? "../../.local/automation-results";
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
