@@ -176,7 +176,18 @@ export class Suites {
   async run(suite: Suite) {
     this.busy.set(true);
     try {
-      const run = await this.api.launch(suite.testIds, crypto.randomUUID(), 1, 0);
+      const run = await this.api.launch(
+        suite.testIds,
+        crypto.randomUUID(),
+        1,
+        0,
+        'chromium',
+        undefined,
+        'off',
+        'local-lab',
+        false,
+        { id: suite.id, version: suite.version },
+      );
       await this.router.navigate(['/runs', run.id]);
     } catch (error) {
       this.error.set(errorMessage(error));

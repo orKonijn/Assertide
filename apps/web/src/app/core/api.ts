@@ -197,6 +197,7 @@ export class Api {
     video: 'off' | 'retain-on-failure' = 'off',
     environmentId = 'local-lab',
     headed = false,
+    suite?: { id: string; version: number },
   ) {
     const catalogRevision =
       revision ??
@@ -206,6 +207,7 @@ export class Api {
       {
         catalogRevision,
         selection: { testIds },
+        ...(suite ? { suite } : {}),
         environmentId,
         browserProjects: testIds.some((id) => id.startsWith('UI-')) ? [browser] : [],
         workers,

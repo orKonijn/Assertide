@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   input,
+  output,
   viewChild,
 } from '@angular/core';
 import { init, use, type EChartsType } from 'echarts/core';
@@ -18,10 +19,19 @@ use([LineChart, GridComponent, TooltipComponent, SVGRenderer]);
   selector: 'app-trend-chart',
   styles: [':host { display: block; min-width: 0; overflow: hidden; }'],
   template:
-    '<div #chart role="img" aria-label="Daily final pass rate. Exact values are in the table below." style="height:260px;width:100%"></div>',
+    '<div #chart role="img" aria-label="Daily final and first-attempt pass rates. Exact values and day filters are in the table below." style="height:260px;width:100%"></div>',
 })
 export class TrendChart {
-  readonly points = input.required<{ day: string; finalPassRate: number | null }[]>();
+  readonly points =
+    input.required<
+      {
+        day: string;
+        finalPassRate: number | null;
+        firstAttemptPassRate: number | null;
+        executed: number;
+      }[]
+    >();
+  readonly daySelected = output<string>();
   private readonly element = viewChild<ElementRef<HTMLDivElement>>('chart');
   private chart?: EChartsType;
   constructor() {
@@ -34,6 +44,9 @@ export class TrendChart {
       const node = this.element()?.nativeElement;
       if (!node) return;
       this.chart = init(node, undefined, { renderer: 'svg' });
+      this.chart.on('click', (event) => {
+        if (typeof event.name === 'string') this.daySelected.emit(event.name);
+      });
       const resize = new ResizeObserver(() => this.chart?.resize());
       resize.observe(node);
       const theme = new MutationObserver(() => this.draw());
@@ -77,6 +90,20 @@ export class TrendChart {
           symbolSize: 8,
           lineStyle: { color: '#8b7cf8', width: 3 },
           itemStyle: { color: '#8b7cf8' },
+        },
+        {
+          type: 'line',
+          name: 'First-attempt pass rate',
+          data: this.points().map((point) =>
+            point.firstAttemptPassRate === null
+              ? null
+              : Math.round(point.firstAttemptPassRate * 1000) / 10,
+          ),
+          connectNulls: false,
+          symbol: 'diamond',
+          symbolSize: 8,
+          lineStyle: { color: '#0d9488', width: 2, type: 'dashed' },
+          itemStyle: { color: '#0d9488' },
         },
       ],
     });

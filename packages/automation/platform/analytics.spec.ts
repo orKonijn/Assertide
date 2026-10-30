@@ -34,6 +34,39 @@ test("analytics filters persist in the URL and charts provide table alternatives
   await expect(
     page.getByRole("columnheader", { name: "Date (UTC)", exact: true }),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Save my filters", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Reset filters", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Execution project", { exact: true }),
+  ).toHaveValue("all");
+  await page
+    .getByRole("button", { name: "Restore my filters", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Execution project", { exact: true }),
+  ).toHaveValue("api");
+  await expect(
+    page.getByRole("heading", {
+      name: "Previous interval comparison",
+      exact: true,
+    }),
+  ).toBeVisible();
+  const downloadPromise = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Export metrics JSON", exact: true })
+    .click();
+  const download = await downloadPromise;
+  const downloadPath = await download.path();
+  expect(downloadPath).toBeTruthy();
+  const exported = JSON.parse(await readFile(downloadPath!, "utf8"));
+  expect(exported.filters.browser).toBe("api");
+  expect(exported.definitions.comparison).toContain("UTC");
+  expect(exported.generatedAt).toBeTruthy();
+  expect(exported.comparison).toHaveProperty("missingPriorIdentities");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.screenshot({
     path: "../../docs/changelog/assets/unreleased/analytics-desktop.png",

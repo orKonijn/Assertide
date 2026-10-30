@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Extended analytics with UTC date, suite, environment and status filters, saved personal filters, equal-interval comparison, JSON export, first-attempt trends, instability candidates, retry-inclusive duration, endpoint latency and evidence completeness. Suite launches freeze their saved version. Calculation, scope, browser/export and accessibility checks pass; see [definitions and screenshots](docs/analytics.md).
+
 - Implemented all seven supplemental JSONPlaceholder API cases and all seven The Internet browser cases as manual, low-volume practice. All cases pass in local public-fixture checks; execution is opt-in, excluded from CI, single-worker, without retries and stopped on access/rate-limit responses. See [practice commands and limits](docs/practice-targets.md).
 
 - Added root setup, start and verification commands that configure local sign-in automatically. Fresh dependency setup and all 14 connected browser checks pass locally; see [local startup](README.md#web-development).

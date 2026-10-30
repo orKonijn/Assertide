@@ -143,12 +143,41 @@ test("platform authorization, suite concurrency, launch deduplication and cancel
       name: "Smoke",
       testIds: ["LAB-001"],
     });
+    const suiteConfig = { ...config, suite: { id: suite.id, version: 1 } };
+    const suiteRun = await service.launch(
+      admin,
+      localProjectId,
+      suiteConfig,
+      randomUUID(),
+    );
+    assert.equal((suiteRun["suite"] as { name: string }).name, "Smoke");
+    await assert.rejects(
+      service.launch(
+        admin,
+        localProjectId,
+        { ...suiteConfig, selection: { testIds: ["LAB-002"] } },
+        randomUUID(),
+      ),
+      { status: 422 },
+    );
     await service.saveSuite(
       admin,
       localProjectId,
       { name: "New name", testIds: [] },
       suite.id,
       '"1"',
+    );
+    await assert.rejects(
+      service.launch(admin, localProjectId, suiteConfig, randomUUID()),
+      { status: 412 },
+    );
+    assert.equal(
+      (
+        (await service.get(admin, String(suiteRun["id"]), "run"))["suite"] as {
+          name: string;
+        }
+      ).name,
+      "Smoke",
     );
     await assert.rejects(
       service.saveSuite(

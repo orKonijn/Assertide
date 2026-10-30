@@ -2,7 +2,7 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TrendChart } from '../core/trend-chart';
-import { Api, Run, errorMessage } from '../core/api';
+import { Api, Run, Environment, Suite, errorMessage } from '../core/api';
 import { PercentPipe, DatePipe, DecimalPipe } from '@angular/common';
 interface Analytics {
   executed: number;
@@ -15,7 +15,45 @@ interface Analytics {
   failed: number;
   broken: number;
   duration: { averageMs: number | null; p95Ms: number | null; samples: number };
-  apiLatency: { p95Ms: number | null; samples: number; smallSample: boolean };
+  apiLatency: {
+    p95Ms: number | null;
+    samples: number;
+    smallSample: boolean;
+    transportFailures: number;
+  };
+  comparison: {
+    from: string;
+    to: string;
+    executed: number;
+    finalPassRateChange: number | null;
+    missingPriorIdentities: number;
+    missingCurrentIdentities: number;
+  };
+  testDuration: { samples: number; medianMs: number | null; p95Ms: number | null };
+  instability: {
+    caseId: string;
+    browser: string;
+    environment: string;
+    samples: number;
+    failed: number;
+  }[];
+  evidence: {
+    eligibleAttempts: number;
+    completeAttempts: number;
+    rate: number | null;
+    missing: number;
+    expired: number;
+    unavailable: number;
+    videoDisabledRuns: number;
+  };
+  endpoints: {
+    method: string;
+    path: string;
+    samples: number;
+    p95Ms: number | null;
+    transportFailures: number;
+    smallSample: boolean;
+  }[];
   trends: {
     day: string;
     executed: number;
@@ -23,6 +61,7 @@ interface Analytics {
     failed: number;
     broken: number;
     finalPassRate: number | null;
+    firstAttemptPassRate: number | null;
   }[];
   browsers: {
     name: string;
@@ -32,7 +71,7 @@ interface Analytics {
     broken: number;
     finalPassRate: number | null;
   }[];
-  failures: { caseId: string; count: number }[];
+  failures: { caseId: string; count: number; samples: number; rate: number }[];
 }
 @Component({
   imports: [RouterLink, PercentPipe, DatePipe, DecimalPipe, FormsModule, TrendChart],
@@ -67,7 +106,43 @@ interface Analytics {
         </select></label
       >
       <button type="submit" [disabled]="loading()">Apply filters</button>
+      <label>From (UTC)<input type="date" name="from" [(ngModel)]="from" /></label>
+      <label>Through (UTC)<input type="date" name="to" [(ngModel)]="to" /></label>
+      <label
+        >Environment<select name="environment" [(ngModel)]="environment">
+          <option value="">All environments</option>
+          @for (item of environments(); track item.id) {
+            <option [value]="item.id">{{ item.name }}</option>
+          }
+        </select></label
+      >
+      <label
+        >Result status<select name="status" [(ngModel)]="status">
+          <option value="all">All results</option>
+          <option value="passed">Passed</option>
+          <option value="failed">Failed</option>
+          <option value="broken">Broken</option>
+          <option value="skipped">Skipped</option>
+        </select></label
+      >
+      <label
+        >Suite<select name="suite" [(ngModel)]="suite">
+          <option value="">All suites and selections</option>
+          @for (item of suites(); track item.id) {
+            <option [value]="item.id">{{ item.name }}</option>
+          }
+        </select></label
+      >
+      <button type="button" (click)="reset()">Reset filters</button>
+      <button type="button" (click)="saveFilters()">Save my filters</button>
+      <button type="button" (click)="restoreFilters()">Restore my filters</button>
+      <button type="button" [disabled]="!analytics() || loading()" (click)="exportMetrics()">
+        Export metrics JSON
+      </button>
     </form>
+    @if (notice()) {
+      <p role="status">{{ notice() }}</p>
+    }
     @if (error()) {
       <p class="error" role="alert">{{ error() }} <button (click)="load()">Retry</button></p>
     }
@@ -93,7 +168,30 @@ interface Analytics {
       </div>
       @if (analytics(); as metrics) {
         <section class="card">
-          <h2>Last {{ days }} days</h2>
+          <h2>Previous interval comparison</h2>
+          <p>
+            {{ metrics.comparison.from | date: 'mediumDate' : 'UTC' }} to
+            {{ metrics.comparison.to | date: 'mediumDate' : 'UTC' }} (exclusive, UTC) ·
+            {{ metrics.comparison.executed }} executed instances
+          </p>
+          <p>
+            Final pass-rate change:
+            {{
+              metrics.comparison.finalPassRateChange === null
+                ? 'Insufficient comparable data'
+                : (metrics.comparison.finalPassRateChange * 100 | number: '1.1-1') +
+                  ' percentage points'
+            }}
+          </p>
+          <p class="muted">
+            Same filters, equal-length preceding interval.
+            {{ metrics.comparison.missingPriorIdentities }} identities absent from the prior
+            interval; {{ metrics.comparison.missingCurrentIdentities }} absent from this interval.
+            Changes may reflect case mix.
+          </p>
+        </section>
+        <section class="card">
+          <h2>{{ from || to ? 'Selected UTC interval' : 'Last ' + days + ' days' }}</h2>
           <p class="muted">
             Data as of {{ metrics.dataAsOf | date: 'medium' }} · {{ metrics.executed }} executed
             instances · {{ metrics.excluded }} excluded
@@ -167,14 +265,18 @@ interface Analytics {
               exchanges, including failures.
             </p>
             @if (metrics.apiLatency.smallSample) {
-              <p>Small sample: fewer than 30 requests.</p>
+              <p>Small sample: fewer than 20 completed HTTP requests.</p>
             }
           </section>
         </div>
         <section class="card">
           <h2>Daily reliability</h2>
           @if (metrics.trends.length) {
-            <app-trend-chart [points]="metrics.trends" />
+            <app-trend-chart [points]="metrics.trends" (daySelected)="selectDay($event)" />
+            <p class="muted">
+              Solid purple: final pass rate. Dashed teal: first-attempt pass rate. Select a day in
+              the chart or table to filter the interval.
+            </p>
           }
           <details>
             <summary>Show chart data and denominators</summary>
@@ -187,12 +289,15 @@ interface Analytics {
                     <th>Failed/broken</th>
                     <th>Executed</th>
                     <th>Final pass rate</th>
+                    <th>First-attempt pass rate</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (point of metrics.trends; track point.day) {
                     <tr>
-                      <td>{{ point.day }}</td>
+                      <td>
+                        <button (click)="selectDay(point.day)">{{ point.day }}</button>
+                      </td>
                       <td>{{ point.passed }}</td>
                       <td>{{ point.failed + point.broken }}</td>
                       <td>{{ point.executed }}</td>
@@ -203,10 +308,17 @@ interface Analytics {
                             : (point.finalPassRate | percent: '1.1-1')
                         }}
                       </td>
+                      <td>
+                        {{
+                          point.firstAttemptPassRate === null
+                            ? '—'
+                            : (point.firstAttemptPassRate | percent: '1.1-1')
+                        }}
+                      </td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="5">No completed results match these filters.</td>
+                      <td colspan="6">No completed results match these filters.</td>
                     </tr>
                   }
                 </tbody>
@@ -260,13 +372,77 @@ interface Analytics {
                 <a routerLink="/explorer" [queryParams]="{ query: failure.caseId }">{{
                   failure.caseId
                 }}</a>
-                · {{ failure.count }} failed/broken instances
+                · {{ failure.count }} / {{ failure.samples }} failed/broken instances ({{
+                  failure.rate | percent: '1.1-1'
+                }})
               </p>
             } @empty {
               <p class="empty">No failed results in this history window.</p>
             }
           </section>
         </div>
+      }
+      @if (analytics(); as metrics) {
+        <section class="card">
+          <h2>Test duration and instability</h2>
+          <p>
+            Attempt-duration sum per instance: median {{ metrics.testDuration.medianMs ?? '—' }} ms
+            · p95 {{ metrics.testDuration.p95Ms ?? '—' }} ms ·
+            {{ metrics.testDuration.samples }} samples. Retry cost is included.
+          </p>
+          <p>
+            {{ metrics.apiLatency.transportFailures }} transport failures excluded from completed
+            HTTP latency.
+          </p>
+          @for (item of metrics.instability; track item.caseId + item.browser + item.environment) {
+            <p>
+              {{ item.caseId }} · {{ item.browser }} · {{ item.environment }}:
+              {{ item.failed }} failures in {{ item.samples }} eligible runs.
+            </p>
+          } @empty {
+            <p>No instability candidates with at least five eligible runs.</p>
+          }
+          <p class="muted">
+            Candidates have both pass and failure in their last ten eligible runs within this
+            window. Code changes can explain differences; this is not a root-cause diagnosis.
+          </p>
+        </section>
+        <section class="card">
+          <h2>Evidence completeness</h2>
+          <p>
+            {{ metrics.evidence.completeAttempts }} / {{ metrics.evidence.eligibleAttempts }} failed
+            or broken attempts have all required evidence ({{
+              metrics.evidence.rate === null
+                ? 'No eligible attempts'
+                : (metrics.evidence.rate | percent: '1.1-1')
+            }}).
+          </p>
+          <p>
+            Required items: {{ metrics.evidence.missing }} missing ·
+            {{ metrics.evidence.expired }} expired · {{ metrics.evidence.unavailable }} unavailable.
+            Video capture disabled in {{ metrics.evidence.videoDisabledRuns }} matching browser
+            runs.
+          </p>
+          <p class="muted">
+            Browser failures require screenshot and trace, plus video when enabled. API failures
+            require a recorded exchange or transport error. Expected failures are excluded; failed
+            attempts recovered by retry remain eligible.
+          </p>
+        </section>
+        <section class="card">
+          <h2>API endpoint latency</h2>
+          @for (endpoint of metrics.endpoints; track endpoint.method + endpoint.path) {
+            <p>
+              <code style="overflow-wrap: anywhere">{{ endpoint.method }} {{ endpoint.path }}</code>
+              · p95 {{ endpoint.p95Ms ?? '—' }} ms · {{ endpoint.samples }} completed responses ·
+              {{ endpoint.transportFailures }} transport failures{{
+                endpoint.smallSample ? ' · small sample' : ''
+              }}
+            </p>
+          } @empty {
+            <p>No recorded API exchanges match these filters.</p>
+          }
+        </section>
       }
       <section class="card">
         <h2>Live activity</h2>
@@ -301,6 +477,14 @@ export class Overview {
   private readonly route = inject(ActivatedRoute);
   days = Number(this.route.snapshot.queryParamMap.get('days') ?? 7);
   browser = this.route.snapshot.queryParamMap.get('browser') ?? 'all';
+  from = this.route.snapshot.queryParamMap.get('from') ?? '';
+  to = this.route.snapshot.queryParamMap.get('to') ?? '';
+  environment = this.route.snapshot.queryParamMap.get('environment') ?? '';
+  suite = this.route.snapshot.queryParamMap.get('suite') ?? '';
+  readonly suites = signal<Suite[]>([]);
+  status = this.route.snapshot.queryParamMap.get('status') ?? 'all';
+  readonly environments = signal<Environment[]>([]);
+  readonly notice = signal('');
   readonly runs = signal<Run[]>([]);
   readonly analytics = signal<Analytics | null>(null);
   readonly loading = signal(true);
@@ -321,29 +505,113 @@ export class Overview {
     void this.load();
   }
   async filter() {
+    this.loading.set(true);
+    this.requestVersion++;
     await this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { days: this.days, browser: this.browser },
+      queryParams: this.filters(),
       replaceUrl: true,
     });
     await this.load();
   }
+  filters() {
+    return {
+      days: this.days,
+      browser: this.browser,
+      ...(this.from ? { from: this.from } : {}),
+      ...(this.to ? { to: this.to } : {}),
+      ...(this.environment ? { environment: this.environment } : {}),
+      ...(this.suite ? { suite: this.suite } : {}),
+      status: this.status,
+    };
+  }
+  reset() {
+    this.days = 7;
+    this.browser = 'all';
+    this.from = '';
+    this.to = '';
+    this.environment = '';
+    this.suite = '';
+    this.status = 'all';
+    void this.filter();
+  }
+  selectDay(day: string) {
+    this.from = day;
+    this.to = day;
+    void this.filter();
+  }
+  saveFilters() {
+    try {
+      localStorage.setItem(
+        `assertide.analytics.${this.api.identity()?.subject}.${this.api.projectId()}`,
+        JSON.stringify(this.filters()),
+      );
+      this.notice.set('Filters saved on this device.');
+    } catch {
+      this.notice.set('This browser could not save filters.');
+    }
+  }
+  restoreFilters() {
+    try {
+      const saved: unknown = JSON.parse(
+        localStorage.getItem(
+          `assertide.analytics.${this.api.identity()?.subject}.${this.api.projectId()}`,
+        ) ?? 'null',
+      );
+      if (!saved || typeof saved !== 'object') {
+        this.notice.set('No saved filters on this device.');
+        return;
+      }
+      const value = saved as Record<string, unknown>;
+      this.days = typeof value['days'] === 'number' ? value['days'] : 7;
+      for (const key of ['browser', 'from', 'to', 'environment', 'suite', 'status'] as const)
+        this[key] =
+          typeof value[key] === 'string'
+            ? value[key]
+            : key === 'browser' || key === 'status'
+              ? 'all'
+              : '';
+      void this.filter();
+      this.notice.set('Saved filters restored.');
+    } catch {
+      this.notice.set('Saved filters could not be restored.');
+    }
+  }
+  exportMetrics() {
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(this.analytics(), null, 2)], { type: 'application/json' }),
+    );
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'assertide-metrics.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+  private requestVersion = 0;
   async load() {
+    const version = ++this.requestVersion;
+    const project = this.api.projectId();
+    const query = new URLSearchParams(
+      Object.entries(this.filters()).map(([key, value]) => [key, String(value)]),
+    );
     this.loading.set(true);
     this.error.set('');
     try {
-      this.runs.set(
-        (await this.api.get<{ items: Run[] }>(`/runs?projectId=${this.api.projectId()}`)).items,
-      );
-      this.analytics.set(
-        await this.api.get<Analytics>(
-          `/projects/${this.api.projectId()}/analytics?days=${this.days}&browser=${encodeURIComponent(this.browser)}`,
-        ),
-      );
+      const [environments, runs, analytics, suites] = await Promise.all([
+        this.api.get<{ items: Environment[] }>(`/projects/${project}/environments`),
+        this.api.get<{ items: Run[] }>(`/runs?projectId=${project}`),
+        this.api.get<Analytics>(`/projects/${project}/analytics?${query}`),
+        this.api.get<{ items: Suite[] }>(`/projects/${project}/suites`),
+      ]);
+      if (version !== this.requestVersion) return;
+      this.environments.set(environments.items);
+      this.suites.set(suites.items);
+      this.runs.set(runs.items);
+      this.analytics.set(analytics);
     } catch (error) {
-      this.error.set(errorMessage(error));
+      if (version === this.requestVersion) this.error.set(errorMessage(error));
     } finally {
-      this.loading.set(false);
+      if (version === this.requestVersion) this.loading.set(false);
     }
   }
 }

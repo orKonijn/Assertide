@@ -89,6 +89,10 @@ const runInput = z
   .object({
     catalogRevision: z.string().min(1),
     selection: selectionInput,
+    suite: z
+      .object({ id: z.uuid(), version: z.number().int().positive() })
+      .strict()
+      .optional(),
     environmentId: z.string().regex(/^[a-z][a-z0-9-]{0,63}$/),
     browserProjects: z.array(z.enum(["chromium", "firefox", "webkit"])).max(3),
     workers: z.number().int().min(1).max(4),
@@ -525,6 +529,21 @@ export class PlatformService {
       return this.get(principal, existing.run_id, "run");
     }
     let historyFamily = config.selection.testIds;
+    let suite: unknown;
+    if (config.suite && !parentRunId) {
+      const saved = await this.get(principal, config.suite.id, "suite");
+      if (saved["projectId"] !== projectId)
+        throw new ApiError(404, "Suite unavailable for this project");
+      if (saved.version !== config.suite.version)
+        throw new ApiError(412, "Suite changed; refresh before launching");
+      const ids = z.array(z.string()).parse(saved["testIds"]).sort();
+      if (JSON.stringify(ids) !== JSON.stringify(config.selection.testIds))
+        throw new ApiError(
+          422,
+          "Suite selection does not match its saved version",
+        );
+      suite = saved;
+    }
     let workerImage =
       process.env["WORKER_RUNTIME"] === "oci"
         ? process.env["OCI_WORKER_IMAGE"]
@@ -574,6 +593,7 @@ export class PlatformService {
         throw new ApiError(409, "Original source snapshot is unavailable");
       }
       source = parent["source"];
+      suite = parent["suite"];
       historyFamily = z
         .array(z.string())
         .parse(parent["historyFamily"] ?? parentConfig.selection.testIds);
@@ -607,6 +627,7 @@ export class PlatformService {
       reportPhase: "pending",
       parentRunId: parentRunId ?? null,
       source,
+      suite,
       metadata,
       historyFamily,
       workerImage,
