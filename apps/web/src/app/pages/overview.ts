@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import type { Environment, Run, Suite } from '../core/api';
 import { Api, errorMessage } from '../core/api';
+import { DatePicker } from '../core/date-picker';
 import { LoadingState } from '../core/loading-state';
 import { TrendChart } from '../core/trend-chart';
 interface Analytics {
@@ -82,7 +83,16 @@ interface Analytics {
 }
 @Component({
   host: { class: 'overview-page' },
-  imports: [RouterLink, PercentPipe, DatePipe, DecimalPipe, FormsModule, TrendChart, LoadingState],
+  imports: [
+    DatePicker,
+    RouterLink,
+    PercentPipe,
+    DatePipe,
+    DecimalPipe,
+    FormsModule,
+    TrendChart,
+    LoadingState,
+  ],
   template: `
     <header class="page-header">
       <div>
@@ -119,19 +129,15 @@ interface Analytics {
             </select></label
           >
 
-          <label
-            >From ({{ analytics()?.timeZone ?? 'UTC' }})<input
-              type="date"
-              name="from"
-              aria-label="From date"
-              [(ngModel)]="from"
+          <label for="from-date"
+            >From ({{ analytics()?.timeZone ?? 'UTC' }})<app-date-picker
+              label="From date"
+              [(value)]="from"
           /></label>
-          <label
-            >Through ({{ analytics()?.timeZone ?? 'UTC' }})<input
-              type="date"
-              name="to"
-              aria-label="Through date"
-              [(ngModel)]="to"
+          <label for="through-date"
+            >Through ({{ analytics()?.timeZone ?? 'UTC' }})<app-date-picker
+              label="Through date"
+              [(value)]="to"
           /></label>
           <label
             >Environment<select name="environment" [(ngModel)]="environment">

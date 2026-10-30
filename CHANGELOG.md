@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Replaced browser-native date popups in Overview and Executions with a site-themed calendar, including month navigation, selected/today indicators, Clear/Today actions, and Escape/outside dismissal. Dates retain their ISO filter values. Build, lint, and fixture-based selection, focus, leap-day, filtering, and responsive checks pass. See [calendar screenshots](docs/ui-refresh.md#site-themed-date-picker).
+
 - Redesigned Overview with a unified summary strip, reliability chart, attention panel, grouped activity, and expandable detailed analytics. History filters now span the panel in an aligned grid with actions in a separate footer and a rounded keyboard-focus indicator. Build, lint, and responsive fixture-based layout/navigation checks pass. See [Overview dashboard and filter screenshots](docs/ui-refresh.md#overview-dashboard-and-filter-layout).
 
 - Aligned shared page headings and section spacing, and moved live activity and recent completed executions to the top of Overview with compact summaries and actionable empty states. Execution history now keeps the run ID and Rerun metadata badge together. Build, lint, ten web tests, and fixture-based responsive/sorting checks pass. See [Overview and execution row screenshots](docs/ui-refresh.md#overview-priorities-and-consistent-page-spacing).

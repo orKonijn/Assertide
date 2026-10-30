@@ -619,3 +619,17 @@ Production build and lint pass. Browser checks with representative API fixtures 
 ![History filters light](changelog/assets/unreleased/overview-filters-1280-light.png)
 
 ![History filters mobile light](changelog/assets/unreleased/overview-filters-390-light.png)
+
+## Site-themed date picker
+
+Overview and Executions now use a shared calendar styled with the site palette. Month navigation, selected/today indicators, Clear, Today, and Close replace the browser popup. Dates stay in YYYY-MM-DD form when applied to filters. The popup appears above clipping containers and fits the viewport. Escape restores trigger focus; outside clicks dismiss it.
+
+Production build and lint pass. Fixture-based browser checks cover February 29 selection, previous/next month, applied query values, clear/today, selected-day focus, Escape and outside dismissal, viewport fit, both routes, and 390/1280px light/dark views. Screenshots use the actual UI with sample API data. Changes remain Unreleased; no product version assigned.
+
+![Dark calendar desktop](changelog/assets/unreleased/date-picker-1280-dark.png)
+
+![Light calendar desktop](changelog/assets/unreleased/date-picker-1280-light.png)
+
+![Dark calendar mobile](changelog/assets/unreleased/date-picker-390-dark.png)
+
+![Light calendar mobile](changelog/assets/unreleased/date-picker-390-light.png)

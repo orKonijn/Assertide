@@ -5,9 +5,10 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import type { Environment, Run, Suite } from '../core/api';
 import { Api, errorMessage } from '../core/api';
+import { DatePicker } from '../core/date-picker';
 import { LoadingState } from '../core/loading-state';
 @Component({
-  imports: [RouterLink, DatePipe, FormsModule, LoadingState],
+  imports: [DatePicker, RouterLink, DatePipe, FormsModule, LoadingState],
   template: `
     <header class="page-header">
       <div>
@@ -42,8 +43,11 @@ import { LoadingState } from '../core/loading-state';
               <option>{{ value }}</option>
             }
           </select></label
-        ><label>From (UTC)<input type="date" name="from" [(ngModel)]="from" /></label
-        ><label>Through (UTC)<input type="date" name="to" [(ngModel)]="to" /></label>
+        ><label for="from-date"
+          >From (UTC)<app-date-picker label="From date" [(value)]="from" /></label
+        ><label for="through-date"
+          >Through (UTC)<app-date-picker label="Through date" [(value)]="to"
+        /></label>
         <label
           >Suite<select name="suite" [(ngModel)]="suite">
             <option value="">All suites and selections</option>

@@ -4509,3 +4509,94 @@ app-json-evidence {
 .overview-page .history-filters > summary:focus:not(:focus-visible) {
   outline: none;
 }
+
+app-date-picker {
+  display: block;
+  min-width: 0;
+  margin-top: 6px;
+}
+.date-trigger {
+  width: 100%;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.date-calendar {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(288px, calc(100vw - 16px));
+  padding: 14px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 14px 48px #0003;
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+}
+.date-calendar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.date-calendar-heading button {
+  min-height: 32px;
+  width: 32px;
+  padding: 4px;
+  border: 0;
+  background: var(--soft);
+}
+.date-calendar-week,
+.date-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.date-calendar-week {
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
+  padding-bottom: 8px;
+}
+.date-calendar-days button {
+  min-height: 32px;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  background: transparent;
+}
+.date-calendar-days button:hover {
+  background: var(--soft);
+}
+.date-calendar-days .outside-month {
+  color: var(--muted);
+}
+.date-calendar-days .is-today {
+  border-color: var(--brand);
+}
+.date-calendar-days button[aria-pressed='true'] {
+  background: var(--brand);
+  color: var(--surface);
+  font-weight: 700;
+}
+.date-calendar-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 12px;
+}
+.date-calendar-footer button {
+  min-height: 32px;
+  font-size: 11px;
+  padding: 6px 10px;
+  background: transparent;
+}
