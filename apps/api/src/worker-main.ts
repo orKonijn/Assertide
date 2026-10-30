@@ -10,7 +10,8 @@ if (!process.env["DATABASE_URL"] || !process.env["S3_BUCKET"])
   );
 if (
   role === "execution" &&
-  (!process.env["REDIS_URL"] || process.env["WORKER_RUNTIME"] !== "oci")
+  (!process.env["REDIS_URL"] ||
+    !["oci", "kubernetes"].includes(process.env["WORKER_RUNTIME"] ?? ""))
 )
   throw new Error("Separate execution workers require Redis and OCI isolation");
 const db = await connectDatabase(process.env["DATABASE_URL"]);

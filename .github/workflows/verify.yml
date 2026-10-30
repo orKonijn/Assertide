@@ -146,6 +146,8 @@ jobs:
         with:
           name: browser-failure-screenshots
           path: packages/automation/test-results/**/*.png
+      - name: Verify Kubernetes Jobs and Vault workload identity
+        run: bash scripts/verify-cluster.sh
       - name: Package reviewed build inputs and compiled web application
         run: node scripts/package-build.mjs
       - name: Attest build provenance

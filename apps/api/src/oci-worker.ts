@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
+import { deleteWorkerJob } from "./kubernetes-worker.ts";
 import { z } from "zod";
 export function workerName(id: string) {
   return `assertide-worker-${z.uuid().parse(id)}`;
@@ -65,6 +66,7 @@ export function ociCommand(
   };
 }
 export async function stopContainer(id: string) {
+  if (process.env["WORKER_RUNTIME"] === "kubernetes") return deleteWorkerJob(id);
   const name = workerName(id);
   return await new Promise<boolean>((resolve) => {
     const child = spawn("docker", ["rm", "--force", name], {

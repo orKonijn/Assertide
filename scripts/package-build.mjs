@@ -22,6 +22,7 @@ execFileSync(
     "packages/domain",
     "packages/automation",
     "workers",
+    "deploy",
     "scripts",
     "package.json",
     "package-lock.json",

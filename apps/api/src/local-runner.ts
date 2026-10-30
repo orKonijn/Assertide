@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { randomUUID, randomBytes } from "node:crypto";
 import { ociCommand, stopContainer } from "./oci-worker.ts";
+import { kubernetesCommand } from "./kubernetes-worker.ts";
 import { hostname } from "node:os";
 import {
   stepSchema,
@@ -199,7 +200,7 @@ export class LocalRunner {
   ) {
     if (
       process.env["NODE_ENV"] === "production" &&
-      process.env["WORKER_RUNTIME"] !== "oci" &&
+      !["oci", "kubernetes"].includes(process.env["WORKER_RUNTIME"] ?? "") &&
       role !== "report"
     )
       throw new Error("Local runner is forbidden in production");
@@ -281,10 +282,13 @@ export class LocalRunner {
     this.active = true;
     try {
       await recoverExpiredLeases(this.db);
-      if (process.env["WORKER_RUNTIME"] === "oci" && this.role !== "report") {
+      if (
+        ["oci", "kubernetes"].includes(process.env["WORKER_RUNTIME"] ?? "") &&
+        this.role !== "report"
+      ) {
         const orphaned = await this.db.query<{ id: string }>(
-          "SELECT id FROM platform_documents WHERE kind='run' AND body->>'workerRuntime'='oci' AND body->>'workerHost'=$1 AND body->>'phase' IN ('completed','canceled','timed_out','infrastructure_error') AND NOT COALESCE((body->>'containerCleaned')::boolean,false)",
-          [hostname()],
+          "SELECT id FROM platform_documents WHERE kind='run' AND body->>'workerRuntime'=$2 AND (body->>'workerHost'=$1 OR $2='kubernetes') AND body->>'phase' IN ('completed','canceled','timed_out','infrastructure_error') AND NOT COALESCE((body->>'containerCleaned')::boolean,false)",
+          [hostname(), process.env["WORKER_RUNTIME"]],
         );
         for (const run of orphaned.rows) {
           if (!(await stopContainer(run.id))) continue;
@@ -359,12 +363,14 @@ export class LocalRunner {
         )
       ).rows[0]?.log ?? "";
     const command = isolated
-      ? ociCommand(id, isolated.snapshot, output, isolated.workers)
+      ? (process.env["WORKER_RUNTIME"] === "kubernetes"
+          ? kubernetesCommand
+          : ociCommand)(id, isolated.snapshot, output, isolated.workers)
       : { executable: process.execPath, args };
     if (isolated) {
       await this.update(id, {
         workerImage: process.env["OCI_WORKER_IMAGE"],
-        workerRuntime: "oci",
+        workerRuntime: process.env["WORKER_RUNTIME"],
         workerHost: hostname(),
       });
       this.containerId = id;
@@ -455,7 +461,7 @@ export class LocalRunner {
     try {
       if (
         run.workerImage !==
-        (process.env["WORKER_RUNTIME"] === "oci"
+        (["oci", "kubernetes"].includes(process.env["WORKER_RUNTIME"] ?? "")
           ? process.env["OCI_WORKER_IMAGE"]
           : undefined)
       )
@@ -496,7 +502,7 @@ export class LocalRunner {
           RUN_BROWSER_URL: run.environment.browserUrl,
           ...(password ? { LAB_PASSWORD: password } : {}),
         },
-        process.env["WORKER_RUNTIME"] === "oci"
+        ["oci", "kubernetes"].includes(process.env["WORKER_RUNTIME"] ?? "")
           ? {
               snapshot,
               workers: run.config.workers,

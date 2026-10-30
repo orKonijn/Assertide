@@ -553,10 +553,11 @@ export class PlatformService {
         );
       suite = saved;
     }
-    let workerImage =
-      process.env["WORKER_RUNTIME"] === "oci"
-        ? process.env["OCI_WORKER_IMAGE"]
-        : undefined;
+    let workerImage = ["oci", "kubernetes"].includes(
+      process.env["WORKER_RUNTIME"] ?? "",
+    )
+      ? process.env["OCI_WORKER_IMAGE"]
+      : undefined;
     let source: unknown = {
       revision: this.revision,
       manifest: this.manifest,
@@ -575,7 +576,9 @@ export class PlatformService {
       (config.video !== "off" && !environment.allowVideo) ||
       (config.headed &&
         (!environment.allowHeaded ||
-          process.env["WORKER_RUNTIME"] !== "oci" ||
+          !["oci", "kubernetes"].includes(
+            process.env["WORKER_RUNTIME"] ?? "",
+          ) ||
           !config.selection.testIds.some((id) => id.startsWith("UI-"))))
     )
       throw new ApiError(
@@ -607,10 +610,11 @@ export class PlatformService {
         .array(z.string())
         .parse(parent["historyFamily"] ?? parentConfig.selection.testIds);
       workerImage = z.string().optional().parse(parent["workerImage"]);
-      const availableImage =
-        process.env["WORKER_RUNTIME"] === "oci"
-          ? process.env["OCI_WORKER_IMAGE"]
-          : undefined;
+      const availableImage = ["oci", "kubernetes"].includes(
+        process.env["WORKER_RUNTIME"] ?? "",
+      )
+        ? process.env["OCI_WORKER_IMAGE"]
+        : undefined;
       if (workerImage !== availableImage)
         throw new ApiError(
           409,
@@ -874,7 +878,11 @@ export function mountPlatform(
           principal.organizationId,
           String(req.params["project"]),
         ),
-        capabilities: { headed: process.env["WORKER_RUNTIME"] === "oci" },
+        capabilities: {
+          headed: ["oci", "kubernetes"].includes(
+            process.env["WORKER_RUNTIME"] ?? "",
+          ),
+        },
       });
     }),
   );

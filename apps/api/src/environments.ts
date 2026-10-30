@@ -5,6 +5,7 @@ import {
   randomUUID,
 } from "node:crypto";
 import { z } from "zod";
+import { vaultTransit } from "./vault.ts";
 import type { Express, Request, Response } from "express";
 import type { SqlConnection } from "./database.ts";
 import { migrate } from "./migrations.ts";
@@ -70,6 +71,12 @@ export async function resolveSecret(
     )
   ).rows[0];
   if (!row) throw new Error("The referenced credential is unavailable");
+  if (row.ciphertext.startsWith("vault:"))
+    return vaultTransit.transform(
+      "decrypt",
+      row.ciphertext,
+      aad(org, project, reference.id, reference.version),
+    );
   const bytes = Buffer.from(row.ciphertext, "base64");
   const decipher = createDecipheriv(
     "aes-256-gcm",
@@ -235,7 +242,6 @@ export function mountEnvironments(
           .json({ title: "A credential name and value are required" });
         return;
       }
-      const encryptionKey = key();
       const id = input.data.id ?? randomUUID();
       const match = /^"(\d+)"$/.exec(req.get("If-Match") ?? "");
       const previous = (
@@ -254,18 +260,31 @@ export function mountEnvironments(
         return;
       }
       const version = (previous?.version ?? 0) + 1;
-      const nonce = randomBytes(12);
-      const cipher = createCipheriv("aes-256-gcm", encryptionKey, nonce);
-      cipher.setAAD(aad(principal.organizationId, project, id, version));
-      const encrypted = Buffer.concat([
-        cipher.update(input.data.value, "utf8"),
-        cipher.final(),
-      ]);
-      const ciphertext = Buffer.concat([
-        nonce,
-        cipher.getAuthTag(),
-        encrypted,
-      ]).toString("base64");
+      let ciphertext: string;
+      const context = aad(principal.organizationId, project, id, version);
+      const backend = process.env["SECRET_BACKEND"] ?? "local";
+      if (backend === "vault") {
+        ciphertext = await vaultTransit.transform(
+          "encrypt",
+          input.data.value,
+          context,
+        );
+      } else if (backend === "local") {
+        const nonce = randomBytes(12);
+        const cipher = createCipheriv("aes-256-gcm", key(), nonce);
+        cipher.setAAD(context);
+        const encrypted = Buffer.concat([
+          cipher.update(input.data.value, "utf8"),
+          cipher.final(),
+        ]);
+        ciphertext = Buffer.concat([
+          nonce,
+          cipher.getAuthTag(),
+          encrypted,
+        ]).toString("base64");
+      } else {
+        throw new Error("Unsupported secret backend");
+      }
       const saved = await platform.db.query(
         "INSERT INTO secret_versions(id,version,organization_id,project_id,name,ciphertext) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING RETURNING id",
         [

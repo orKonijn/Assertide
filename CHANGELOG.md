@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added Kubernetes Job execution with digest-pinned workers, bounded resources, cancellation cleanup and isolated source/output transfer, plus Vault Transit credential encryption using Kubernetes workload identity. Local policy/authentication checks pass; real cluster and Vault integration checks are CI gates. See [production deployment](docs/production-deployment.md).
+
 - Added TypeScript and Angular-template lint checks to local verification and CI, with a reusable in-memory browser authentication fixture and explicit anonymous contexts. Execution history, reports and catalog rows now use mobile card layouts. Lint, strict build and browser checks pass; see [contributor checks](CONTRIBUTING.md) and [implementation evidence](docs/implementation-verification.md).
 
 - Added outcome filtering and a rerun review dialog showing frozen selections and environment availability before queueing. Browser checks verify the linked child preserves its selection and source; see [rerun review](docs/investigation.md).

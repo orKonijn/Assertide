@@ -6,7 +6,7 @@ COPY apps/api/src/lab.ts apps/api/src/database.ts apps/api/src/migrations.ts app
 COPY packages/automation/package.json packages/automation/package-lock.json /app/packages/automation/
 RUN npm --prefix /app/packages/automation ci
 COPY .local/targets/swag-store/build /app/.local/targets/swag-store/build
-COPY workers/entry.mjs /app/workers/entry.mjs
+COPY workers/entry.mjs workers/kubernetes-entry.mjs workers/kubernetes-transfer.mjs /app/workers/
 RUN sha256sum /app/packages/automation/package-lock.json | cut -d ' ' -f 1 > /app/automation-lock.sha256
 ENV NODE_ENV=development HOME=/tmp PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 USER 10001:10001
