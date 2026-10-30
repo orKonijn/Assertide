@@ -312,3 +312,14 @@ Actual running interface:
 The previous header and pagination are preserved in [selection-control captures](#explorer-selection-toggle-and-visible-pagination). Layout checks pass at 320/390/768/1280px in light and dark themes. Local lint, format, type checks, API/web unit tests, and production build pass; eight infrastructure checks remain skipped on Windows. No product version is assigned; this remains Unreleased.
 
 Four browser tests passed, including the 64-state accessibility matrix, catalog editing, pagination, and select/deselect behavior.
+
+## Sticky execution configuration
+
+Above 850px, Configure execution sticks 24px from the viewport top while its catalog column scrolls. The panel is bounded by the available viewport height and scrolls internally when browser/video settings make it taller. On mobile it stays in document flow to avoid covering the catalog.
+
+Actual desktop view after scrolling the catalog:
+
+![Pinned configuration panel in dark mode](changelog/assets/unreleased/execution-config-sticky-dark.png)
+![Pinned configuration panel in light mode](changelog/assets/unreleased/execution-config-sticky-light.png)
+
+Verification: browser checks confirm the pinned position in both themes, reachability of the launch action at 500px viewport height, and normal mobile flow without overflow at 320/390/768px. Local lint, formatting, type checks, API/web unit tests, and production build pass. Eight infrastructure tests remain skipped on Windows. This remains Unreleased, with no version change.

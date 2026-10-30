@@ -2210,6 +2210,16 @@ th[aria-sort='descending'] .sort-indicator::before {
   }
 }
 
+@media (min-width: 851px) {
+  .execution-config {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -199,7 +199,7 @@ import { LoadingState } from '../core/loading-state';
           </div>
         }
       </section>
-      <section class="card">
+      <section class="card execution-config">
         <h2>Configure execution</h2>
         <p>{{ selected().length }} tests selected</p>
         @if (hasUi()) {
