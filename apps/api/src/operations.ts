@@ -74,6 +74,43 @@ export function mountOperations(
     }
     return cached;
   };
+  if (process.env["METRICS_ENABLED"] === "true") {
+    // Internal service endpoint: intentionally absent from the public web proxy.
+    app.get("/internal/metrics", async (_req, res) => {
+      try {
+        const row = (
+          await db.query<{
+            queued: string;
+            oldest_seconds: string;
+            expired: string;
+            report_failures: string;
+          }>(
+            "SELECT count(*) FILTER(WHERE body->>'phase'='queued') AS queued,COALESCE(EXTRACT(EPOCH FROM now()-min((body->>'createdAt')::timestamptz) FILTER(WHERE body->>'phase'='queued')),0) AS oldest_seconds,count(*) FILTER(WHERE body->>'phase' IN ('running','provisioning','finalizing') AND (body->>'leaseExpires')::timestamptz<now()) AS expired,count(*) FILTER(WHERE body->>'reportPhase'='failed') AS report_failures FROM platform_documents WHERE kind='run'",
+          )
+        ).rows[0];
+        const values = {
+          queued: row?.queued,
+          queue_oldest_seconds: row?.oldest_seconds,
+          expired_leases: row?.expired,
+          failed_reports: row?.report_failures,
+        };
+        const lines = Object.entries(values).flatMap(([name, raw]) => {
+          const value = Number(raw ?? 0);
+          if (!Number.isFinite(value)) throw new Error("Invalid metric");
+          return [
+            `# TYPE assertide_${name} gauge`,
+            `assertide_${name} ${Math.max(0, value)}`,
+          ];
+        });
+        res
+          .set("Cache-Control", "no-store")
+          .type("text/plain")
+          .send(lines.join("\n") + "\n");
+      } catch {
+        res.status(503).end();
+      }
+    });
+  }
   app.get("/ready", async (_req, res) => {
     const state = await check();
     res

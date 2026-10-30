@@ -6,5 +6,5 @@
     "esModuleInterop": true, "skipLibCheck": true, "noEmit": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "checks/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "checks/**/*.ts", "scripts/**/*.ts"]
 }

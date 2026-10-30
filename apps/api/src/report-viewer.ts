@@ -380,7 +380,7 @@ export async function mountReportViewer(
   );
   const server = viewer.listen(
     options.port ?? Number(process.env["REPORT_PORT"] ?? 4012),
-    "127.0.0.1",
+    process.env["REPORT_HOST"] ?? "127.0.0.1",
   );
   await new Promise<void>((resolve, reject) => {
     server.once("listening", resolve);

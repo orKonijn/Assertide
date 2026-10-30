@@ -28,6 +28,9 @@ docker push localhost:5001/assertide-worker:ci
 DIGEST=$(docker inspect --format '{{index .RepoDigests 0}}' localhost:5001/assertide-worker:ci | cut -d@ -f2)
 export OCI_WORKER_IMAGE="assertide-registry:5000/assertide-worker@$DIGEST"
 kubectl apply -f deploy/kubernetes/worker-isolation.yaml
+kubectl create namespace assertide
+node --input-type=module -e 'import {deployment} from "./deploy/render.mjs"; const image=process.env.OCI_WORKER_IMAGE; console.log(JSON.stringify(deployment({serviceImage:image,webImage:image,workerImage:image,appOrigin:"https://app.example.test",reportOrigin:"https://reports.example.test",vaultAddress:"https://vault.example.test",vaultRole:"assertide",ingressClass:"nginx",ingressNamespace:"ingress-nginx",tlsSecret:"assertide-tls"})));' > "$RUNNER_TEMP/deployment.json"
+kubectl apply --dry-run=server -f "$RUNNER_TEMP/deployment.json"
 export TEST_KUBERNETES=true
 (cd apps/api && npx tsx --test test/kubernetes-worker.test.ts)
 
@@ -56,4 +59,5 @@ for attempt in {1..50}; do
 done
 export NODE_ENV=test TEST_VAULT=true VAULT_ADDR=http://127.0.0.1:18200 VAULT_JWT_FILE="$RUNNER_TEMP/vault-jwt" VAULT_ROLE=assertide
 (cd apps/api && npx tsx --test test/production-adapters.test.ts)
+(cd apps/api && SECRET_BACKEND=vault npx tsx --test test/environments.test.ts)
 kill "$FORWARD_PID"

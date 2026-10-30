@@ -1,0 +1,52 @@
+name: Publish reviewed container images
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: node scripts/setup-sandbox.mjs
+      - run: docker build -f workers/Dockerfile -t assertide-worker:ci .
+      - run: bash scripts/verify-images.sh
+      - name: Publish commit-addressed images
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          prefix="ghcr.io/${GITHUB_REPOSITORY,,}"
+          for image in service web worker; do
+            target="$prefix-$image:$GITHUB_SHA"
+            docker tag "assertide-$image:ci" "$target"
+            docker push "$target"
+            digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$target" | cut -d@ -f2)
+            echo "${image}_name=$prefix-$image" >> "$GITHUB_ENV"
+            echo "${image}_digest=$digest" >> "$GITHUB_ENV"
+            echo "$prefix-$image@$digest" >> .local/verification/images/digests.txt
+          done
+      - uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.service_name }}
+          subject-digest: ${{ env.service_digest }}
+          push-to-registry: true
+      - uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.web_name }}
+          subject-digest: ${{ env.web_digest }}
+          push-to-registry: true
+      - uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.worker_name }}
+          subject-digest: ${{ env.worker_digest }}
+          push-to-registry: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: container-sboms-and-digests
+          path: .local/verification/images

@@ -58,11 +58,13 @@ jobs:
           MINIO_ROOT_USER: assertide_test
           MINIO_ROOT_PASSWORD: local_ci_object_store_only
           MINIO_BROWSER: 'off'
+          MINIO_KMS_SECRET_KEY: ci-key:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       - run: npm ci
         working-directory: apps/web
       - run: npm audit --audit-level=high
         working-directory: apps/web
       - run: npm run lint
+      - run: node --test deploy/render.test.mjs
       - run: node --test packages/domain/execution.test.ts
       - run: node apps/web/node_modules/typescript/bin/tsc -p packages/domain/tsconfig.json
       - run: npm test -- --watch=false
@@ -146,8 +148,26 @@ jobs:
         with:
           name: browser-failure-screenshots
           path: packages/automation/test-results/**/*.png
+      - name: Verify encrypted scheduled backups
+        run: npx tsx checks/scheduled-backup.ts
+        working-directory: apps/api
+        env:
+          TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+          PG_TOOL_CONTAINER: ${{ job.services.postgres.id }}
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: assertide_test
+          AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
       - name: Verify Kubernetes Jobs and Vault workload identity
         run: bash scripts/verify-cluster.sh
+      - name: Build and scan service, web and worker images
+        run: bash scripts/verify-images.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-sboms
+          path: .local/verification/images
+          if-no-files-found: ignore
       - name: Package reviewed build inputs and compiled web application
         run: node scripts/package-build.mjs
       - name: Attest build provenance

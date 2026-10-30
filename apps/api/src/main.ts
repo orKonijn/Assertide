@@ -18,11 +18,13 @@ import { mountServiceAccounts } from "./service-accounts.ts";
 import { mountAdministration } from "./administration.ts";
 import { mountEnvironments } from "./environments.ts";
 import { mountOperations } from "./operations.ts";
+import { validateProduction } from "./production-config.ts";
 import { requestContext } from "./request-context.ts";
 
 @Module({})
 class AppModule {}
 
+validateProduction();
 const db = await connectDatabase(process.env["DATABASE_URL"]);
 const app = await NestFactory.create(AppModule);
 const express: Express = app.getHttpAdapter().getInstance();
@@ -118,7 +120,10 @@ if (process.env["ENABLE_LAB"] === "true") {
 express.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
-await app.listen(Number(process.env["PORT"] ?? 4010), "127.0.0.1");
+await app.listen(
+  Number(process.env["PORT"] ?? 4010),
+  process.env["HOST"] ?? "127.0.0.1",
+);
 const runner =
   process.env["LOCAL_RUNNER"] === "true" ? new LocalRunner(db) : undefined;
 await runner?.start();

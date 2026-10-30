@@ -31,7 +31,9 @@ test("readiness detects dependency failure and operations remain scoped to autho
     );
   }
   const app = express();
+  process.env["METRICS_ENABLED"] = "true";
   mountOperations(app, db, identity);
+  delete process.env["METRICS_ENABLED"];
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
   const address = server.address();
@@ -64,6 +66,11 @@ test("readiness detects dependency failure and operations remain scoped to autho
         ],
       );
     }
+    const metrics = await fetch(`${url}/internal/metrics`);
+    assert.equal(metrics.status, 200);
+    const text = await metrics.text();
+    assert.match(text, /assertide_queued 2\n/);
+    assert.doesNotMatch(text, /organization|project|admin|password/);
     assert.equal((await fetch(`${url}/ready`)).status, 200);
     assert.equal((await fetch(`${url}/v1/operations`)).status, 401);
     assert.equal(

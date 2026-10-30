@@ -1,0 +1,13 @@
+{
+  "namespace": "assertide",
+  "serviceImage": "REGISTRY/assertide-service@sha256:REPLACE_WITH_VERIFIED_DIGEST",
+  "webImage": "REGISTRY/assertide-web@sha256:REPLACE_WITH_VERIFIED_DIGEST",
+  "workerImage": "REGISTRY/assertide-worker@sha256:REPLACE_WITH_VERIFIED_DIGEST",
+  "appOrigin": "https://assertide.example.com",
+  "reportOrigin": "https://reports.example.com",
+  "vaultAddress": "https://vault.example.com",
+  "vaultRole": "assertide",
+  "ingressClass": "nginx",
+  "ingressNamespace": "ingress-nginx",
+  "tlsSecret": "assertide-tls"
+}

@@ -6,6 +6,39 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { VaultTransit } from "../src/vault.ts";
 import { workerJob } from "../src/kubernetes-worker.ts";
+import { validateProduction } from "../src/production-config.ts";
+
+test("production startup refuses development identity, insecure origins and mutable workers", () => {
+  const env = {
+    NODE_ENV: "production",
+    DATABASE_URL: "postgres://configured",
+    REDIS_URL: "redis://configured",
+    S3_BUCKET: "private",
+    OIDC_CLIENT_ID: "client",
+    OIDC_CLIENT_SECRET: "secret",
+    OIDC_ISSUER: "https://id.example.test",
+    APP_ORIGIN: "https://app.example.test",
+    REPORT_ORIGIN: "https://reports.example.test",
+    WORKER_RUNTIME: "kubernetes",
+    OCI_WORKER_IMAGE: `registry/worker@sha256:${"a".repeat(64)}`,
+  };
+  assert.doesNotThrow(() => validateProduction(env));
+  assert.throws(
+    () => validateProduction({ ...env, LOCAL_IDENTITY: "true" }),
+    /cannot be enabled/,
+  );
+  assert.throws(
+    () => validateProduction({ ...env, APP_ORIGIN: "http://app.example.test" }),
+    /HTTPS/,
+  );
+  assert.throws(
+    () => validateProduction({ ...env, REPORT_ORIGIN: env.APP_ORIGIN }),
+    /separate/,
+  );
+  assert.throws(() =>
+    validateProduction({ ...env, OCI_WORKER_IMAGE: "worker:latest" }),
+  );
+});
 
 test("Kubernetes Jobs enforce isolation and reject mutable images", () => {
   const id = "a22b7a5e-b59d-4eee-8e64-e77b674d9808";
