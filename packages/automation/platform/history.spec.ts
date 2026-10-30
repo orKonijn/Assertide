@@ -99,6 +99,29 @@ test.describe('Allure report history', () => {
     expect(await report.responseStatus()).toBe(403);
     await report.close();
   });
+  test('browser workflow screenshots are published in the authenticated Allure viewer', async ({
+    page,
+    api,
+  }) => {
+    const run = await api.readyReport([D.login]);
+    const report = new AllureReportPage(await page.context().newPage());
+    try {
+      await report.goto(run.id);
+      await report.expand();
+      await report.openStepScreenshot(
+        'UI-001 Valid login unlocks catalog',
+        'Sign in to controlled storefront',
+      );
+      await expect(report.screenshotImage()).toBeVisible();
+      await expect
+        .poll(() =>
+          report.screenshotImage().evaluate((image) => (image as HTMLImageElement).naturalWidth),
+        )
+        .toBeGreaterThan(0);
+    } finally {
+      await report.close();
+    }
+  });
   test('investigation notes survive reload and report environment remains accessible on mobile', async ({
     page,
     api,

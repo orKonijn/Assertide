@@ -36,13 +36,21 @@ export class StorePage {
       registerSecret(password);
       await this.page.getByTestId(S.password).fill(password);
       await this.loginButton.click();
+      if (user === D.standard && password === D.password) {
+        await this.page.waitForURL(/inventory.html$/);
+        await expect(this.items).toHaveCount(6);
+      } else {
+        await expect(this.error).toBeVisible();
+      }
     });
   }
   public submitLogin(): Promise<void> {
     return workflow('Submit required login fields', () => this.loginButton.click());
   }
   public enterUsername(user: string): Promise<void> {
-    return this.page.getByTestId(S.username).fill(user);
+    return workflow('Enter storefront username', () =>
+      this.page.getByTestId(S.username).fill(user),
+    );
   }
   public addProduct(slug: string): Promise<void> {
     return workflow('Add product to cart', () => this.page.getByTestId(S.addId(slug)).click());
@@ -60,7 +68,11 @@ export class StorePage {
     );
   }
   public checkout(): Promise<void> {
-    return workflow('Begin checkout', () => this.page.getByTestId(S.checkout).click());
+    return workflow('Begin checkout', async () => {
+      await this.page.getByTestId(S.checkout).click();
+      await this.page.waitForURL(/checkout-step-one.html$/);
+      await this.page.getByTestId(S.firstName).waitFor({ state: 'visible' });
+    });
   }
   public enterCustomer(customer: {
     firstName: string;
@@ -84,10 +96,23 @@ export class StorePage {
     return workflow('Review checkout order', () => this.page.getByTestId(S.continue).click());
   }
   public finish(): Promise<void> {
-    return workflow('Complete purchase', () => this.page.getByTestId(S.finish).click());
+    return workflow('Complete purchase', async () => {
+      await this.page.getByTestId(S.finish).click();
+      await this.page.waitForURL(/checkout-complete.html$/);
+      await expect(this.completion).toBeVisible();
+    });
   }
   public cancelCheckout(): Promise<void> {
-    return workflow('Cancel checkout', () => this.page.getByTestId(S.cancel).click());
+    return workflow('Cancel checkout', async () => {
+      const customerStage = this.page.url().endsWith('/checkout-step-one.html');
+      await this.page.getByTestId(S.cancel).click();
+      await this.page.waitForURL(customerStage ? /cart.html$/ : /inventory.html$/);
+      if (customerStage) {
+        await this.page.getByTestId(S.checkout).waitFor({ state: 'visible' });
+      } else {
+        await expect(this.items).toHaveCount(6);
+      }
+    });
   }
   public sortByPrice(): Promise<string[]> {
     return workflow('Sort products by ascending price', () =>
@@ -104,15 +129,16 @@ export class StorePage {
     });
   }
   public revisitInventory(): Promise<Response | null> {
-    return this.page.goto(D.routes.inventory);
+    return workflow('Revisit storefront inventory', () => this.page.goto(D.routes.inventory));
   }
   public productPrice(name: string): Promise<string | null> {
     return this.items.filter({ hasText: name }).locator(S.price).textContent();
   }
   public openProduct(name: string): Promise<void> {
-    return workflow('Inspect product details', () =>
-      this.items.filter({ hasText: name }).getByText(name, { exact: true }).click(),
-    );
+    return workflow('Inspect product details', async () => {
+      await this.items.filter({ hasText: name }).getByText(name, { exact: true }).click();
+      await expect(this.detailName).toHaveText(name);
+    });
   }
   public addDetailedProduct(): Promise<void> {
     return workflow('Add inspected product to cart', () =>
@@ -135,5 +161,75 @@ export class StorePage {
   }
   public attachCart(): Promise<void> {
     return screenshot(this.page, 'screenshot');
+  }
+  public reload(): Promise<Response | null> {
+    return workflow('Reload and restore persisted storefront state', () => this.page.reload());
+  }
+  public visit(route: string): Promise<Response | null> {
+    return workflow(`Navigate to ${route}`, () => this.page.goto(route));
+  }
+  public sort(mode: string): Promise<string[]> {
+    return workflow(`Sort catalog by ${mode}`, () =>
+      this.page.getByTestId(S.sort).selectOption(mode),
+    );
+  }
+  public backToProducts(): Promise<void> {
+    return workflow('Return from details to products', async () => {
+      await this.page.getByTestId('back-to-products').click();
+      await this.page.waitForURL(/inventory.html$/);
+      await expect(this.items).toHaveCount(6);
+    });
+  }
+  public continueShopping(): Promise<void> {
+    return workflow('Continue shopping from cart', async () => {
+      await this.page.getByTestId('continue-shopping').click();
+      await this.page.waitForURL(/inventory.html$/);
+      await expect(this.items).toHaveCount(6);
+    });
+  }
+  public backHome(): Promise<void> {
+    return workflow('Start shopping after completed purchase', async () => {
+      await this.page.getByTestId('back-to-products').click();
+      await this.page.waitForURL(/inventory.html$/);
+      await expect(this.items).toHaveCount(6);
+    });
+  }
+  public removeDetailedProduct(): Promise<void> {
+    return workflow('Remove inspected product', () =>
+      this.page.getByRole('button', { name: 'Remove', exact: true }).click(),
+    );
+  }
+  public openCartProduct(name: string): Promise<void> {
+    return workflow('Inspect a product from the cart', async () => {
+      await this.itemNames.filter({ hasText: name }).click();
+      await expect(this.detailName).toHaveText(name);
+    });
+  }
+  public submitLoginByKeyboard(): Promise<void> {
+    return workflow('Submit sign-in using keyboard', () =>
+      this.page.getByTestId(S.password).press('Enter'),
+    );
+  }
+  public resize(width: number, height: number): Promise<void> {
+    return workflow(`Use ${width} by ${height} viewport`, () =>
+      this.page.setViewportSize({ width, height }),
+    );
+  }
+  public async verifyCart(names: readonly string[]): Promise<void> {
+    await workflow('Verify cart contents, quantities and badge agree', async () => {
+      await expect(this.itemNames).toHaveCount(names.length);
+      expect((await this.itemNames.allTextContents()).sort()).toEqual([...names].sort());
+      if (names.length) {
+        await expect(this.badge).toHaveText(String(names.length));
+        await expect(this.quantity).toHaveText(names.map(() => '1'));
+      } else {
+        await expect(this.badge).toHaveCount(0);
+      }
+    });
+  }
+  public async verifyTitle(title: string): Promise<void> {
+    await workflow('Verify current storefront stage', () =>
+      expect(this.page.locator('.title')).toHaveText(title),
+    );
   }
 }

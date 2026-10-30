@@ -64,6 +64,7 @@ jobs:
       - run: npm audit --audit-level=high
         working-directory: apps/web
       - run: node --test deploy/render.test.mjs
+      - run: node --test scripts/local-object-store-health.test.mjs scripts/managed-object-store.test.mjs
       - run: node --test packages/domain/execution.test.ts
       - run: node apps/web/node_modules/typescript/bin/tsc -p packages/domain/tsconfig.json
       - run: npm test -- --watch=false
@@ -119,7 +120,7 @@ jobs:
           name: reference-load-results
           path: .local/verification/*.json
           if-no-files-found: ignore
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium firefox webkit
         working-directory: packages/automation
       - run: npx tsx --test test/trace-viewer.test.ts
         working-directory: apps/api
@@ -135,6 +136,15 @@ jobs:
       - run: node packages/automation/checks/architecture.mjs
       - run: node packages/automation/checks/reporting.mjs
       - run: node packages/automation/checks/video.mjs
+      - name: Verify all controlled API and cross-browser regression cases
+        run: npm run test:regression
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: controlled-regression-evidence
+          path: .local/automation-results
+          if-no-files-found: ignore
+          retention-days: 14
       - uses: actions/cache@v4
         with:
           path: .local/platform-history

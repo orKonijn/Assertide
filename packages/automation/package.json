@@ -8,6 +8,7 @@
     "test": "playwright test",
     "list": "playwright test --list",
     "test:platform": "playwright test --config platform.config.ts",
+    "test:regression": "playwright test --config regression.config.ts",
     "test:ui": "playwright test --project chromium --project firefox --project webkit",
     "test:architecture": "node checks/architecture.mjs",
     "test:reporting": "node checks/reporting.mjs",

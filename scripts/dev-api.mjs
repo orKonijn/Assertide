@@ -2,6 +2,11 @@ import { randomBytes } from 'node:crypto';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import {
+  ensureLocalObjectStore,
+  localStorageEnvironment,
+  usesLocalObjectStore,
+} from './managed-object-store.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const directory = new URL('../.local/', import.meta.url);
@@ -32,13 +37,14 @@ if (!credentials.encryptionKey) {
   });
 }
 const separate = process.env.SEPARATE_WORKERS === 'true';
-if (separate && (!process.env.DATABASE_URL || !process.env.S3_BUCKET))
+const storageEnv = localStorageEnvironment(credentials);
+if (separate && (!storageEnv.DATABASE_URL || !storageEnv.S3_BUCKET))
   throw new Error('Separate workers require PostgreSQL and object storage');
 const options = {
   cwd: `${root}/apps/api`,
   stdio: 'inherit',
   env: {
-    ...process.env,
+    ...storageEnv,
     NODE_ENV: 'development',
     LOCAL_IDENTITY: 'true',
     LOCAL_RUNNER: separate ? 'false' : 'true',
@@ -76,8 +82,22 @@ const start = (entry, extra = {}) => {
   });
   return child;
 };
-start('src/main.ts');
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => stop(signal));
+if (usesLocalObjectStore(storageEnv)) {
+  const storage = await ensureLocalObjectStore(credentials);
+  if (storage) {
+    children.push(storage);
+    storage.once('exit', () => {
+      if (!stopping) {
+        process.exitCode = 1;
+        stop();
+      }
+    });
+  }
+  if (stopping) stop();
+  else console.log('Local report storage is ready.');
+}
+if (!stopping) start('src/main.ts');
 if (separate) {
   const deadline = Date.now() + 30000;
   let ready = false;
@@ -89,7 +109,7 @@ if (separate) {
         })
       ).ok;
     } catch {
-      // A refused connection is expected before the local service starts.
+      /* Wait for API readiness before starting separate workers. */
     }
     if (ready) break;
     await new Promise((resolve) => setTimeout(resolve, 100));

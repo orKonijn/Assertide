@@ -10,4 +10,14 @@ test.describe('Failure reporting contract', () => {
   test('records masked failure evidence without credential values', async () => {
     await probe.fail(secret);
   });
+  test('records a final screenshot for a successful browser test', async () => {
+    await probe.verify();
+    await probe.verify();
+  });
+  test.describe('Sensitive success', () => {
+    test.use({ sensitive: true });
+    test('does not automatically capture sensitive pages', async () => {
+      await probe.verify();
+    });
+  });
 });

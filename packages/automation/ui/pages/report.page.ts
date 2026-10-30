@@ -27,6 +27,19 @@ export class AllureReportPage {
   public url(): string {
     return this.page.url();
   }
+  public async openScreenshot(title: string): Promise<void> {
+    await this.testTitle(title).click();
+    await this.page.getByText(/^Attachments/).click();
+    await this.page.getByText('final-state.png', { exact: false }).first().click();
+  }
+  public screenshotImage(): Locator {
+    return this.page.locator('img').first();
+  }
+  public async openStepScreenshot(title: string, step: string): Promise<void> {
+    await this.testTitle(title).click();
+    await this.page.getByText(step, { exact: true }).click();
+    await this.page.getByText('step-state.png', { exact: true }).last().click();
+  }
   public async responseStatus(): Promise<number> {
     return (await this.page.request.get(this.page.url())).status();
   }
