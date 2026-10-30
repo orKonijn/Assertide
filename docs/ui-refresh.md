@@ -557,3 +557,17 @@ Production build and fixture-based project search, pagination, edit/cancel, and 
 ![Softer light mode on desktop](changelog/assets/unreleased/soft-light-projects-1280-light.png)
 
 ![Softer light mode on mobile](changelog/assets/unreleased/soft-light-projects-390-light.png)
+
+## Suite builder without internal scrolling
+
+Create/Edit suite now has a compact heading, name/description fields, expandable owner/priority/tags, and a searchable test picker with four tests per page and a selected count. Both form and membership list grow with their content instead of scrolling internally. The desktop sticky positioning is retained without a maximum-height constraint.
+
+Build and lint pass. Production UI checks with sample API fixtures cover membership pagination, selections retained across pages/search, edit/reset, optional metadata, no horizontal overflow, and computed non-scrolling form/list styles at 390 and 1280 pixels in both themes. These checks do not validate live backend writes. Changes remain Unreleased with no product version assigned.
+
+![Desktop suite builder in dark mode](changelog/assets/unreleased/suite-builder-1280-dark.png)
+
+![Mobile suite builder in dark mode](changelog/assets/unreleased/suite-builder-390-dark.png)
+
+![Desktop suite builder in light mode](changelog/assets/unreleased/suite-builder-1280-light.png)
+
+![Mobile suite builder in light mode](changelog/assets/unreleased/suite-builder-390-light.png)

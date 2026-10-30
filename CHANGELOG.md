@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Redesigned Create/Edit suite with compact fields, expandable optional metadata, and a searchable four-test membership picker with pagination and selected count. Removed internal scrolling from both the form and test list; selection persists across pages and searches. Build, lint, and responsive fixture-based interaction checks pass. See [suite builder screenshots](docs/ui-refresh.md#suite-builder-without-internal-scrolling).
+
 - New visits now default to dark mode. Saved light/dark preferences continue to apply on reload. Production build and fixture-based browser checks for first visit and both saved choices pass.
 
 - Softened light mode with gray page and card backgrounds, quieter borders, and a muted purple accent. Checked text/accent combinations retain at least 4.5:1 contrast. Production build and responsive fixture-based checks pass. See [light theme screenshots](docs/ui-refresh.md#softer-light-theme).

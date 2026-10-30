@@ -107,8 +107,12 @@ import { Api, errorMessage } from '../core/api';
           }
         </div>
       </section>
-      <form class="card" (ngSubmit)="save()">
-        <h2>{{ editing() ? 'Edit suite' : 'Create suite' }}</h2>
+      <form class="card suite-editor" (ngSubmit)="save()">
+        <div class="suite-editor-heading">
+          <p class="eyebrow">SUITE BUILDER</p>
+          <h2>{{ editing() ? 'Edit suite' : 'Create suite' }}</h2>
+          <p class="muted">Name your suite and choose its tests.</p>
+        </div>
         @if (editing()) {
           <button type="button" (click)="reset()">Cancel editing</button>
         }
@@ -120,20 +124,33 @@ import { Api, errorMessage } from '../core/api';
             maxlength="2000"
           ></textarea>
         </label>
-        <label>Owner<input name="owner" [(ngModel)]="owner" maxlength="120" /></label>
-        <label
-          >Suite priority<select name="priority" [(ngModel)]="priority">
-            <option>P0</option>
-            <option>P1</option>
-            <option>P2</option>
-          </select></label
-        >
-        <label
-          >Tags (comma separated)<input name="tags" [(ngModel)]="tags" maxlength="1000"
-        /></label>
+        <details class="suite-options">
+          <summary>Owner, priority & tags</summary>
+          <label>Owner<input name="owner" [(ngModel)]="owner" maxlength="120" /></label>
+          <label
+            >Suite priority<select name="priority" [(ngModel)]="priority">
+              <option>P0</option>
+              <option>P1</option>
+              <option>P2</option>
+            </select></label
+          >
+          <label
+            >Tags (comma separated)<input name="tags" [(ngModel)]="tags" maxlength="1000"
+          /></label>
+        </details>
         <fieldset class="selection-list">
-          <legend>Membership</legend>
-          @for (test of tests(); track test.id) {
+          <legend>
+            Tests <span class="muted">{{ selected().length }} selected</span>
+          </legend>
+          <label class="suite-test-search"
+            >Search tests<input
+              type="search"
+              name="testSearch"
+              [ngModel]="testQuery()"
+              (ngModelChange)="testQuery.set($event); testPage.set(1)"
+              placeholder="Case ID or title"
+          /></label>
+          @for (test of pageTests(); track test.id) {
             <label
               ><input
                 type="checkbox"
@@ -141,9 +158,34 @@ import { Api, errorMessage } from '../core/api';
                 [disabled]="!test.enabled && !selected().includes(test.id)"
                 (change)="toggle(test.id)"
               />
-              {{ test.id }} {{ test.title }}</label
+              <span
+                ><strong>{{ test.id }}</strong
+                ><span>{{ test.title }}</span></span
+              ></label
             >
           }
+          @if (!filteredTests().length) {
+            <p class="muted">No matching tests.</p>
+          }
+          <nav class="suite-test-pages" aria-label="Suite membership pages">
+            <button
+              type="button"
+              aria-label="Previous tests"
+              [disabled]="currentTestPage() === 1"
+              (click)="testPage.set(currentTestPage() - 1)"
+            >
+              ‹
+            </button>
+            <span>{{ currentTestPage() }} / {{ testPageCount() }}</span>
+            <button
+              type="button"
+              aria-label="Next tests"
+              [disabled]="currentTestPage() === testPageCount()"
+              (click)="testPage.set(currentTestPage() + 1)"
+            >
+              ›
+            </button>
+          </nav>
         </fieldset>
         <button
           class="primary"
@@ -177,6 +219,21 @@ export class Suites {
   });
   public readonly tests = signal<TestCase[]>([]);
   public readonly selected = signal<string[]>([]);
+  public readonly testQuery = signal('');
+  public readonly testPage = signal(1);
+  public readonly filteredTests = computed(() => {
+    const query = this.testQuery().trim().toLowerCase();
+    return this.tests().filter((test) =>
+      (test.id + ' ' + test.title).toLowerCase().includes(query),
+    );
+  });
+  public readonly testPageCount = computed(() =>
+    Math.max(1, Math.ceil(this.filteredTests().length / 4)),
+  );
+  public readonly currentTestPage = computed(() => Math.min(this.testPage(), this.testPageCount()));
+  public readonly pageTests = computed(() =>
+    this.filteredTests().slice((this.currentTestPage() - 1) * 4, this.currentTestPage() * 4),
+  );
   public readonly error = signal('');
   public readonly busy = signal(false);
   public readonly editing = signal<Suite | null>(null);
@@ -192,6 +249,8 @@ export class Suites {
     return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');
   }
   public edit(suite: Suite): void {
+    this.testQuery.set('');
+    this.testPage.set(1);
     this.editing.set(suite);
     this.name = suite.name;
     this.description = suite.description;
@@ -202,6 +261,8 @@ export class Suites {
     this.error.set('');
   }
   public reset(): void {
+    this.testQuery.set('');
+    this.testPage.set(1);
     this.editing.set(null);
     this.name = '';
     this.description = '';
