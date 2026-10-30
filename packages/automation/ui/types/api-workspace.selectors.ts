@@ -1,4 +1,6 @@
 export const ApiWorkspaceSelectors = {
+  exchanges: '.exchange-item',
+  page: (number: number) => `Exchange page ${number}`,
   heading: 'API workspace',
   run: 'Run API suite',
   execution: 'Execution',

@@ -5,15 +5,20 @@ import { ApiWorkspaceSelectors as S } from '../types/api-workspace.selectors';
 import { Routes } from '../types/routes';
 import { workflow } from '../utils/allure.utils';
 export class ApiWorkspacePage {
+  public readonly exchanges;
   public readonly heading;
   public readonly runButton;
   public readonly evidence;
   public readonly selectedValue;
   public constructor(private readonly page: Page) {
+    this.exchanges = page.locator(S.exchanges);
     this.heading = page.getByRole('heading', { name: S.heading, exact: true });
     this.runButton = page.getByRole('button', { name: S.run, exact: true });
     this.evidence = page.getByLabel(S.evidence);
     this.selectedValue = page.getByLabel(S.value);
+  }
+  public goToExchangePage(number: number): Promise<void> {
+    return this.page.getByRole('button', { name: S.page(number), exact: true }).click();
   }
   public goto(): Promise<Response | null> {
     return workflow('Open API evidence workspace', () => this.page.goto(Routes.api));

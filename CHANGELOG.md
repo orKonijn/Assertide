@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Redesigned API workspace with a compact execution summary, clearer exchange rows, and a focused evidence inspector. Recorded exchanges now paginate ten at a time; paging preserves the selected evidence and changing executions resets it. Local verification, six browser scenarios including 64 accessibility states, evidence-download/pagination checks, and mobile/dark layout checks pass. See [API workspace screenshots](docs/ui-refresh.md#api-workspace-and-exchange-pagination).
+
 - Simplified the mobile/tablet header with grouped theme/menu icons, standardized checkboxes across the site, and prevented the explorer Select heading from wrapping. Desktop report headings now align with their data columns. Local verification, eight browser scenarios including 64 accessibility states, and light/dark geometry checks pass. See [header, checkbox, and table evidence](docs/ui-refresh.md#header-controls-shared-checkboxes-and-aligned-table-headings).
 
 - Catalog columns now retain their widths when switching pages. Desktop navigation uses tighter spacing in shorter windows to avoid unnecessary scrollbars while retaining scrolling when content truly overflows. Local verification, four browser tests including 64 accessibility states, and sidebar/column geometry checks pass. See [sidebar and pagination evidence](docs/ui-refresh.md#stable-catalog-columns-and-sidebar-fit).

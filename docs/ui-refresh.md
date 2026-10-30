@@ -355,3 +355,19 @@ Actual running captures:
 Geometry checks confirm report heading/cell alignment and no horizontal overflow at 320/390/768/1280px in both themes. Local lint, formatting, type checks, API/web tests, and production build pass; eight infrastructure checks remain skipped on Windows. This is an Unreleased UI update with no version change.
 
 Eight browser scenarios pass, including the 64-state accessibility matrix, catalog selection, suite checkbox workflows, and mobile drawer/project-picker behavior. The initial catalog test expected 27 fixtures but the local catalog had expanded to 127; it now derives expected selection/page counts from the catalog API, and both catalog tests pass on rerun. The changed test also passes lint, type checks, and Page Object architecture checks.
+
+## API workspace and exchange pagination
+
+The workspace uses a compact contract/execution summary and a two-panel exchange browser. Exchange rows emphasize method, path, status, case, and attempt; the selected row is highlighted. Recorded exchanges are filtered before pagination, with ten entries per page and a sliding numbered window. Paging preserves the inspected evidence; changing execution resets the page, selected exchange, and evidence. Empty executions show a clear message even when they contain only non-API artifacts.
+
+The request/response inspector has a loading state, explicit empty state, and selected-case badge. It stays in view on desktop with bounded internal scrolling. Evidence still uses the redacted viewer/download flow, and viewing an exchange never repeats its request. Concurrent inspection responses cannot replace a newer selection.
+
+Actual running implementation:
+
+![Dark API workspace with paginated exchanges](changelog/assets/unreleased/api-redesign-1280-dark.png)
+![Light API workspace with inspected evidence](changelog/assets/unreleased/api-redesign-evidence.png)
+![Mobile API workspace](changelog/assets/unreleased/api-redesign-390-dark.png)
+
+Layout checks pass at 320/390/768/1280px in both themes. Local lint, formatting, type checks, API/web unit tests, production build, and Page Object architecture/reporting checks pass. Eight infrastructure tests remain skipped on Windows. No product version is assigned; the redesign is Unreleased.
+
+Six browser scenarios pass, including the 64-state accessibility matrix, execution/evidence flows, and the expanded API workspace test for ten-row pagination, preserved inspected evidence, JSON inspection, and redacted downloads. An initial multi-case launch returned only one selected case during development; its isolated rerun passed with all 18 results.
