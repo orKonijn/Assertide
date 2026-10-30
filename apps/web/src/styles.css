@@ -3311,3 +3311,98 @@ aside .account {
     grid-column: 1 / -1;
   }
 }
+
+.run-heading {
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 20px;
+}
+.run-heading h1 {
+  font-size: clamp(24px, 3vw, 32px);
+  margin-bottom: 12px;
+}
+.run-heading .actions {
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.run-heading .actions button,
+.content .run-heading a {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.execution-summary .execution-overview {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.execution-overview > .card {
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  padding: 24px;
+  background: transparent;
+  box-shadow: none;
+}
+.execution-overview .selection-overview {
+  border-left: 1px solid var(--border);
+}
+.execution-overview .metric {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 18px;
+  font-size: 26px;
+  text-transform: capitalize;
+  flex-wrap: wrap;
+}
+.execution-overview .metric .status-indicator {
+  margin-right: 0;
+}
+.execution-overview .metric-unit {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: none;
+}
+.execution-overview h2 {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+}
+.execution-overview button {
+  font-size: 12px;
+  min-height: 36px;
+  padding: 8px 12px;
+}
+.execution-overview .frozen-cases summary {
+  background: transparent;
+  border: 1px solid var(--border);
+  min-height: 36px;
+  padding: 8px 12px;
+}
+.execution-overview .selection-overview > .muted {
+  font-size: 11px;
+  margin: 12px 0 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .execution-summary .execution-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .execution-overview > .card {
+    padding: 18px;
+  }
+  .execution-overview .selection-overview {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+  .run-heading .actions {
+    justify-content: flex-start;
+  }
+}

@@ -51,7 +51,7 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
         </button>
       </div>
     </dialog>
-    <header class="page-header">
+    <header class="page-header run-heading">
       <div>
         <p class="eyebrow">EXECUTION DETAIL</p>
         <h1>Run {{ id.slice(0, 8) }}</h1>
@@ -75,41 +75,45 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
     }
     @if (run(); as current) {
       <div class="grid execution-summary">
-        <section class="card">
-          <h2>Execution phase</h2>
-          <p class="metric" role="status">
-            <span
-              class="status-indicator"
-              [attr.data-status]="current.phase"
-              aria-hidden="true"
-            ></span
-            >{{ current.phase }}
-          </p>
-          @if (current.queueReason) {
-            <p>{{ current.queueReason }}. The run will start when capacity becomes available.</p>
-          }
-          @if (current.cancelRequested && current.phase !== 'canceled') {
-            <p>Stopping workers…</p>
-          }
-          @if (['queued', 'running', 'provisioning'].includes(current.phase)) {
-            <button [disabled]="busy()" (click)="cancel()">Cancel execution</button>
-          }
-        </section>
-        <section class="card">
-          <h2>Frozen selection</h2>
-          <p class="metric">{{ current.selection.testIds.length }}</p>
-          <details class="frozen-cases">
-            <summary>View selected tests</summary>
-            <div class="frozen-case-list" aria-label="Selected test identifiers">
-              @for (caseId of current.selection.testIds; track caseId) {
-                <span class="badge">{{ caseId }}</span>
-              }
-            </div>
-          </details>
-          @if (current.source) {
-            <p class="muted">Source revision {{ current.source.revision.slice(0, 12) }}</p>
-          }
-        </section>
+        <div class="execution-overview">
+          <section class="card phase-overview">
+            <h2>Execution phase</h2>
+            <p class="metric" role="status">
+              <span
+                class="status-indicator"
+                [attr.data-status]="current.phase"
+                aria-hidden="true"
+              ></span
+              >{{ current.phase }}
+            </p>
+            @if (current.queueReason) {
+              <p>{{ current.queueReason }}. The run will start when capacity becomes available.</p>
+            }
+            @if (current.cancelRequested && current.phase !== 'canceled') {
+              <p>Stopping workers…</p>
+            }
+            @if (['queued', 'running', 'provisioning'].includes(current.phase)) {
+              <button [disabled]="busy()" (click)="cancel()">Cancel execution</button>
+            }
+          </section>
+          <section class="card selection-overview">
+            <h2>Frozen selection</h2>
+            <p class="metric">
+              {{ current.selection.testIds.length }} <span class="metric-unit">tests selected</span>
+            </p>
+            <details class="frozen-cases">
+              <summary>View selected tests</summary>
+              <div class="frozen-case-list" aria-label="Selected test identifiers">
+                @for (caseId of current.selection.testIds; track caseId) {
+                  <span class="badge">{{ caseId }}</span>
+                }
+              </div>
+            </details>
+            @if (current.source) {
+              <p class="muted">Source revision {{ current.source.revision.slice(0, 12) }}</p>
+            }
+          </section>
+        </div>
         <section class="card execution-report">
           <div class="execution-report-heading">
             <h2>Allure report</h2>

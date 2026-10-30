@@ -457,3 +457,14 @@ Actual production build with intercepted representative API fixture responses:
 ![Suite pagination on mobile with fixture data](changelog/assets/unreleased/suite-pagination-390.png)
 
 Lint, ten web tests, and production build pass. Browser checks verify ten suites on the first page, three on the last page of a 23-suite fixture, disabled boundary controls, retained create/edit form values, and no horizontal overflow at 320/390/768/1280px in light and dark themes. Live database integration remains unverified because the local database is unavailable. No product version is assigned or changed; this remains Unreleased.
+
+## Aligned execution overview
+
+The execution header uses smaller actions and a tighter title. Phase and frozen selection share a divided overview panel, with aligned labels and metrics, a status dot, and an explicit “tests selected” unit. On phones the sections stack with a horizontal divider. Expanded identifiers retain their bounded scrolling region; cancel, refresh, and rerun behavior is unchanged.
+
+Actual production build with sample API responses and an inert live-event connection:
+
+![Aligned queued execution overview on desktop with fixtures](changelog/assets/unreleased/execution-overview-1280.png)
+![Stacked execution overview on mobile with fixtures](changelog/assets/unreleased/execution-overview-390.png)
+
+Lint, ten web unit tests, and production build pass. Browser checks cover the queued state, disabled rerun controls, expanding 127 selected identifiers, and no horizontal overflow at 320/390/768/1280px in both themes. These are layout checks; they do not verify queue processing or live database behavior. The previously recorded local database startup problem remains outside this UI change. No product version is assigned or changed; this remains Unreleased.
