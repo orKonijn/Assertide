@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Implemented all seven supplemental JSONPlaceholder API cases and all seven The Internet browser cases as manual, low-volume practice. All cases pass in local public-fixture checks; execution is opt-in, excluded from CI, single-worker, without retries and stopped on access/rate-limit responses. See [practice commands and limits](docs/practice-targets.md).
+
 - Added root setup, start and verification commands that configure local sign-in automatically. Fresh dependency setup and all 14 connected browser checks pass locally; see [local startup](README.md#web-development).
 
 - Added environment-controlled headed execution for isolated Linux workers, using a private virtual display per run. Policy tests verify local-runtime and API-only refusal and authorized OCI launch; the environment browser workflow passes locally. Linux execution is covered by the OCI integration gate. See [worker setup](docs/isolated-workers.md).
