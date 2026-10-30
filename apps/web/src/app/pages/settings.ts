@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Api, errorMessage } from '../core/api';
 import { Members } from '../core/members';
 import { Environments } from '../core/environments';
+import { Operations } from '../core/operations';
 interface Audit {
   id: string;
   actor: string;
@@ -19,7 +20,7 @@ interface ServiceAccount {
   version: number;
 }
 @Component({
-  imports: [DatePipe, FormsModule, Members, Environments],
+  imports: [DatePipe, FormsModule, Members, Environments, Operations],
   template: `<header class="page-header">
       <div>
         <p class="eyebrow">WORKSPACE SETTINGS</p>
@@ -45,6 +46,7 @@ interface ServiceAccount {
       <p class="error" role="alert">{{ error() }}</p>
     }
     @if (api.identity()?.role === 'administrator') {
+      <app-operations />
       <app-members />
       <app-environments />
       <section class="card">

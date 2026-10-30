@@ -17,6 +17,7 @@ import { mountArtifacts } from "./artifacts.ts";
 import { mountServiceAccounts } from "./service-accounts.ts";
 import { mountAdministration } from "./administration.ts";
 import { mountEnvironments } from "./environments.ts";
+import { mountOperations } from "./operations.ts";
 
 @Module({})
 class AppModule {}
@@ -92,6 +93,7 @@ if (process.env["LOCAL_IDENTITY"] === "true") {
 mountPlatform(express, platform, identity);
 mountAdministration(express, identity, platform);
 mountEnvironments(express, identity, platform);
+mountOperations(express, db, identity);
 mountLiveEvents(express, identity, platform);
 mountAnalytics(express, identity, platform);
 mountArtifacts(express, identity, platform);

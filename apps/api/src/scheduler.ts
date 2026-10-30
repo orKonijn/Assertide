@@ -1,6 +1,20 @@
 import { Queue, Worker, DelayedError } from "bullmq";
 import { z } from "zod";
 import type { SqlConnection, SqlExecutor } from "./database.ts";
+export function executionLimits() {
+  const limit = (name: string, fallback: number, max: number) =>
+    z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(max)
+      .parse(process.env[name] ?? fallback);
+  return {
+    projectRuns: limit("MAX_PROJECT_RUNS", 2, 100),
+    organizationRuns: limit("MAX_ORGANIZATION_RUNS", 4, 500),
+    organizationWorkers: limit("MAX_ORGANIZATION_WORKERS", 8, 1000),
+  };
+}
 
 export async function initializeScheduler(db: SqlConnection) {
   await db.query(
@@ -41,10 +55,11 @@ export async function claimExecution(
         [target.organization_id, target.project_id],
       )
     ).rows[0];
+    const limits = executionLimits();
     if (
-      Number(active?.runs) >= 4 ||
-      Number(active?.project_runs) >= 2 ||
-      Number(active?.workers) + target.workers > 8
+      Number(active?.runs) >= limits.organizationRuns ||
+      Number(active?.project_runs) >= limits.projectRuns ||
+      Number(active?.workers) + target.workers > limits.organizationWorkers
     ) {
       await tx.query(
         "UPDATE platform_documents SET body=jsonb_set(body,'{queueReason}','\"Waiting for project or organization worker capacity\"') WHERE id=$1",

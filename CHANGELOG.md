@@ -6,6 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Administrators can inspect dependency health, queue age, failed reports, capacity and retention in Settings. Added bounded database/Redis/object-store readiness probes and configurable deployment capacity limits. Database failure, scope, quota and desktop/mobile browser checks pass; see [operations guidance](docs/operations.md).
 - Added opt-in Linux OCI workers with immutable image selection, non-root execution, read-only source/root filesystems, resource caps and no external network. CI verifies the isolation boundaries, mixed fixture execution, container cleanup and the connected app workflow. See [worker setup and scope](docs/isolated-workers.md).
 - Execution details and Allure now record Node, Playwright, Allure/integration and bundled browser versions. Reports use the run's frozen feature, owner, module, priority and tags. Browser checks verify recorded versions, generated labels and report rebuilding.
 - Raw Allure inputs now have immutable, checksum-verified object-store archives. Report rebuilding restores them when a worker's local staging files are missing. Real-store tests cover cross-run and path rejection, integrity failures and 14/30-day retention; the browser rebuild passes after deleting local raw inputs.
