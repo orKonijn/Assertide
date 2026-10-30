@@ -3,6 +3,7 @@ import { validateStorageTransport } from "./production-config.ts";
 import { readiness } from "./operations.ts";
 import { connectDatabase } from "./database.ts";
 import { LocalRunner } from "./local-runner.ts";
+import { prepareSource } from "./source.ts";
 
 validateStorageTransport();
 const role = process.env["WORKER_ROLE"];
@@ -23,6 +24,7 @@ if (
 const db = await connectDatabase(process.env["DATABASE_URL"]);
 // The API applies migrations before workers start. Never seed identities here.
 await db.query("SELECT id FROM schema_migrations LIMIT 1");
+if (role === "execution") await prepareSource();
 const runner = new LocalRunner(db, role);
 let stopping = false;
 const health = process.env["WORKER_HEALTH_PORT"]

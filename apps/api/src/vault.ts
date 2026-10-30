@@ -44,7 +44,9 @@ export class VaultTransit {
         this.token = "";
         this.expires = 0;
       }
-      throw new Error("Vault operation failed");
+      throw Object.assign(new Error("Vault operation failed"), {
+        code: "VAULT_OPERATION_FAILED",
+      });
     }
     return (await response.json()) as unknown;
   }

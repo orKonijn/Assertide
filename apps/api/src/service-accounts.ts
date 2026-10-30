@@ -1,3 +1,4 @@
+import { failureResponse } from "./request-context.ts";
 import { randomUUID, randomBytes, createHash } from "node:crypto";
 import { z } from "zod";
 import type { Express, Request, Response } from "express";
@@ -42,13 +43,13 @@ export function mountServiceAccounts(
           return;
         }
         await work(req, res, principal, project);
-      } catch {
-        res
-          .status(500)
-          .json({
-            title: "Service account operation failed",
-            correlationId: randomUUID(),
-          });
+      } catch (error) {
+        failureResponse(
+          res,
+          error,
+          "service_accounts",
+          "Service account operation failed",
+        );
       }
     };
   app.get(
@@ -105,11 +106,9 @@ export function mountServiceAccounts(
         const id = z.uuid().safeParse(req.params["id"]);
         const version = /^"(\d+)"$/.exec(req.get("If-Match") ?? "");
         if (!id.success || !version) {
-          res
-            .status(412)
-            .json({
-              title: "Reload service accounts before changing this credential",
-            });
+          res.status(412).json({
+            title: "Reload service accounts before changing this credential",
+          });
           return;
         }
         const token = `ast_${randomBytes(32).toString("base64url")}`;

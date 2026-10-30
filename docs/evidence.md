@@ -4,7 +4,7 @@ The API workspace reads recorded exchanges; inspecting a request does not send i
 
 Execution results identify each artifact by run, result, attempt, capture time and expiry. Downloads require current project membership and create an audit event. Files are addressed by generated UUIDs rather than user-provided paths. The importer rejects files outside the run directory, unsupported content types and artifacts over 50 MB. Browser evidence is restricted to the trusted local storefront; API traces remain disabled.
 
-Traces and video expire after 14 days; other imported artifacts expire after 30 days. The local worker sweeps expired evidence every minute, deletes each file and records a tombstone. Expired evidence returns HTTP 410. This currently covers imported local artifact files; S3 object-version deletion, raw/report cleanup and backup aging remain separate unfinished operational requirements.
+Traces and video expire after 14 days; other imported artifacts expire after 30 days. The local worker sweeps expired evidence every minute, deletes each file and records a tombstone. Expired evidence returns HTTP 410. Private S3 storage deletes all object versions and multipart uploads; raw evidence, reports and history have their own retention sweeps. Scheduled database backups use a separate encrypted, versioned bucket. Its retention/object-lock and replication policy must be configured by the deployment owner; see [recovery guidance](database-recovery.md).
 
 Worker logs retain a redacted tail. Events are retained for 24 hours. Reconnecting outside the retained window triggers a snapshot resync. A report rebuild remains separate from execution outcomes.
 

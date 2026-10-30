@@ -1,12 +1,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
-import { requestContext } from "../src/request-context.ts";
+import { requestContext, failureResponse } from "../src/request-context.ts";
 
 test("request correlation ignores caller identifiers and never logs request secrets", async () => {
   const app = express();
   app.use(requestContext);
-  app.get("/failure", (_req, res) => res.status(503).end());
+  app.get("/failure", (_req, res) =>
+    failureResponse(
+      res,
+      Object.assign(new Error("private database password"), {
+        code: "08006",
+        detail: "private",
+      }),
+      "platform",
+      "Internal service error",
+    ),
+  );
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
   const address = server.address();
@@ -23,9 +33,25 @@ test("request correlation ignores caller identifiers and never logs request secr
     );
     const id = response.headers.get("x-request-id");
     assert.match(id!, /^[0-9a-f-]{36}$/);
+    assert.equal((await response.json()).correlationId, id);
+    assert.ok(
+      events.every(
+        (value) => !value.includes("private") && !value.includes("forged"),
+      ),
+    );
     assert.deepEqual(
       events.map((value) => JSON.parse(value)),
-      [{ event: "request_failed", requestId: id, status: 503 }],
+      [
+        {
+          event: "operation_failed",
+          requestId: id,
+          operation: "platform",
+          category: "database",
+          code: "08006",
+          status: 500,
+        },
+        { event: "request_failed", requestId: id, status: 500 },
+      ],
     );
   } finally {
     console.warn = warn;

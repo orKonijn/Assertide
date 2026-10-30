@@ -1,12 +1,20 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
-import { mkdir, writeFile, rename, symlink, access } from "node:fs/promises";
+import {
+  mkdir,
+  writeFile,
+  rename,
+  symlink,
+  access,
+  rm,
+} from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const automation = path.join(root, "packages", "automation");
-export const sourceRoot = path.join(root, ".local", "sources");
+export const sourceRoot =
+  process.env["SOURCE_ROOT"] ?? path.join(root, ".local", "sources");
 function files(directory: string): string[] {
   return readdirSync(path.join(automation, directory), {
     withFileTypes: true,
@@ -36,61 +44,75 @@ export const sourceManifest = entries.map(({ file, body }) => ({
 export const catalogRevision = createHash("sha256")
   .update(JSON.stringify(sourceManifest))
   .digest("hex");
-export async function prepareSource(): Promise<void> {
-  const destination = path.join(sourceRoot, catalogRevision);
+export async function prepareSource(storageRoot = sourceRoot): Promise<void> {
+  const destination = path.join(storageRoot, catalogRevision);
   try {
     await access(path.join(destination, "manifest.json"));
+    await verifySource(catalogRevision, storageRoot);
     return;
-  } catch {
-    /* First use. */
+  } catch (error) {
+    if (!(
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ))
+      throw error;
   }
-  const staging = path.join(sourceRoot, `staging-${randomUUID()}`);
+  const staging = path.join(storageRoot, `staging-${randomUUID()}`);
   await mkdir(staging, { recursive: true });
-  for (const { file, body } of entries) {
-    await mkdir(path.dirname(path.join(staging, file)), { recursive: true });
-    await writeFile(path.join(staging, file), body, { flag: "wx" });
-  }
-  await writeFile(
-    path.join(staging, "manifest.json"),
-    JSON.stringify(sourceManifest),
-    { flag: "wx" },
-  );
-  // Trusted development dependency installation; production workers must use a pinned image.
-  await symlink(
-    path.join(automation, "node_modules"),
-    path.join(staging, "node_modules"),
-    process.platform === "win32" ? "junction" : "dir",
-  );
-  for (let attempt = 0; ; attempt++) {
-    try {
-      await rename(staging, destination);
-      return;
-    } catch (error) {
-      // A concurrent initializer may have published the same complete snapshot.
-      try {
-        await verifySource(catalogRevision);
-        return;
-      } catch {
-        /* Not published yet. */
-      }
-      if (
-        attempt >= 4 ||
-        !(
-          error &&
-          typeof error === "object" &&
-          "code" in error &&
-          ["EPERM", "EACCES"].includes(String(error.code))
-        )
-      )
-        throw error;
-      await new Promise((resolve) => setTimeout(resolve, 50 * 2 ** attempt));
+  try {
+    for (const { file, body } of entries) {
+      await mkdir(path.dirname(path.join(staging, file)), { recursive: true });
+      await writeFile(path.join(staging, file), body, { flag: "wx" });
     }
+    await writeFile(
+      path.join(staging, "manifest.json"),
+      JSON.stringify(sourceManifest),
+      { flag: "wx" },
+    );
+    // Trusted development dependency installation; production workers must use a pinned image.
+    await symlink(
+      path.join(automation, "node_modules"),
+      path.join(staging, "node_modules"),
+      process.platform === "win32" ? "junction" : "dir",
+    );
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await rename(staging, destination);
+        return;
+      } catch (error) {
+        // A concurrent initializer may have published the same complete snapshot.
+        try {
+          await verifySource(catalogRevision, storageRoot);
+          return;
+        } catch {
+          /* Not published yet. */
+        }
+        if (
+          attempt >= 4 ||
+          !(
+            error &&
+            typeof error === "object" &&
+            "code" in error &&
+            ["EPERM", "EACCES"].includes(String(error.code))
+          )
+        )
+          throw error;
+        await new Promise((resolve) => setTimeout(resolve, 50 * 2 ** attempt));
+      }
+    }
+  } finally {
+    await rm(staging, { recursive: true, force: true });
   }
 }
-export async function verifySource(revision: string): Promise<string> {
+export async function verifySource(
+  revision: string,
+  storageRoot = sourceRoot,
+): Promise<string> {
   if (!/^[a-f0-9]{64}$/.test(revision))
     throw new Error("Execution has no approved source snapshot");
-  const directory = path.join(sourceRoot, revision);
+  const directory = path.join(storageRoot, revision);
   const manifest: unknown = JSON.parse(
     readFileSync(path.join(directory, "manifest.json"), "utf8"),
   );

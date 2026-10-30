@@ -6,6 +6,6 @@ Workers claim a monotonically increasing lease epoch and renew a 30-second lease
 
 Capacity admission is serialized in a database transaction: at most two active runs per project, four per organization and eight aggregate workers. Runs remain queued with an explanation when capacity is exhausted. Redis jobs are delayed without consuming retry attempts; the SQL fallback rechecks capacity.
 
-The local launcher still executes this repository's trusted fixtures in child process groups. Redis delivery and fencing do not make that runner a production isolation boundary. OCI isolation, object storage and operational restore/load acceptance remain unfinished.
+The local launcher still executes this repository's trusted fixtures in child process groups. Redis delivery and fencing do not make that runner a production isolation boundary. Production execution uses digest-pinned OCI or Kubernetes workers, private object storage and separate execution/report supervisors. CI verifies both runtimes and reference restore/load drills; production-scale capacity, recovery and availability acceptance remain deployment-specific. See [deployment setup](production-deployment.md).
 
 CI runs SQL tests against PostgreSQL 17 and verifies Redis duplicate delivery. The browser pipeline is configured to use PostgreSQL and Redis together. Local fallback checks use embedded PostgreSQL-compatible storage; the Redis-only test is explicitly skipped when `TEST_REDIS_URL` is absent.

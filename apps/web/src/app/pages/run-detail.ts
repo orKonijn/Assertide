@@ -328,17 +328,24 @@ export class RunDetail {
   }
   private stream: EventSource | undefined;
   private lastSequence = 0;
+  private loadGeneration = 0;
+  private accessRevoked = false;
   constructor() {
     inject(ActivatedRoute)
       .queryParamMap.pipe(takeUntilDestroyed())
       .subscribe((params) => this.focusedResult.set(params.get('result') ?? ''));
     inject(DestroyRef).onDestroy(() => {
+      this.accessRevoked = true;
+      this.loadGeneration++;
       this.stream?.close();
     });
     inject(ActivatedRoute)
       .paramMap.pipe(takeUntilDestroyed())
       .subscribe((params) => {
         this.id = params.get('id') ?? '';
+        this.loadGeneration++;
+        this.accessRevoked = false;
+        this.error.set('');
         this.run.set(null);
         this.history.set([]);
         this.selected.set([]);
@@ -350,16 +357,22 @@ export class RunDetail {
   private connect() {
     this.stream?.close();
     const stream = (this.stream = new EventSource(`/v1/runs/${this.id}/events`));
+    const current = () => this.stream === stream && !this.accessRevoked;
     stream.onopen = () => {
+      if (!current()) return;
       this.disconnected.set(false);
       void this.load();
     };
-    stream.onerror = () => this.disconnected.set(true);
+    stream.onerror = () => {
+      if (current()) this.disconnected.set(true);
+    };
     stream.addEventListener('resync', () => {
+      if (!current()) return;
       this.lastSequence = 0;
       void this.load();
     });
     stream.addEventListener('update', (event: MessageEvent<string>) => {
+      if (!current()) return;
       const sequence = Number(event.lastEventId);
       if (Number.isSafeInteger(sequence) && sequence > this.lastSequence) {
         this.lastSequence = sequence;
@@ -367,27 +380,38 @@ export class RunDetail {
       }
     });
     stream.addEventListener('access_revoked', () => {
+      if (!current()) return;
+      this.accessRevoked = true;
+      this.loadGeneration++;
       stream.close();
       this.run.set(null);
+      this.history.set([]);
+      this.error.set('');
       this.api.identity.set(null);
     });
     void this.load();
   }
   async load() {
+    if (this.accessRevoked) return;
     const id = this.id;
+    const generation = ++this.loadGeneration;
+    const current = () =>
+      generation === this.loadGeneration && id === this.id && !this.accessRevoked;
     try {
       const run = await this.api.get<Run>(`/runs/${id}`);
-      if (id !== this.id) return;
+      if (!current()) return;
       this.run.set(run);
+      this.history.set([]);
       if (run.historyStream) {
         const data = await this.api.get<{
           items: { runId: string; endedAt: string; reportAvailable: boolean }[];
         }>(`/runs/${id}/history`);
-        if (id !== this.id) return;
+        if (!current()) return;
         this.history.set(data.items);
       }
       this.error.set('');
     } catch (error) {
+      if (!current()) return;
       this.error.set(errorMessage(error));
     }
   }

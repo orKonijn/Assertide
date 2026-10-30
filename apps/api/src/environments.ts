@@ -1,3 +1,4 @@
+import { failureResponse } from "./request-context.ts";
 import {
   createCipheriv,
   createDecipheriv,
@@ -145,11 +146,13 @@ export function mountEnvironments(
           return;
         }
         await work(req, res, principal, project);
-      } catch {
-        res.status(500).json({
-          title: "Environment operation failed",
-          correlationId: randomUUID(),
-        });
+      } catch (error) {
+        failureResponse(
+          res,
+          error,
+          "environments",
+          "Environment operation failed",
+        );
       }
     };
   app.post(

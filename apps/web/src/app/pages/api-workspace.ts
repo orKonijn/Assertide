@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -26,7 +26,7 @@ import { JsonEvidence } from '../core/json-evidence';
         <p class="muted">Investigate recorded contract checks against the controlled Lab.</p>
       </div>
       <button
-        [disabled]="busy() || !tests().length || api.identity()?.role === 'viewer'"
+        [disabled]="busy() || !executableTests().length || api.identity()?.role === 'viewer'"
         (click)="start()"
       >
         Run API suite
@@ -38,7 +38,8 @@ import { JsonEvidence } from '../core/json-evidence';
     <section class="card">
       <h2>Orders contract</h2>
       <p>
-        {{ tests().length }} API cases · GET, POST, PUT, PATCH and DELETE · browserless execution
+        {{ executableTests().length }} executable API cases · {{ tests().length }} total · GET,
+        POST, PUT, PATCH and DELETE · browserless execution
       </p>
       <p class="muted">
         Authentication credentials and fixture control headers are excluded from recorded exchanges.
@@ -103,6 +104,7 @@ export class ApiWorkspace {
   readonly api = inject(Api);
   private readonly router = inject(Router);
   readonly tests = signal<TestCase[]>([]);
+  readonly executableTests = computed(() => this.tests().filter((test) => test.enabled));
   readonly runs = signal<Run[]>([]);
   readonly selectedRun = signal<Run | null>(null);
   readonly evidence = signal('');
@@ -147,10 +149,12 @@ export class ApiWorkspace {
   }
   private inspectionVersion = 0;
   async start() {
+    if (this.busy() || !this.executableTests().length || this.api.identity()?.role === 'viewer')
+      return;
     this.busy.set(true);
     try {
       const run = await this.api.launch(
-        this.tests().map((test) => test.id),
+        this.executableTests().map((test) => test.id),
         crypto.randomUUID(),
         1,
         0,

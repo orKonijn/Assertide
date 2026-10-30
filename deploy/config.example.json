@@ -9,5 +9,6 @@
   "vaultRole": "assertide",
   "ingressClass": "nginx",
   "ingressNamespace": "ingress-nginx",
-  "tlsSecret": "assertide-tls"
+  "tlsSecret": "assertide-tls",
+  "sourceClaim": "assertide-sources"
 }

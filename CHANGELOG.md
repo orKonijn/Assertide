@@ -62,7 +62,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - Completed all 15 controlled Lab cases, including invalid/expired tokens, boundaries, pagination, signed fault injection, bounded transport timeout, a 20-request rate window and local latency evidence. All pass locally and in the browser-launched mixed run; unsigned fixture controls are rejected.
 - Added browser execution against a pinned local Sauce Labs sandbox, with telemetry disabled. All 12 catalog browser cases pass in Chromium, Firefox and WebKit; mixed browser/API launch and Allure viewing pass through the Angular UI.
 - Added authenticated live execution events, seven-day server-calculated metrics with denominator explanations, and report rebuilding that preserves test outcomes. Browser checks cover viewer launch denial, anonymous evidence denial, rejected cross-origin logout and session invalidation.
-- Added a connected local workflow for OIDC sign-in, project-scoped catalog selection, suite creation, trusted-fixture Playwright execution, stored results and authorized Allure 3 viewing on a separate hostname. The browser journey passed against the running services; production isolation and the full specification remain unfinished.
+- Added a connected local workflow for OIDC sign-in, project-scoped catalog selection, suite creation, trusted-fixture Playwright execution, stored results and authorized Allure 3 viewing on a separate hostname. The browser journey passed against the running services; this was the initial local milestone, subsequently extended by the production adapters and workflows recorded above.
 - Added responsive catalog screens with light/dark themes. Desktop and 390px checks passed and screenshots were captured from the running application.
 - Added an opt-in local Lab API with signed fixture tokens, SQL-backed tenant-scoped order CRUD, idempotent creation, optimistic concurrency and viewer restrictions. SQL and HTTP integration tests pass using embedded PostgreSQL-compatible development storage; deployed PostgreSQL verification remains pending.
 - Added execution-domain functions for legal phase transitions, stale-version/lease rejection, idempotent cancellation, and historical pass/retry/latency calculations. Five Node tests verify the PRD fixture and edge cases; these functions are not yet integrated with a persistent API or runner.
@@ -76,12 +76,25 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Execution supervisors now prepare verified source snapshots before accepting work. Kubernetes API/execution pods share a durable source claim so retained revisions survive pod replacement; provision the claim and retain matching worker images as described in [deployment setup](docs/production-deployment.md). Independent-directory integrity checks pass locally; fresh-container startup is checked in CI.
+- Disabled cases already saved in a suite can be removed, and API-suite launches include only enabled cases. The API workspace shows the executable count and disables launch when none remain. The browser regression verifies removal, saved membership, successful launches and the empty selection state.
+- Run detail ignores older same-run snapshot/history/error responses and invalidates pending reads after route changes or access revocation. Deferred-response unit tests verify ordering and protected-state clearing.
+- Unexpected platform, administration, environment and CI-account failures now reuse the request ID for generic client errors and allowlisted diagnostic categories. Tests verify correlation without logging credentials, query values or unrestricted exception messages. Current setup, retention and scheduling docs now reflect implemented behavior.
+
 - Overview date filters now retain explicit accessible names while analytics labels update. Light/dark desktop and mobile accessibility checks pass locally; the visible layout is unchanged.
 
 - Private report tickets now remain bound to the exact report build and issuing login session or CI credential. Logout, session expiry and credential rotation/revocation invalidate subsequent report asset requests. The browser journey verifies denial after logout.
 - Cancellation now stops the owned worker process tree and retains completed attempts from durable checkpoints. Missing browser instances are reconciled individually, queued cancellations retain explicit canceled outcomes, and concurrent progress updates no longer discard a cancellation request. The Windows browser cancellation test and database checks pass.
 
-### Design preview visuals
+### Application captures
+
+![API workspace with no enabled cases and launch disabled](docs/changelog/assets/unreleased/api-disabled-desktop.png)
+
+The executable count distinguishes runnable cases from the retained catalog.
+
+![Disabled API launch at mobile width](docs/changelog/assets/unreleased/api-disabled-mobile.png)
+
+The same state remains readable at 390px without horizontal scrolling.
 
 ![Compatible execution history in a running result page](docs/changelog/assets/unreleased/report-history.png)
 
@@ -111,7 +124,14 @@ Administrators assign a role and explicit project access; changing their own acc
 
 The same controls stack at 390px, with the member table horizontally scrollable.
 
-These screenshots were captured from the running local HTML design preview. They are not screenshots of a deployed platform or the Figma canvas.
+![Suite metadata and membership saved and edited in the running application](docs/changelog/assets/unreleased/suite-editing.png)
+
+Suite edits retain a revision and reject stale saves.
+
+
+### Historical design previews
+
+The following three images were captured from the running local HTML design preview. They are not screenshots of a deployed platform or the Figma canvas.
 
 ![Light desktop design preview showing historical quality cards, trends and separate live activity](docs/changelog/assets/unreleased/design-preview-light-desktop.png)
 
@@ -128,8 +148,4 @@ The 390px preview stacks metrics and turns execution rows into labeled details.
 ### Known issues
 
 - The editable Figma design is incomplete: the file was created, but Figma's Starter-plan tool limit blocked further access before screens could be added. The local generator is provided for recovery, but its output has not been executed or inspected in Figma.
-
-![Suite metadata and membership saved and edited in the running application](docs/changelog/assets/unreleased/suite-editing.png)
-
-Suite edits retain a revision and reject stale saves.
 

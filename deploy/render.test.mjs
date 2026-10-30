@@ -24,6 +24,10 @@ test("deployment renders separate origins, scoped identity, probes and immutable
       item.metadata.name === "assertide-execution",
     );
     assert.equal(pod.securityContext.runAsNonRoot, true);
+    const source = pod.volumes.find((volume) => volume.name === "sources");
+    if (["assertide-api", "assertide-execution"].includes(item.metadata.name))
+      assert.equal(source.persistentVolumeClaim.claimName, "assertide-sources");
+    else assert.equal(source, undefined);
     assert.ok(pod.containers[0].readinessProbe);
     assert.match(pod.containers[0].image, /@sha256:/);
   }

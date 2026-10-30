@@ -5,6 +5,8 @@ export function deployment(config) {
   const dns = /^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$/;
   const namespace = config.namespace ?? "assertide";
   if (!dns.test(namespace)) throw new Error("Invalid namespace");
+  const sourceClaim = config.sourceClaim ?? "assertide-sources";
+  if (!dns.test(sourceClaim)) throw new Error("Invalid source claim");
   for (const key of ["serviceImage", "webImage", "workerImage"]) {
     if (!/^[a-zA-Z0-9./:_-]+@sha256:[a-f0-9]{64}$/.test(config[key] ?? ""))
       throw new Error(`${key} requires a registry digest`);
@@ -70,6 +72,7 @@ export function deployment(config) {
       VAULT_JWT_FILE: "/var/run/secrets/vault/token",
       WORKER_HEALTH_PORT: "4020",
       METRICS_ENABLED: "true",
+      SOURCE_ROOT: "/var/lib/assertide/sources",
     },
   });
   const securityContext = {
@@ -88,6 +91,14 @@ export function deployment(config) {
       volumeMounts.push({ name: "local", mountPath: "/app/.local" });
       volumes.push({ name: "local", emptyDir: { sizeLimit: "8Gi" } });
       if (role !== "report") {
+        volumeMounts.push({
+          name: "sources",
+          mountPath: "/var/lib/assertide/sources",
+        });
+        volumes.push({
+          name: "sources",
+          persistentVolumeClaim: { claimName: sourceClaim },
+        });
         volumeMounts.push({
           name: "vault-jwt",
           mountPath: "/var/run/secrets/vault",

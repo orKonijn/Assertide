@@ -1,3 +1,4 @@
+import { failureResponse } from "./request-context.ts";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Express, Request, Response } from "express";
@@ -824,17 +825,13 @@ export function mountPlatform(
         await fn(req, res, principal);
       } catch (error) {
         const status = error instanceof ApiError ? error.status : 500;
-        res
-          .status(status)
-          .type("application/problem+json")
-          .json({
-            status,
-            title:
-              error instanceof ApiError
-                ? error.message
-                : "Internal service error",
-            correlationId: randomUUID(),
-          });
+        failureResponse(
+          res,
+          error,
+          "platform",
+          error instanceof ApiError ? error.message : "Internal service error",
+          status,
+        );
       }
     };
   app.get(

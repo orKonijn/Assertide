@@ -1,3 +1,4 @@
+import { failureResponse } from "./request-context.ts";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Express, Request, Response } from "express";
@@ -55,15 +56,15 @@ export function mountAdministration(
         }
         await work(req, res, principal);
       } catch (error) {
-        res
-          .status(error instanceof Conflict ? 412 : 500)
-          .json({
-            title:
-              error instanceof Conflict
-                ? error.message
-                : "Administration operation failed",
-            correlationId: randomUUID(),
-          });
+        failureResponse(
+          res,
+          error,
+          "administration",
+          error instanceof Conflict
+            ? error.message
+            : "Administration operation failed",
+          error instanceof Conflict ? 412 : 500,
+        );
       }
     };
   app.post(
@@ -151,11 +152,9 @@ export function mountAdministration(
     handle(async (req, res, principal) => {
       const input = memberInput.safeParse(req.body);
       if (!input.success) {
-        res
-          .status(422)
-          .json({
-            title: "A subject, name, role and project list are required",
-          });
+        res.status(422).json({
+          title: "A subject, name, role and project list are required",
+        });
         return;
       }
       if (input.data.subject === principal.subject) {

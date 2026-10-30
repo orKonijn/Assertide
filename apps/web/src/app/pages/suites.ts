@@ -70,7 +70,7 @@ import { Api, Suite, TestCase, errorMessage } from '../core/api';
               ><input
                 type="checkbox"
                 [checked]="selected().includes(test.id)"
-                [disabled]="!test.enabled"
+                [disabled]="!test.enabled && !selected().includes(test.id)"
                 (change)="toggle(test.id)"
               />
               {{ test.id }} {{ test.title }}</label
