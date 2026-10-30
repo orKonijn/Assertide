@@ -2,6 +2,7 @@ export const NavigationSelectors = {
   activeProject: "Active project",
   menu: "Menu",
   close: "Close menu",
+  backdrop: "Dismiss navigation",
   dialog: "Workspace navigation",
   skip: "Skip to content",
   content: "#content",

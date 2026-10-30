@@ -30,6 +30,13 @@
       Menu
     </button>
   </header>
+  <button
+    class="drawer-backdrop"
+    [class.open]="menu()"
+    tabindex="-1"
+    aria-label="Dismiss navigation"
+    (click)="closeMenu()"
+  ></button>
   <aside
     id="workspace-navigation"
     [class.open]="menu()"
@@ -66,7 +73,7 @@
           routerLinkActive="active"
           ariaCurrentWhenActive="page"
           [routerLinkActiveOptions]="{ exact: true }"
-          (click)="menu.set(false)"
+          (click)="closeMenu()"
           ><svg
             class="nav-icon"
             viewBox="0 0 24 24"

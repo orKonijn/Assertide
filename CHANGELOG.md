@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Mobile navigation now closes when its dimmed backdrop is clicked and slides out smoothly while the backdrop fades. Close, Escape, and navigation actions restore the menu trigger consistently; reduced-motion settings disable transitions. Fixed sign-in cards drifting left at tablet/zoomed widths by keeping equal automatic side margins. Build/lint, five browser tests including 64 accessibility states, and centered-layout checks at 320/390/840/1280px pass. See [navigation and sign-in evidence](docs/ui-refresh.md#mobile-navigation-and-sign-in-alignment).
+
 - Dialogs now animate their closing transition and backdrop, with immediate dismissal for reduced-motion preferences. Replaced the oversized mobile navigation close button with a compact, labeled icon; project cards keep Open/Edit in one row, and catalog badges no longer touch edit buttons. Build/lint and seven browser tests, including 64 accessibility states, pass. See [dialog and card polish](docs/ui-refresh.md#dialog-and-card-polish).
 
 - The project picker now closes when a pointer press starts and ends outside it, returning focus to its trigger; clicks inside and drags out remain open. Regular selects use compact anchored menus, themed selected options, and inset arrows; scrolling surfaces use slim theme-aware scrollbars. Native select behavior remains the fallback where customizable selects are unsupported. Build, lint, six browser tests (including the 64-state accessibility matrix), and test architecture/reporting checks pass. See [controls and scrollbar evidence](docs/ui-refresh.md#dropdowns-and-scrollbars).

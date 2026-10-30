@@ -53,4 +53,24 @@ test.describe("Project picker", () => {
       await expect(picker.trigger).toBeFocused();
     }
   });
+  test("mobile drawer dismisses outside and animates closing", async ({
+    page,
+  }) => {
+    await viewport(page, "mobile");
+    await navigation.menu.click();
+    await navigation.dismissFromOutside();
+    await expect(navigation.menu).toHaveAttribute("aria-expanded", "false");
+    await expect(navigation.menu).toBeFocused();
+    await expect(navigation.closeMenu).not.toBeVisible();
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await navigation.menu.click();
+    await expect(navigation.closeMenu).toBeVisible();
+    await navigation.closeMenu.focus();
+    expect(await navigation.closingMotion()).toEqual({
+      animating: true,
+      visible: true,
+    });
+    await expect(navigation.closeMenu).not.toBeVisible();
+    await expect(navigation.menu).toBeFocused();
+  });
 });

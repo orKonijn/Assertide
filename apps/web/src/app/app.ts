@@ -135,9 +135,12 @@ export class App {
     }
   }
   toggleMenu() {
-    this.menu.update((value) => !value);
-    if (this.menu())
-      setTimeout(() => document.querySelector<HTMLElement>('.mobile-close')?.focus(), 0);
+    if (this.menu()) {
+      this.closeMenu();
+      return;
+    }
+    this.menu.set(true);
+    setTimeout(() => document.querySelector<HTMLElement>('.mobile-close')?.focus(), 0);
   }
   toggleTheme() {
     this.dark.update((value) => !value);

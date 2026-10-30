@@ -10,6 +10,7 @@ export class NavigationComponent {
   readonly menu;
   readonly dialog;
   readonly closeMenu;
+  readonly backdrop;
   readonly signOut;
   readonly skip;
   readonly content;
@@ -18,6 +19,7 @@ export class NavigationComponent {
     this.activeProject = page.getByLabel(S.activeProject);
     this.selectedProject = this.activeProject.locator("span").first();
     this.menu = page.getByRole("button", { name: S.menu, exact: true });
+    this.backdrop = page.getByRole("button", { name: S.backdrop, exact: true });
     this.dialog = page.getByRole("dialog", { name: S.dialog });
     this.closeMenu = this.dialog.getByRole("button", {
       name: S.close,
@@ -56,6 +58,26 @@ export class NavigationComponent {
   }
   press(key: string) {
     return this.page.keyboard.press(key);
+  }
+  async dismissFromOutside() {
+    const box = await this.backdrop.boundingBox();
+    if (!box) throw new Error("Navigation backdrop is not visible");
+    await this.page.mouse.click(box.x + box.width - 12, box.y + 24);
+  }
+  async closingMotion() {
+    return this.backdrop.evaluate(async (button) => {
+      (button as HTMLButtonElement).click();
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      const drawer = document.getElementById("workspace-navigation")!;
+      return {
+        animating: drawer
+          .getAnimations()
+          .some((animation) => animation.playState === "running"),
+        visible: getComputedStyle(drawer).display !== "none",
+      };
+    });
   }
   async setTheme(theme: "light" | "dark") {
     await this.page.evaluate((value) => {

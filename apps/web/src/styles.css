@@ -1255,6 +1255,62 @@ select option {
     }
   }
 }
+.login {
+  width: min(580px, calc(100% - 32px));
+  margin: clamp(24px, 8vh, 72px) auto;
+}
+.drawer-backdrop {
+  display: none;
+}
+@media (max-width: 850px) {
+  .login {
+    margin: 24px auto;
+  }
+  .drawer-backdrop {
+    position: fixed;
+    inset: 72px 0 0;
+    z-index: 19;
+    width: 100%;
+    height: calc(100dvh - 72px);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: #080e2080;
+    opacity: 0;
+    cursor: default;
+    transition:
+      opacity 180ms ease,
+      display 180ms allow-discrete;
+  }
+  .drawer-backdrop:not(:disabled):hover {
+    background: #080e2080;
+  }
+  .drawer-backdrop:not(:disabled):active {
+    transform: none;
+  }
+  .drawer-backdrop.open {
+    display: block;
+    opacity: 1;
+  }
+  aside {
+    transform: translateX(-100%);
+    transition:
+      transform 180ms ease,
+      display 180ms allow-discrete;
+  }
+  aside.open {
+    animation: none;
+    transform: translateX(0);
+  }
+  @starting-style {
+    aside.open {
+      transform: translateX(-100%);
+    }
+    .drawer-backdrop.open {
+      opacity: 0;
+    }
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
