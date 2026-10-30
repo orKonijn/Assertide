@@ -18,6 +18,7 @@ execFileSync(
     `--output=${directory}/source.tar`,
     "HEAD",
     "apps/api",
+    "apps/web",
     "packages/domain",
     "packages/automation",
     "workers",
@@ -25,9 +26,34 @@ execFileSync(
     "package.json",
     "package-lock.json",
     "README.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "eslint.config.mjs",
+    ".dockerignore",
+    ".gitignore",
+    "docs",
   ],
   { cwd: root, stdio: "inherit", windowsHide: true },
 );
+const archived = execFileSync("tar", ["-tf", `${directory}/source.tar`], {
+  encoding: "utf8",
+}).split(/\r?\n/);
+for (const required of [
+  "apps/web/package-lock.json",
+  "apps/web/angular.json",
+  "eslint.config.mjs",
+  "apps/api/src/main.ts",
+  "packages/automation/playwright.config.ts",
+])
+  if (!archived.includes(required))
+    throw new Error(`Build archive missing ${required}`);
+if (
+  archived.some(
+    (name) =>
+      name.split("/").includes(".local") || name.endsWith("/credentials.json"),
+  )
+)
+  throw new Error("Private runtime data must never enter the build archive");
 await writeFile(
   `${directory}/build.json`,
   JSON.stringify(
