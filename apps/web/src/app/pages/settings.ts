@@ -32,11 +32,16 @@ interface ServiceAccount {
     </header>
     @if (api.identity()?.role === 'administrator') {
       <nav class="settings-nav" aria-label="Settings sections">
-        <a href="/settings#settings-health">Health</a
-        ><a href="/settings#settings-members">Members</a
-        ><a href="/settings#settings-environments">Environments</a
-        ><a href="/settings#settings-accounts">Service accounts</a
-        ><button type="button" (click)="openSection('settings-audit')">Audit trail</button>
+        @for (section of sections; track section.id) {
+          <button
+            type="button"
+            [attr.aria-current]="activeSection() === section.id ? 'location' : null"
+            (click)="openSection(section.id)"
+          >
+            <span class="settings-nav-index" aria-hidden="true">{{ section.number }}</span
+            >{{ section.label }}
+          </button>
+        }
       </nav>
     }
     <div class="grid settings-overview">
@@ -147,6 +152,14 @@ interface ServiceAccount {
     }`,
 })
 export class Settings {
+  public readonly sections = [
+    { id: 'settings-health', label: 'Health', number: '01' },
+    { id: 'settings-members', label: 'Members', number: '02' },
+    { id: 'settings-environments', label: 'Environments', number: '03' },
+    { id: 'settings-accounts', label: 'Service accounts', number: '04' },
+    { id: 'settings-audit', label: 'Audit trail', number: '05' },
+  ];
+  public readonly activeSection = signal('settings-health');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   public readonly api = inject(Api);
   public readonly events = signal<Audit[]>([]);
@@ -172,6 +185,7 @@ export class Settings {
     if (!section) {
       return;
     }
+    this.activeSection.set(id);
     section.setAttribute('tabindex', '-1');
     section.focus({ preventScroll: true });
     section.scrollIntoView({

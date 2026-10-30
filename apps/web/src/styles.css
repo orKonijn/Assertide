@@ -3157,3 +3157,157 @@ aside .account {
   height: 10px;
   margin-right: 10px;
 }
+
+.settings-page .settings-nav {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  margin-bottom: 24px;
+}
+.settings-page .settings-nav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  margin: 0;
+  min-height: 42px;
+  padding: 8px 12px;
+}
+.settings-page .settings-nav button:hover {
+  background: var(--soft);
+  color: var(--text);
+}
+.settings-page .settings-nav button[aria-current] {
+  color: var(--brand);
+  background: var(--tint);
+  border-color: color-mix(in srgb, var(--brand) 25%, var(--border));
+  font-weight: 650;
+}
+.settings-nav-index {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+.reports-page {
+  display: block;
+  max-width: 1280px;
+  margin-inline: auto;
+}
+.reports-page .reports-panel {
+  padding: 0;
+  overflow: hidden;
+}
+.report-library-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.report-library-heading h2 {
+  font-size: 16px;
+  margin: 0 0 4px;
+}
+.report-library-heading p {
+  font-size: 12px;
+  margin: 0;
+}
+.report-library-heading .report-refresh {
+  position: static;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 8px;
+  margin: 0;
+}
+.reports-page .report-cards {
+  table-layout: fixed;
+  width: 100%;
+}
+.reports-page .report-cards th {
+  width: auto;
+  padding: 12px 24px;
+  background: var(--soft);
+  font-size: 10px;
+  text-align: left;
+}
+.reports-page .report-cards td {
+  padding: 16px 24px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.reports-page .report-cards th:last-child,
+.reports-page .report-cards td:last-child {
+  text-align: right;
+}
+.reports-page .report-cards th:first-child {
+  width: 24%;
+}
+.reports-page .report-cards td p {
+  font-size: 11px;
+  margin-top: 4px;
+}
+.reports-page .report-cards tbody tr {
+  background: transparent;
+}
+.reports-page .report-cards tbody tr:hover {
+  background: color-mix(in srgb, var(--brand) 3%, var(--surface));
+}
+.reports-page .report-cards a {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.reports-page .report-status {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+@media (max-width: 850px) {
+  .settings-page .settings-nav {
+    flex-wrap: wrap;
+  }
+  .settings-page .settings-nav button {
+    flex: 1 1 140px;
+    justify-content: flex-start;
+  }
+  .report-library-heading {
+    padding: 16px;
+  }
+  .reports-page .table-wrap {
+    padding: 0 12px 12px;
+  }
+  .reports-page .report-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    overflow: hidden;
+  }
+  .reports-page .report-cards tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
+  }
+  .reports-page .report-cards td {
+    padding: 0;
+  }
+  .reports-page .report-cards td:last-child {
+    text-align: left;
+    align-self: end;
+  }
+  .reports-page .report-cards td[colspan] {
+    grid-column: 1 / -1;
+  }
+}

@@ -431,3 +431,18 @@ Health, Members, Environments, Service accounts, and Audit trail are in-page but
 Service health and dependency labels, execution phases, report phases, and individual results have status dots. Healthy/ready/completed/passed states are green; queued/running/provisioning/pending/generating/degraded/skipped/canceled states are orange; failures, timeouts, interruptions, and unavailable services are red. Unknown statuses remain neutral. Existing text labels remain visible, so status never depends on color alone. Execution history badges follow the same palette.
 
 Verification: lint, ten web unit tests, and production build pass. A focused regression test checks all five shortcuts for correct focus/scroll targets and unchanged URL, plus missing-target handling and reduced-motion behavior. Live screenshots and browser checks are unavailable: the local development server remains down after the previously recorded database startup failure. No screenshots are claimed for this change. This remains Unreleased; no product version is assigned or changed.
+
+## Settings navigation and report library
+
+Settings shortcuts share a compact navigation strip with numbered labels and a highlighted last-selected section. All five controls scroll and focus within Settings; review found four links remained after the previous change, and this update replaces them with buttons. The strip wraps on smaller screens.
+
+Reports has a library heading with counts for the loaded records and ready reports, an adjacent refresh control, aligned execution/status/expiry/action columns, colored status dots, and compact mobile cards. Counts describe loaded records rather than claiming an organization-wide total. Existing execution and Allure links retain their destinations.
+
+These screenshots show the actual production build with representative intercepted API fixture responses, not live database records:
+
+![Settings navigation strip on desktop using fixtures](changelog/assets/unreleased/navigation-reports-settings-1280.png)
+![Settings navigation on mobile using fixtures](changelog/assets/unreleased/navigation-reports-settings-390.png)
+![Report library with mixed report states using fixtures](changelog/assets/unreleased/navigation-reports-reports-1280.png)
+![Compact report cards on mobile using fixtures](changelog/assets/unreleased/navigation-reports-reports-390.png)
+
+Lint, ten web unit tests, and production build pass. Browser checks against the production build verify all five shortcuts remain on Settings and update their selected state, and both pages fit 320/390/768/1280px in light/dark themes. The database remains unavailable, so these checks do not verify live API integration or report opening. This remains Unreleased; no product version is assigned or changed.
