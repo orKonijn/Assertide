@@ -11,3 +11,7 @@ Download the archive and checksum from the same successful run. Verify the check
 The workflow rejects high/critical npm advisories in the application's web, API and automation lockfiles. The separately pinned upstream practice fixture has its own dependencies and license; do not confuse its development dependency audit with the Assertide runtime audit. A deployment must additionally scan the chosen base image and retain an approved image registry digest.
 
 Reference: [GitHub's official attestation action](https://github.com/actions/attest).
+
+## Container images
+
+The manual `publish-images.yml` workflow builds the service, web and worker images, runs smoke checks and a fixable high/critical vulnerability gate, generates SPDX SBOMs, and then publishes commit-addressed GHCR images with signed provenance. It does not assign a product release version or deploy a cluster. The PR workflow runs the same image build/scan checks without publishing registry images. See [production deployment](production-deployment.md) for digest validation and deployment configuration.

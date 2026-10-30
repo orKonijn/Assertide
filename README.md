@@ -32,3 +32,7 @@ The infrastructure baseline requires Docker, PostgreSQL 17, Redis and private S3
 ## Versions
 
 No product release is assigned. The private web package uses `0.0.0` as a tooling placeholder, not a released application version. A documented pre-1.0 compatibility policy must precede the first product release. Completed changes remain under `Unreleased` in the changelog.
+
+## Production deployment
+
+Kubernetes Jobs, Vault Transit workload authentication, service/web images, TLS ingress manifests, health/metrics and encrypted scheduled backups are documented in [production deployment](docs/production-deployment.md). The renderer requires real registry digests and deployment bindings. CI exercises the adapters and scans the images; the manual image publication workflow does not merge or deploy the application.
