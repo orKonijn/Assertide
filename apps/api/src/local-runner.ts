@@ -7,6 +7,11 @@ import { randomUUID, randomBytes } from "node:crypto";
 import { ociCommand, stopContainer } from "./oci-worker.ts";
 import { hostname } from "node:os";
 import { archiveRaw, restoreRaw, rawManifest } from "./raw-storage.ts";
+import {
+  enrichReport,
+  caseMetadata,
+  toolchainSchema,
+} from "./report-metadata.ts";
 import type { SqlConnection } from "./database.ts";
 import { verifySource } from "./source.ts";
 import { stopProcessTree } from "./process-tree.ts";
@@ -63,6 +68,7 @@ const runSchema = z.object({
   historyFamily: z.array(z.string()).optional(),
   workerImage: z.string().optional(),
   rawArchive: rawManifest.optional(),
+  metadata: z.array(caseMetadata).default([]),
   environment: environmentSchema
     .extend({ version: z.number().optional() })
     .default(defaultEnvironment),
@@ -586,6 +592,24 @@ export class LocalRunner {
         )
       ).rows[0];
       const raw = path.join(output, "allure-results");
+      const toolchain = toolchainSchema.parse(
+        JSON.parse(
+          await readFile(path.join(output, "toolchain.json"), "utf8").catch(
+            (error) => {
+              if (error.code !== "ENOENT") throw error;
+              return JSON.stringify({
+                node: "not recorded by this source revision",
+                playwright: "not recorded",
+                platform: "not recorded",
+                architecture: "not recorded",
+                browserBuilds: [],
+              });
+            },
+          ),
+        ),
+      );
+      await this.update(run.id, { toolchain });
+      await enrichReport(raw, run, toolchain);
       for (const entry of await readdir(raw))
         if (entry.endsWith(".json")) {
           const file = path.join(raw, entry);

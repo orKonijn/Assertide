@@ -1,0 +1,11 @@
+# Isolated workers
+
+Linux workers can execute the approved fixture snapshot in a Docker container. First run `node scripts/setup-sandbox.mjs`, then build `docker build -f workers/Dockerfile -t assertide-worker:local .`. Set `WORKER_RUNTIME=oci` and set `OCI_WORKER_IMAGE` to the immutable ID returned by `docker image inspect --format '{{.Id}}' assertide-worker:local`. Use a non-root supervisor account with access to Docker. Treat that account and the Docker daemon as privileged infrastructure.
+
+Runs freeze the image identifier; a worker refuses a run assigned to a different image. The image contains the installed dependency lock and pinned local store fixture. Entry validates that the approved source lock matches the image before executing it. Changing dependencies requires rebuilding the image. Source is mounted read-only and copied into temporary storage; only the run output directory is writable on the host.
+
+Containers run as the supervisor's non-root UID, with a read-only root, no capabilities, no privilege escalation, bounded memory/CPU/processes and a temporary filesystem. `--network none` blocks external destinations; each container runs its own loopback Lab and store fixtures. The container receives only its run specification and fixture credentials over stdin. Database, object-store, OIDC and encryption credentials stay outside it. This mode supports the approved local targets; arbitrary external target execution is not enabled.
+
+Cancellation, timeout, lease loss and shutdown stop the process and remove its named container. After a supervisor restart, expired leases become infrastructure failures and terminal containers belonging to that host are removed. An unavailable Docker daemon leaves cleanup pending for retry. Host recovery is needed if the entire worker machine remains offline.
+
+Linux CI builds the image and verifies non-root execution, absent cloud credentials, denied root/source writes, blocked external fetch, mixed Lab/browser execution and container removal. The full application browser suite also passes with OCI workers, PostgreSQL, Redis and private MinIO. These checks cover repository-controlled fixtures, not an arbitrary untrusted-code hosting service. The Windows development runner remains a trusted local process.

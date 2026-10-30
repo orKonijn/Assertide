@@ -2,6 +2,9 @@ import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { z } from "zod";
 test("SSO authenticates and opens the real catalog", async ({ page }) => {
+  // This journey builds two container runs and rebuilds a report; individual
+  // phase assertions retain their own bounded readiness checks.
+  test.setTimeout(90000);
   const credentials = z
     .object({ password: z.string() })
     .parse(JSON.parse(await readFile("../../.local/credentials.json", "utf8")));

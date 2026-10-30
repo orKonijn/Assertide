@@ -70,6 +70,16 @@ export interface Run {
   source?: { revision: string };
   logTail?: string;
   queueReason?: string;
+  workerImage?: string;
+  toolchain?: {
+    node: string;
+    platform: string;
+    architecture: string;
+    playwright: string;
+    allure: string;
+    allureIntegration: string;
+    browserBuilds: { name: string; revision: string; version?: string }[];
+  };
   artifacts?: {
     id: string;
     resultId: string;

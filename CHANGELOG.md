@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added opt-in Linux OCI workers with immutable image selection, non-root execution, read-only source/root filesystems, resource caps and no external network. CI verifies the isolation boundaries, mixed fixture execution, container cleanup and the connected app workflow. See [worker setup and scope](docs/isolated-workers.md).
+- Execution details and Allure now record Node, Playwright, Allure/integration and bundled browser versions. Reports use the run's frozen feature, owner, module, priority and tags. Browser checks verify recorded versions, generated labels and report rebuilding.
 - Raw Allure inputs now have immutable, checksum-verified object-store archives. Report rebuilding restores them when a worker's local staging files are missing. Real-store tests cover cross-run and path rejection, integrity failures and 14/30-day retention; the browser rebuild passes after deleting local raw inputs.
 - Added Allure 3 JSONL history partitioned by project, environment, selection family and browsers. SQL leases and version checks protect concurrent history writers; report history and the ready pointer publish atomically. Rebuilds replace their point, expired links are cleared in new reports, and execution pages link to compatible runs. Database and browser checks pass.
 - Added private S3-compatible evidence and report storage with version-pinned, integrity-checked downloads. Complete report uploads publish immutable manifests; viewer access remains bound to the issuing credential. Real local MinIO tests verify privacy, object-version/delete-marker removal and interrupted multipart cleanup, and the browser report/rebuild journey passes against object storage.

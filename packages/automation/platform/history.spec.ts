@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { readFile, rm } from "node:fs/promises";
+import { readFile, rm, readdir } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -49,6 +49,26 @@ test("compatible reports retain history and authenticated links without duplicat
     return await (await page.request.get(`/v1/runs/${created.id}`)).json();
   };
   const first = await create();
+  expect(first.toolchain.playwright).toBe("1.64.1");
+  const firstRaw = path.resolve(
+    "../../.local/runs",
+    z.uuid().parse(first.id),
+    "allure-results",
+  );
+  expect(
+    await readFile(path.join(firstRaw, "environment.properties"), "utf8"),
+  ).toContain("Playwright=1.64.1");
+  const resultName = (await readdir(firstRaw)).find((name) =>
+    name.endsWith("-result.json"),
+  )!;
+  const enriched = JSON.parse(
+    await readFile(path.join(firstRaw, resultName), "utf8"),
+  );
+  expect(
+    enriched.labels.some(
+      (label: { name: string }) => label.name === "severity",
+    ),
+  ).toBe(true);
   const second = await create();
   expect(second.historyStream).toBe(first.historyStream);
   expect(second.historyEntries).toBe(first.historyEntries + 1);
@@ -101,6 +121,20 @@ test("compatible reports retain history and authenticated links without duplicat
     report.getByRole("button", { name: "Expand all", exact: true }),
   ).toBeVisible();
   await report.close();
+  await expect(
+    page.getByRole("heading", { name: "Execution environment", exact: true }),
+  ).toBeVisible();
+  await page
+    .locator("section")
+    .filter({
+      has: page.getByRole("heading", {
+        name: "Execution environment",
+        exact: true,
+      }),
+    })
+    .screenshot({
+      path: "../../docs/changelog/assets/unreleased/execution-environment.png",
+    });
   await page
     .locator("section")
     .filter({

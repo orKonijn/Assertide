@@ -47,6 +47,7 @@ export async function expireRunData(db: SqlConnection, now = new Date()) {
       "attempts.ndjson",
       "results.json",
       "worker.log",
+      "toolchain.json",
       "history.jsonl",
       "allure.config.mjs",
     ]) {

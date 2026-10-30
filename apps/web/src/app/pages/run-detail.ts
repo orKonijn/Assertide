@@ -83,6 +83,25 @@ import { Api, Run, errorMessage } from '../core/api';
           }
         </section>
       </div>
+      @if (current.toolchain; as tools) {
+        <section class="card">
+          <h2>Execution environment</h2>
+          <p>Allure {{ tools.allure }} · Playwright integration {{ tools.allureIntegration }}</p>
+          <p>
+            Playwright {{ tools.playwright }} · Node {{ tools.node }} · {{ tools.platform }}/{{
+              tools.architecture
+            }}
+          </p>
+          @for (browser of tools.browserBuilds; track browser.name) {
+            <p>{{ browser.name }} {{ browser.version }} · build {{ browser.revision }}</p>
+          }
+          @if (current.workerImage) {
+            <p class="muted">
+              Isolated worker image: <code>{{ current.workerImage }}</code>
+            </p>
+          }
+        </section>
+      }
       <section class="card">
         <h2>Test results</h2>
         @if (current.results?.length) {
