@@ -575,3 +575,25 @@ Build and lint pass. Production UI checks with sample API fixtures cover members
 ### Suite editor page-flow correction
 
 Following the suite builder redesign, sticky positioning was removed. The form now follows normal page scrolling on desktop and mobile, with no internal form or membership-list scrolling. Production build and fixture-based checks confirm static positioning, movement during page scroll, search, pagination, selection persistence, and edit/reset in both themes. The screenshots above still describe the form appearance; this follow-up changes scrolling behavior.
+
+## Overview priorities and consistent page spacing
+
+Shared page headers now use consistent typography, gaps, and description spacing. Overview puts up to five live runs and five recently completed runs before historical metrics, with links to the complete history and test selection. Summary metrics are smaller; detailed analytics remain available below. Execution history displays Rerun as a metadata badge beside the run ID, preserving its meaning rather than implying a launch action.
+
+Production build, lint, and ten web tests pass. Fixture-based checks cover live/recent run display, execution links, rerun metadata, sorting, and horizontal overflow at 390/1280 pixels in light/dark mode. Screenshots use representative API responses and do not establish live backend validation. Changes remain Unreleased with no product version assigned.
+
+![Overview priorities on desktop](changelog/assets/unreleased/overview-activity-1280-dark.png)
+
+![Overview priorities on mobile](changelog/assets/unreleased/overview-activity-390-dark.png)
+
+![Overview in light mode](changelog/assets/unreleased/overview-activity-1280-light.png)
+
+![Mobile Overview in light mode](changelog/assets/unreleased/overview-activity-390-light.png)
+
+![Execution identity and rerun badge](changelog/assets/unreleased/execution-identity-1280-dark.png)
+
+![Execution identity on mobile](changelog/assets/unreleased/execution-identity-390-dark.png)
+
+![Light execution identity](changelog/assets/unreleased/execution-identity-1280-light.png)
+
+![Light mobile execution identity](changelog/assets/unreleased/execution-identity-390-light.png)

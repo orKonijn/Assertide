@@ -4089,3 +4089,140 @@ app-json-evidence {
   font-size: 12px;
   min-height: 40px;
 }
+
+/* Shared page rhythm and compact execution identity. */
+.content .page-header {
+  gap: 20px;
+  margin-bottom: 24px;
+  padding-block: 12px 20px;
+}
+.content .page-header h1 {
+  font-size: clamp(26px, 2.4vw, 32px);
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.content .page-header .eyebrow {
+  margin: 0 0 10px;
+}
+.content .page-header p:last-child {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+.content .section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.content .section-heading h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.run-identity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.rerun-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 550;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--soft);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.history-table td {
+  vertical-align: middle;
+}
+.overview-page {
+  display: block;
+}
+.overview-activity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+.overview-activity-grid > .card {
+  margin: 0;
+  min-width: 0;
+  padding: 20px;
+}
+.overview-run-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.overview-run-row time {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+}
+.content .overview-run-row .run-reference {
+  font-family: monospace;
+  font-size: 12px;
+  min-height: 34px;
+  padding: 6px 10px;
+}
+.content .overview-more {
+  font-size: 11px;
+  min-height: 32px;
+  padding: 6px 10px;
+}
+.overview-empty {
+  padding: 20px 0 4px;
+  font-size: 13px;
+}
+.overview-empty p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 8px 0 16px;
+}
+.overview-page .metric-grid > .card {
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+.overview-page .metric-grid .metric {
+  font-size: 30px;
+  margin-block: 8px;
+}
+.overview-page .metric-grid h2 {
+  margin-bottom: 0;
+}
+.overview-page > .card {
+  padding: 20px;
+}
+.overview-page .history-filters > summary {
+  font-size: 13px;
+}
+@media (max-width: 1000px) {
+  .overview-activity-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .content .page-header {
+    gap: 16px;
+  }
+  .overview-activity-grid > .card,
+  .overview-page > .card {
+    padding: 16px;
+  }
+  .overview-run-row time {
+    width: 100%;
+    margin-left: 0;
+  }
+}

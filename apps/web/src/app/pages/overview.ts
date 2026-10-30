@@ -81,6 +81,7 @@ interface Analytics {
   failures: { caseId: string; count: number; samples: number; rate: number }[];
 }
 @Component({
+  host: { class: 'overview-page' },
   imports: [RouterLink, PercentPipe, DatePipe, DecimalPipe, FormsModule, TrendChart, LoadingState],
   template: `
     <header class="page-header">
@@ -173,6 +174,51 @@ interface Analytics {
     @if (loading()) {
       <app-loading-state label="Loading executions…" />
     } @else {
+      <div class="overview-activity-grid">
+        <section class="card overview-activity">
+          <div class="section-heading">
+            <h2>Live activity</h2>
+            <span class="badge">{{ live().length }} active</span>
+          </div>
+          @for (run of live().slice(0, 5); track run.id) {
+            <div class="overview-run-row">
+              <a class="run-reference" [routerLink]="['/runs', run.id]"
+                >{{ run.id.slice(0, 8) }} <span aria-hidden="true">↗</span></a
+              ><span class="badge phase-badge" [attr.data-phase]="run.phase">{{ run.phase }}</span
+              ><span class="muted">{{ run.selection.testIds.length }} tests</span>
+            </div>
+          } @empty {
+            <div class="overview-empty">
+              <strong>Ready for your next run</strong>
+              <p>No executions are active. Choose tests to get started.</p>
+              <a routerLink="/explorer">Select tests →</a>
+            </div>
+          }
+          @if (live().length) {
+            <a class="overview-more" routerLink="/runs">View executions →</a>
+          }
+        </section>
+        <section class="card overview-activity">
+          <div class="section-heading">
+            <h2>Recent completed executions</h2>
+            <a class="overview-more" routerLink="/runs">View history →</a>
+          </div>
+          @for (run of completed().slice(0, 5); track run.id) {
+            <div class="overview-run-row">
+              <a class="run-reference" [routerLink]="['/runs', run.id]"
+                >{{ run.id.slice(0, 8) }} <span aria-hidden="true">↗</span></a
+              ><span class="muted">{{ run.results?.length ?? 0 }} results</span
+              ><time>{{ run.createdAt | date: 'short' }}</time>
+            </div>
+          } @empty {
+            <div class="overview-empty">
+              <strong>No completed runs yet</strong>
+              <p>Your results and reports will appear here after a run finishes.</p>
+              <a routerLink="/explorer">Create an execution →</a>
+            </div>
+          }
+        </section>
+      </div>
       <div class="grid metric-grid">
         <section class="card">
           <h2>Completed runs</h2>
@@ -482,30 +528,6 @@ interface Analytics {
           }
         </section>
       }
-      <section class="card">
-        <h2>Live activity</h2>
-        @for (run of live(); track run.id) {
-          <p>
-            <a [routerLink]="['/runs', run.id]">{{ run.id.slice(0, 8) }}</a> · {{ run.phase }} ·
-            {{ run.selection.testIds.length }} selected
-          </p>
-        } @empty {
-          <p class="empty">No active executions. Select tests to start a run.</p>
-        }
-      </section>
-      <section class="card">
-        <h2>Recent completed executions</h2>
-        @for (run of completed().slice(0, 5); track run.id) {
-          <p>
-            <a [routerLink]="['/runs', run.id]">{{ run.id.slice(0, 8) }}</a> ·
-            {{ run.results?.length ?? 0 }} results
-          </p>
-        } @empty {
-          <p class="empty">
-            No completed history yet. Metrics will appear after real test execution.
-          </p>
-        }
-      </section>
     }
   `,
 })
