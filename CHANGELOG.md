@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Settings section numbers now retain their label colors at full opacity, fixing insufficient text contrast in light mode. Focused browser contrast checks pass in both themes at desktop, tablet, and phone widths.
+
 - Execution detail now groups phase and frozen selection in one aligned overview panel with smaller header actions and an explicit selected-test count. Mobile stacks the two sections within the panel. Lint, ten web tests, build, and responsive fixture-based checks pass. See [execution overview screenshots](docs/ui-refresh.md#aligned-execution-overview).
 
 - Test suites now shows ten suites per page with numbered navigation above the list. Paging preserves create/edit form values. Lint, ten web tests, production build, and responsive browser checks with fixture data pass. See [suite pagination evidence](docs/ui-refresh.md#suite-list-pagination).
