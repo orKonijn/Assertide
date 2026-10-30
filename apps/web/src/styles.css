@@ -3821,3 +3821,163 @@ aside .account {
     padding-top: 16px;
   }
 }
+
+app-json-evidence {
+  display: block;
+  min-width: 0;
+}
+.evidence-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.evidence-views {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+}
+.evidence-views button {
+  min-height: 36px;
+  padding: 7px 12px;
+  font-size: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 7px;
+}
+.evidence-views button[aria-pressed='true'] {
+  background: var(--soft);
+  color: var(--brand);
+}
+.evidence-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  font-size: 12px;
+  padding: 8px 12px;
+}
+.evidence-pointer {
+  margin-bottom: 16px;
+}
+.evidence-pointer summary {
+  font-size: 12px;
+  padding: 10px 0;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+}
+.evidence-pointer .toolbar {
+  margin: 8px 0 12px;
+  gap: 10px;
+}
+.evidence-pointer label {
+  font-size: 12px;
+}
+.evidence-pointer input {
+  font-family: monospace;
+  font-size: 12px;
+  min-height: 38px;
+}
+.evidence-pointer button {
+  font-size: 12px;
+  min-height: 38px;
+}
+.evidence-code {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--canvas);
+}
+.evidence-code-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.evidence-code pre {
+  margin: 0;
+  padding: 18px;
+  border-radius: 0;
+  background: transparent;
+  font-size: 12px;
+  line-height: 1.8;
+  max-height: none;
+  overflow: visible;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.evidence-expand {
+  margin-top: 12px;
+  font-size: 12px;
+}
+.exchange-inspector .evidence-caption {
+  font-size: 12px;
+  margin: 0 0 18px;
+}
+
+/* Navigation fits the viewport; evidence grows with the document. */
+#workspace-navigation {
+  overflow: visible;
+  scrollbar-gutter: auto;
+}
+@media (max-height: 760px) {
+  #workspace-navigation {
+    padding-block: 12px;
+  }
+  #workspace-navigation > .brand-logo {
+    margin-bottom: 12px;
+  }
+  #workspace-navigation app-project-picker {
+    margin-bottom: 12px;
+  }
+  #workspace-navigation nav {
+    gap: 1px;
+    padding-bottom: 12px;
+  }
+  #workspace-navigation nav a {
+    min-height: 36px;
+    padding-block: 7px;
+  }
+  #workspace-navigation .nav-section-label {
+    padding-top: 8px;
+    padding-bottom: 3px;
+  }
+  #workspace-navigation .account {
+    padding: 9px;
+    gap: 8px;
+  }
+}
+@media (min-width: 901px) and (max-height: 600px) {
+  #workspace-navigation {
+    position: absolute;
+    bottom: auto;
+    min-height: 100dvh;
+  }
+}
+@media (max-width: 900px) and (max-height: 650px) {
+  #workspace-navigation nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #workspace-navigation .nav-section-label {
+    grid-column: 1 / -1;
+  }
+  #workspace-navigation nav a {
+    font-size: 11px;
+    gap: 6px;
+    padding-inline: 6px;
+  }
+  #workspace-navigation .drawer-heading {
+    margin-bottom: 8px;
+  }
+}

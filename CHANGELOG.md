@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Redesigned recorded evidence with Overview/Request/Response controls, a single JSON viewer, a compact download action, and expandable pointer lookup. JSON expands with the page instead of scrolling internally; the sidebar uses tighter spacing in short windows without its own scrolling area. Build, lint, ten web tests, and fixture-based interaction checks pass. See [evidence screenshots](docs/ui-refresh.md#recorded-evidence-inspector).
+
 - Redesigned the sidebar with grouped Workspace, Testing, and Manage navigation, a compact project switcher, a subtle selected-page indicator, and a contained account area while preserving the existing icons. Build, lint, and fixture-based desktop/mobile picker checks pass. See [sidebar screenshots](docs/ui-refresh.md#grouped-workspace-sidebar).
 
 - Combined project search, count, and pagination into one compact toolbar, removing the repeated collection heading and floating page summary. Added the Assertide mark as the browser tab icon. Responsive fixture-based checks and build pass. See [toolbar screenshots](docs/ui-refresh.md#compact-project-toolbar).

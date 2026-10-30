@@ -22,39 +22,76 @@ export function atJsonPointer(value: unknown, pointer: string): unknown {
   selector: 'app-json-evidence',
   imports: [FormsModule],
   template: `
-    <div class="flex flex-wrap gap-2 items-center">
-      @if (lines().length > 200) {
-        <button type="button" (click)="expanded.set(!expanded())">
-          {{ expanded() ? 'Collapse to 200 lines' : 'Show all ' + lines().length + ' lines' }}
+    <div class="evidence-tools">
+      <div class="evidence-views" role="group" aria-label="Evidence view">
+        <button type="button" [attr.aria-pressed]="!selected()" (click)="selection.set(null)">
+          Overview
         </button>
-      }
-      <button type="button" (click)="download()">Download redacted JSON</button>
-      <button type="button" (click)="inspect('/request')">Request</button>
-      <button type="button" (click)="inspect('/response')">Response</button>
+        <button
+          type="button"
+          [attr.aria-pressed]="selected()?.label === '/request'"
+          (click)="inspect('/request')"
+        >
+          Request
+        </button>
+        <button
+          type="button"
+          [attr.aria-pressed]="selected()?.label === '/response'"
+          (click)="inspect('/response')"
+        >
+          Response
+        </button>
+      </div>
+      <button
+        class="evidence-download"
+        type="button"
+        (click)="download()"
+        aria-label="Download redacted JSON"
+      >
+        <svg
+          aria-hidden="true"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+        >
+          <path d="M12 3v12m-5-5 5 5 5-5M5 16v5h14v-5" />
+        </svg>
+        Download JSON
+      </button>
     </div>
-    <form (ngSubmit)="inspect(pointer)" class="toolbar">
-      <label
-        >JSON pointer<input
-          name="pointer"
-          [(ngModel)]="pointer"
-          placeholder="/response/body/quantity"
-      /></label>
-      <button type="submit">Inspect pointer</button>
-    </form>
-    @if (selected()) {
-      <p class="muted">{{ selected()!.label }}</p>
-      <pre tabindex="0" aria-label="Selected JSON value" class="max-h-[20rem] overflow-auto">{{
-        selected()!.text
-      }}</pre>
+    <details class="evidence-pointer">
+      <summary>Find a JSON value</summary>
+      <form (ngSubmit)="inspect(pointer)" class="toolbar">
+        <label
+          >JSON pointer<input
+            name="pointer"
+            [(ngModel)]="pointer"
+            placeholder="/response/body/quantity"
+        /></label>
+        <button type="submit">Inspect pointer</button>
+      </form>
+      @if (pointerError()) {
+        <p role="alert">{{ pointerError() }}</p>
+      }
+    </details>
+    <div class="evidence-code">
+      <div class="evidence-code-heading">
+        <span>{{ selected()?.label || 'Complete exchange' }}</span
+        ><span>JSON</span>
+      </div>
+      <pre
+        tabindex="0"
+        [attr.aria-label]="selected() ? 'Selected JSON value' : 'Recorded request and response'"
+        >{{ selected()?.text ?? displayed() }}</pre>
+    </div>
+    @if (!selected() && lines().length > 200) {
+      <button class="evidence-expand" type="button" (click)="expanded.set(!expanded())">
+        {{ expanded() ? 'Collapse to 200 lines' : 'Show all ' + lines().length + ' lines' }}
+      </button>
     }
-    @if (pointerError()) {
-      <p role="alert">{{ pointerError() }}</p>
-    }
-    <pre
-      tabindex="0"
-      aria-label="Recorded request and response"
-      class="max-h-[32rem] overflow-auto"
-      >{{ displayed() }}</pre>
     @if (lines().length > 200 && !expanded()) {
       <p class="muted">
         Showing 200 of {{ lines().length }} lines. The download contains all recorded redacted
@@ -67,7 +104,7 @@ export class JsonEvidence {
   public readonly value = input.required<string>();
   public readonly expanded = signal(false);
   public pointer = '/response/body';
-  private readonly selection = signal<{ source: string; label: string; text: string } | null>(null);
+  public readonly selection = signal<{ source: string; label: string; text: string } | null>(null);
   public readonly selected = computed(() =>
     this.selection()?.source === this.value() ? this.selection() : null,
   );

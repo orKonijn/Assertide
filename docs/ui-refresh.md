@@ -533,3 +533,17 @@ Build and lint pass. The production UI with representative API fixtures was chec
 ![Mobile navigation in dark mode](changelog/assets/unreleased/sidebar-redesign-390-dark.png)
 
 ![Mobile navigation in light mode](changelog/assets/unreleased/sidebar-redesign-390-light.png)
+
+## Recorded evidence inspector
+
+One JSON viewer displays the complete exchange or selected request/response. Pointer lookup is expandable, and downloads still contain the complete redacted evidence. Long values wrap; JSON grows with the document without an internal scroll area. The existing 200-line expansion control remains available. Navigation no longer scrolls internally: short viewports use tighter spacing, and very short desktop windows let the page carry the navigation.
+
+Production build, lint, and ten web tests pass. With representative intercepted API data, request/response switching, pointer lookup, JSON download, and overflow checks pass at desktop/mobile sizes in both themes. Sidebar picker alignment, opening, focus restoration, absence of internal scrolling, and sign-out visibility were checked at 700px viewport height. This is fixture-based browser validation, not live backend validation. Changes remain Unreleased; no version assigned.
+
+![Desktop evidence inspector in dark mode](changelog/assets/unreleased/evidence-inspector-1280-dark.png)
+
+![Mobile evidence inspector in dark mode](changelog/assets/unreleased/evidence-inspector-390-dark.png)
+
+![Desktop evidence inspector in light mode](changelog/assets/unreleased/evidence-inspector-1280-light.png)
+
+![Mobile evidence inspector in light mode](changelog/assets/unreleased/evidence-inspector-390-light.png)
