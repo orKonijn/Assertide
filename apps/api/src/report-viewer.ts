@@ -11,6 +11,7 @@ import { runRoot } from "./local-runner.ts";
 import { PlatformService } from "./platform.ts";
 import { IdentityService } from "./identity.ts";
 import type { SqlConnection } from "./database.ts";
+import { migrate } from "./migrations.ts";
 import { objectStore } from "./object-store.ts";
 import { reportManifest } from "./report-storage.ts";
 import { readFile } from "node:fs/promises";
@@ -45,12 +46,10 @@ export async function mountReportViewer(
     throw new Error(
       "Production report origin requires HTTPS and a separate hostname",
     );
-  await db.query(
+  await migrate(db, "viewer-baseline-v1", [
     "CREATE TABLE IF NOT EXISTS report_tickets (digest text PRIMARY KEY, run_id text NOT NULL, subject text NOT NULL, expires_at timestamptz NOT NULL, redeemed boolean NOT NULL DEFAULT false)",
-  );
-  await db.query(
     "ALTER TABLE report_tickets ADD COLUMN IF NOT EXISTS auth_digest text, ADD COLUMN IF NOT EXISTS auth_kind text, ADD COLUMN IF NOT EXISTS report_directory text, ADD COLUMN IF NOT EXISTS view_path text",
-  );
+  ]);
   app.get("/v1/runs/:id/traces/:artifact", async (req, res) => {
     try {
       const principal = await identity.principal(req);

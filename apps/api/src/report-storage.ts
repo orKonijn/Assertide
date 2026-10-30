@@ -8,6 +8,7 @@ import {
   type ObjectReference,
 } from "./object-store.ts";
 import type { SqlConnection } from "./database.ts";
+import { migrate } from "./migrations.ts";
 import { isShortLivedEvidence } from "./evidence-files.ts";
 import { buildReportBundles, reportBundleName } from "./report-bundle.ts";
 
@@ -23,9 +24,9 @@ export const reportManifest = z.object({
     .optional(),
 });
 export async function initializeReports(db: SqlConnection) {
-  await db.query(
+  await migrate(db, "reports-baseline-v1", [
     "CREATE TABLE IF NOT EXISTS report_builds (run_id uuid NOT NULL, directory text NOT NULL, body jsonb NOT NULL, expires_at timestamptz NOT NULL, expired boolean NOT NULL DEFAULT false, PRIMARY KEY(run_id,directory))",
-  );
+  ]);
 }
 function directoryPath(id: string, directory: string) {
   z.uuid().parse(id);

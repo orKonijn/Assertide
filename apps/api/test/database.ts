@@ -13,6 +13,7 @@ export async function testDatabase(): Promise<SqlConnection> {
   scoped.searchParams.set("options", `-c search_path=${schema}`);
   const database = await connectDatabase(scoped.href);
   return {
+    driver: "postgres",
     query: (sql, values) => database.query(sql, values),
     transaction: (handler) => database.transaction(handler),
     close: async () => {

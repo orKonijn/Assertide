@@ -7,6 +7,7 @@ import {
 import { z } from "zod";
 import type { Express, Request, Response } from "express";
 import type { SqlConnection } from "./database.ts";
+import { migrate } from "./migrations.ts";
 import type { IdentityService, Principal } from "./identity.ts";
 import type { PlatformService } from "./platform.ts";
 
@@ -43,9 +44,9 @@ export const defaultEnvironment = environmentSchema.parse({
   allowVideo: true,
 });
 export async function initializeEnvironments(db: SqlConnection) {
-  await db.query(
+  await migrate(db, "environments-baseline-v1", [
     "CREATE TABLE IF NOT EXISTS secret_versions (id uuid NOT NULL, version integer NOT NULL, organization_id uuid NOT NULL, project_id uuid NOT NULL, name text NOT NULL, ciphertext text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(id,version))",
-  );
+  ]);
 }
 function key() {
   const value = process.env["SECRET_ENCRYPTION_KEY"];

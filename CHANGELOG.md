@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added checksum-locked, transactional database migrations with concurrent-start serialization and preservation of existing data. Local tests verify adoption, repeat startup, rollback, failed-batch retry and refusal of edited migrations; PostgreSQL verification runs in CI. See [migration and rollback guidance](docs/migrations.md).
+
 - Added an authenticated screenshot dialog, collapsible/downloadable redacted JSON, suite/environment history filters and automatic expiry/revocation clearing of protected views. Browser checks verify real evidence, Escape/focus return, downloads and sign-in return URLs; see [investigation screenshots and behavior](docs/investigation.md).
 
 - Extended analytics with UTC date, suite, environment and status filters, saved personal filters, equal-interval comparison, JSON export, first-attempt trends, instability candidates, retry-inclusive duration, endpoint latency and evidence completeness. Suite launches freeze their saved version. Calculation, scope, browser/export and accessibility checks pass; see [definitions and screenshots](docs/analytics.md).

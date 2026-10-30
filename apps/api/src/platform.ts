@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Express, Request, Response } from "express";
 import type { SqlConnection } from "./database.ts";
+import { migrate } from "./migrations.ts";
 import { IdentityService, type Principal } from "./identity.ts";
 import { discoverApprovedSource, discoveredCase } from "./discovery.ts";
 import { initializeScheduler } from "./scheduler.ts";
@@ -142,9 +143,9 @@ export class PlatformService {
   ) {}
   async initialize() {
     await prepareSource();
-    await this.db.query(
+    await migrate(this.db, "catalog-baseline-v1", [
       "CREATE TABLE IF NOT EXISTS catalog_revisions (revision text PRIMARY KEY, body jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now())",
-    );
+    ]);
     try {
       const items = await this.discover();
       await this.db.query(
@@ -171,18 +172,12 @@ export class PlatformService {
       this.manifest = previous.body.manifest;
       this.setCatalog(z.array(discoveredCase).parse(previous.body.items));
     }
-    await this.db.query(
+    await migrate(this.db, "platform-baseline-v1", [
       "CREATE TABLE IF NOT EXISTS platform_documents (id text PRIMARY KEY, organization_id uuid NOT NULL, project_id uuid NOT NULL, kind text NOT NULL, version integer NOT NULL DEFAULT 1, body jsonb NOT NULL)",
-    );
-    await this.db.query(
       "CREATE INDEX IF NOT EXISTS platform_scope ON platform_documents(organization_id,project_id,kind,id)",
-    );
-    await this.db.query(
       "CREATE TABLE IF NOT EXISTS launch_keys (scope text PRIMARY KEY, payload text NOT NULL, run_id text NOT NULL)",
-    );
-    await this.db.query(
       "CREATE TABLE IF NOT EXISTS run_events (sequence bigserial PRIMARY KEY, run_id text NOT NULL, body jsonb NOT NULL, occurred_at timestamptz NOT NULL DEFAULT now())",
-    );
+    ]);
     await initializeScheduler(this.db);
     await initializeReports(this.db);
     await initializeHistory(this.db);

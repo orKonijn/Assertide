@@ -8,6 +8,7 @@ export interface SqlExecutor {
   ): Promise<{ rows: T[] }>;
 }
 export interface SqlConnection extends SqlExecutor {
+  readonly driver?: "postgres" | "pglite";
   transaction<T>(handler: (connection: SqlExecutor) => Promise<T>): Promise<T>;
   close(): Promise<void>;
 }
@@ -22,6 +23,7 @@ export async function connectDatabase(url?: string): Promise<SqlConnection> {
       console.warn("PostgreSQL idle connection lost; pool will reconnect");
     });
     return {
+      driver: "postgres",
       query: (sql, values) => pool.query(sql, values),
       transaction: async (handler) => {
         const client = await pool.connect();
@@ -47,6 +49,7 @@ export async function connectDatabase(url?: string): Promise<SqlConnection> {
   const db = new PGlite(process.env["LOCAL_DATABASE_PATH"]);
   await db.waitReady;
   return {
+    driver: "pglite",
     query: (sql, values) => db.query(sql, values),
     transaction: (handler) =>
       db.transaction((tx) =>

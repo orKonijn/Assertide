@@ -3,6 +3,7 @@ import * as oidc from "openid-client";
 import { z } from "zod";
 import type { Express, Request, Response } from "express";
 import type { SqlConnection } from "./database.ts";
+import { migrate } from "./migrations.ts";
 
 export const principalSchema = z.object({
   subject: z.string(),
@@ -37,21 +38,13 @@ export class IdentityService {
     private readonly origin: string,
   ) {}
   async initialize() {
-    await this.db.query(
+    await migrate(this.db, "identity-baseline-v1", [
       "CREATE TABLE IF NOT EXISTS service_accounts (id uuid PRIMARY KEY, digest text UNIQUE NOT NULL, organization_id uuid NOT NULL, project_id uuid NOT NULL, name text NOT NULL, created_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL, revoked boolean NOT NULL DEFAULT false, version integer NOT NULL DEFAULT 1)",
-    );
-    await this.db.query(
       "CREATE TABLE IF NOT EXISTS memberships (subject text PRIMARY KEY, body jsonb NOT NULL)",
-    );
-    await this.db.query(
       "ALTER TABLE memberships ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1",
-    );
-    await this.db.query(
       "CREATE TABLE IF NOT EXISTS sessions (digest text PRIMARY KEY, subject text NOT NULL REFERENCES memberships(subject), expires_at timestamptz NOT NULL)",
-    );
-    await this.db.query(
       "CREATE TABLE IF NOT EXISTS login_requests (digest text PRIMARY KEY, body jsonb NOT NULL, expires_at timestamptz NOT NULL)",
-    );
+    ]);
   }
   async provision(principal: Principal, replace = true) {
     await this.db.query(

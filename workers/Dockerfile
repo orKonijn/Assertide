@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/playwright:v1.64.1-noble
 WORKDIR /app/apps/api
 COPY apps/api/package.json apps/api/package-lock.json ./
 RUN npm ci
-COPY apps/api/src/lab.ts apps/api/src/database.ts apps/api/src/local-sandbox.ts apps/api/src/worker-fixture.ts ./src/
+COPY apps/api/src/lab.ts apps/api/src/database.ts apps/api/src/migrations.ts apps/api/src/local-sandbox.ts apps/api/src/worker-fixture.ts ./src/
 COPY packages/automation/package.json packages/automation/package-lock.json /app/packages/automation/
 RUN npm --prefix /app/packages/automation ci
 COPY .local/targets/swag-store/build /app/.local/targets/swag-store/build

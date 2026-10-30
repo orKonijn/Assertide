@@ -3,6 +3,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { z } from "zod";
 import type { Request, Response, Express, NextFunction } from "express";
 import type { SqlConnection } from "./database.ts";
+import { migrate } from "./migrations.ts";
 
 const tenantA = "00000000-0000-4000-8000-000000000001";
 const tenantB = "00000000-0000-4000-8000-000000000002";
@@ -58,12 +59,10 @@ export class LabService {
     this.key = new TextEncoder().encode(signingKey);
   }
   async initialize() {
-    await this.db.query(
+    await migrate(this.db, "lab-baseline-v1", [
       "CREATE TABLE IF NOT EXISTS lab_orders (id uuid PRIMARY KEY, tenant uuid NOT NULL, body jsonb NOT NULL)",
-    );
-    await this.db.query(
       "CREATE TABLE IF NOT EXISTS lab_keys (scope text PRIMARY KEY, payload text NOT NULL, body jsonb NOT NULL)",
-    );
+    ]);
   }
   async token(username: string, password: string): Promise<string> {
     if (

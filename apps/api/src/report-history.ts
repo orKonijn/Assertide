@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { SqlConnection, SqlExecutor } from "./database.ts";
+import { migrate } from "./migrations.ts";
 export const historyPoint = z
   .object({
     uuid: z.string(),
@@ -25,9 +26,9 @@ export async function readHistory(db: SqlConnection, stream: string) {
   return row ? z.array(entrySchema).parse(row.body) : [];
 }
 export async function initializeHistory(db: SqlConnection) {
-  await db.query(
+  await migrate(db, "history-baseline-v1", [
     "CREATE TABLE IF NOT EXISTS report_history (stream text PRIMARY KEY,version integer NOT NULL DEFAULT 0,body jsonb NOT NULL DEFAULT '[]'::jsonb,owner uuid,lease_expires timestamptz)",
-  );
+  ]);
 }
 export function historyStream(run: {
   organizationId: string;

@@ -1,6 +1,7 @@
 import { Queue, Worker, DelayedError } from "bullmq";
 import { z } from "zod";
 import type { SqlConnection, SqlExecutor } from "./database.ts";
+import { migrate } from "./migrations.ts";
 export function executionLimits() {
   const limit = (name: string, fallback: number, max: number) =>
     z.coerce
@@ -17,15 +18,11 @@ export function executionLimits() {
 }
 
 export async function initializeScheduler(db: SqlConnection) {
-  await db.query(
+  await migrate(db, "scheduler-baseline-v1", [
     "CREATE TABLE IF NOT EXISTS scheduler_mutex (id integer PRIMARY KEY)",
-  );
-  await db.query(
     "INSERT INTO scheduler_mutex(id) VALUES(1) ON CONFLICT DO NOTHING",
-  );
-  await db.query(
     "CREATE TABLE IF NOT EXISTS run_outbox (run_id text PRIMARY KEY REFERENCES platform_documents(id), created_at timestamptz NOT NULL DEFAULT now(), published_at timestamptz)",
-  );
+  ]);
   await db.query(
     "INSERT INTO run_outbox(run_id) SELECT id FROM platform_documents WHERE kind='run' AND body->>'phase'='queued' ON CONFLICT DO NOTHING",
   );
