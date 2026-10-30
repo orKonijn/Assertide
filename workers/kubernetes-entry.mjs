@@ -2,6 +2,9 @@ import { access, readFile, writeFile } from "node:fs/promises";
 import { setTimeout } from "node:timers/promises";
 import { spawn } from "node:child_process";
 
+// PID 1 needs an explicit signal handler; container shutdown reaps its children.
+process.once("SIGTERM", () => process.exit(143));
+
 // A bounded readiness poll: the transfer process publishes input atomically.
 while (
   !(await access("/input/ready").then(

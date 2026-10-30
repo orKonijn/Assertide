@@ -12,6 +12,8 @@ import { setTimeout } from "node:timers/promises";
 import { once } from "node:events";
 import path from "node:path";
 
+process.once("SIGTERM", () => process.exit(143));
+
 const safe = (name) =>
   typeof name === "string" &&
   /^[a-zA-Z0-9_./ -]+$/.test(name) &&

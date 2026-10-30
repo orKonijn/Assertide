@@ -8,6 +8,7 @@ RUN npm --prefix /app/packages/automation ci
 COPY .local/targets/swag-store/build /app/.local/targets/swag-store/build
 COPY workers/entry.mjs workers/kubernetes-entry.mjs workers/kubernetes-transfer.mjs /app/workers/
 RUN sha256sum /app/packages/automation/package-lock.json | cut -d ' ' -f 1 > /app/automation-lock.sha256
+RUN rm -rf /usr/lib/node_modules/npm /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /usr/bin/npm /usr/bin/npx
 ENV NODE_ENV=development HOME=/tmp PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 USER 10001:10001
 ENTRYPOINT ["node", "--import", "tsx", "/app/workers/entry.mjs"]

@@ -37,6 +37,7 @@ export function workerJob(id: string, workers: number, image: string) {
         metadata: { labels: { "app.kubernetes.io/name": "assertide-worker" } },
         spec: {
           restartPolicy: "Never",
+          terminationGracePeriodSeconds: 5,
           automountServiceAccountToken: false,
           securityContext: {
             runAsNonRoot: true,

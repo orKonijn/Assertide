@@ -56,6 +56,7 @@ test("Kubernetes Jobs enforce isolation and reject mutable images", () => {
   const pod = job.spec.template.spec;
   assert.equal(pod.automountServiceAccountToken, false);
   assert.equal(job.spec.backoffLimit, 0);
+  assert.equal(pod.terminationGracePeriodSeconds, 5);
   assert.equal(job.spec.activeDeadlineSeconds, 1800);
   assert.equal(pod.securityContext.runAsNonRoot, true);
   assert.equal(
