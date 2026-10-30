@@ -505,3 +505,17 @@ Actual production UI with representative API fixture responses:
 ![Single-column suite cards on mobile](changelog/assets/unreleased/suite-compact-390.png)
 
 Lint and production build pass. Browser checks confirm two columns on desktop, one on mobile, retained create/edit drafts across pagination, disabled boundary controls, and no horizontal overflow at 320/390/768/1280px in both themes. The editor still pins on desktop and its Save action remains reachable. These checks use fixture data and do not claim live API persistence. No product version is assigned or changed; this remains Unreleased.
+
+## Compact project toolbar
+
+The project count sits beside the search label, with numbered navigation aligned with the input. The repeated Your projects heading and separate page-summary row are removed. Twelve projects per page, filtering, and edit drafts remain unchanged. The browser tab uses the Assertide A/check mark.
+
+Production UI with representative intercepted API fixtures: search, empty results, pagination, draft preservation, edit/cancel, and horizontal overflow checks pass at 320, 390, 768, and 1280 pixels in light and dark themes. Production build and lint pass; these checks do not validate the live backend. No product version is assigned; this remains Unreleased.
+
+![Desktop project toolbar in dark mode](changelog/assets/unreleased/projects-toolbar-1280-dark.png)
+
+![Mobile project toolbar in dark mode](changelog/assets/unreleased/projects-toolbar-390-dark.png)
+
+![Desktop project toolbar in light mode](changelog/assets/unreleased/projects-toolbar-1280-light.png)
+
+![Mobile project toolbar in light mode](changelog/assets/unreleased/projects-toolbar-390-light.png)

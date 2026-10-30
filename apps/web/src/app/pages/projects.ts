@@ -46,51 +46,48 @@ import { Api, errorMessage } from '../core/api';
       </section>
     }
     <div class="project-list-toolbar">
-      <div>
-        <h2>Your projects</h2>
-        <span class="muted" role="status"
-          >{{ filteredProjects().length }} of {{ projects().length }} projects</span
-        >
-      </div>
       <label
-        >Search projects<input
+        ><span class="project-search-label"
+          >Search projects
+          <span class="muted" role="status">{{ filteredProjects().length }} projects</span></span
+        ><input
+          aria-label="Search projects"
           type="search"
           placeholder="Search by name or description"
           [ngModel]="query()"
           (ngModelChange)="query.set($event); page.set(1)"
       /></label>
-    </div>
-    <nav class="result-pagination" aria-label="Project pages">
-      <span class="muted">Page {{ currentPage() }} of {{ pageCount() }}</span>
-      <div class="catalog-page-buttons">
-        <button
-          type="button"
-          aria-label="Previous project page"
-          [disabled]="currentPage() === 1"
-          (click)="page.set(currentPage() - 1)"
-        >
-          ‹
-        </button>
-        @for (number of pageNumbers(); track number) {
+      <nav aria-label="Project pages">
+        <div class="catalog-page-buttons">
           <button
             type="button"
-            [attr.aria-label]="'Project page ' + number"
-            [attr.aria-current]="currentPage() === number ? 'page' : null"
-            (click)="page.set(number)"
+            aria-label="Previous project page"
+            [disabled]="currentPage() === 1"
+            (click)="page.set(currentPage() - 1)"
           >
-            {{ number }}
+            ‹
           </button>
-        }
-        <button
-          type="button"
-          aria-label="Next project page"
-          [disabled]="currentPage() === pageCount()"
-          (click)="page.set(currentPage() + 1)"
-        >
-          ›
-        </button>
-      </div>
-    </nav>
+          @for (number of pageNumbers(); track number) {
+            <button
+              type="button"
+              [attr.aria-label]="'Project page ' + number"
+              [attr.aria-current]="currentPage() === number ? 'page' : null"
+              (click)="page.set(number)"
+            >
+              {{ number }}
+            </button>
+          }
+          <button
+            type="button"
+            aria-label="Next project page"
+            [disabled]="currentPage() === pageCount()"
+            (click)="page.set(currentPage() + 1)"
+          >
+            ›
+          </button>
+        </div>
+      </nav>
+    </div>
     <div class="grid project-grid">
       @for (project of pageProjects(); track project.id) {
         <section class="card project-card" [class.active-project]="api.projectId() === project.id">
