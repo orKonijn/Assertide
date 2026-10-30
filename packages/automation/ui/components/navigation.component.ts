@@ -1,5 +1,4 @@
-import type { Response } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import type { Page, Response } from '@playwright/test';
 
 import { AuthenticationSelectors as A } from '../types/authentication.selectors';
 import { NavigationSelectors as S } from '../types/navigation.selectors';
@@ -7,11 +6,12 @@ import { Routes } from '../types/routes';
 import { workflow } from '../utils/allure.utils';
 import { ProjectPickerComponent } from './project-picker.component';
 export class NavigationComponent {
-  private readonly activeProject;
+  public readonly activeProject;
   public readonly selectedProject;
   public readonly menu;
-  private readonly dialog;
+  public readonly dialog;
   public readonly closeMenu;
+  public readonly backdrop;
   public readonly signOut;
   public readonly skip;
   public readonly content;
@@ -20,6 +20,7 @@ export class NavigationComponent {
     this.activeProject = page.getByLabel(S.activeProject);
     this.selectedProject = this.activeProject.locator('span').first();
     this.menu = page.getByRole('button', { name: S.menu, exact: true });
+    this.backdrop = page.getByRole('button', { name: S.backdrop, exact: true });
     this.dialog = page.getByRole('dialog', { name: S.dialog });
     this.closeMenu = this.dialog.getByRole('button', {
       name: S.close,
@@ -57,6 +58,26 @@ export class NavigationComponent {
   }
   public press(key: string): Promise<void> {
     return this.page.keyboard.press(key);
+  }
+  public async dismissFromOutside(): Promise<void> {
+    const box = await this.backdrop.boundingBox();
+    if (!box) {
+      throw new Error('Navigation backdrop is not visible');
+    }
+    await this.page.mouse.click(box.x + box.width - 12, box.y + 24);
+  }
+  public async closingMotion(): Promise<{ animating: boolean; visible: boolean }> {
+    return this.backdrop.evaluate(async (button) => {
+      (button as HTMLButtonElement).click();
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      const drawer = document.getElementById('workspace-navigation')!;
+      return {
+        animating: drawer.getAnimations().some((animation) => animation.playState === 'running'),
+        visible: getComputedStyle(drawer).display !== 'none',
+      };
+    });
   }
   public async setTheme(theme: 'light' | 'dark'): Promise<void> {
     await this.page.evaluate((value) => {

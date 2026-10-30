@@ -67,20 +67,32 @@ import { LoadingState } from '../core/loading-state';
         <app-loading-state label="Loading history…" />
       } @else {
         <div class="table-wrap">
-          <table class="mobile-result-cards" role="table" [attr.aria-busy]="loading()">
+          <table
+            class="mobile-result-cards history-table"
+            role="table"
+            [attr.aria-busy]="loading()"
+          >
             <thead>
               <tr>
                 <th [attr.aria-sort]="sortState('id')">
-                  <button type="button" (click)="sortBy('id')">Run</button>
+                  <button type="button" (click)="sortBy('id')">
+                    Run<span class="sort-indicator" aria-hidden="true"></span>
+                  </button>
                 </th>
                 <th [attr.aria-sort]="sortState('phase')">
-                  <button type="button" (click)="sortBy('phase')">Phase</button>
+                  <button type="button" (click)="sortBy('phase')">
+                    Phase<span class="sort-indicator" aria-hidden="true"></span>
+                  </button>
                 </th>
                 <th [attr.aria-sort]="sortState('selected')">
-                  <button type="button" (click)="sortBy('selected')">Selected</button>
+                  <button type="button" (click)="sortBy('selected')">
+                    Selected<span class="sort-indicator" aria-hidden="true"></span>
+                  </button>
                 </th>
                 <th [attr.aria-sort]="sortState('createdAt')">
-                  <button type="button" (click)="sortBy('createdAt')">Created</button>
+                  <button type="button" (click)="sortBy('createdAt')">
+                    Created<span class="sort-indicator" aria-hidden="true"></span>
+                  </button>
                 </th>
               </tr>
             </thead>

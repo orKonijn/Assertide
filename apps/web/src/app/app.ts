@@ -149,10 +149,12 @@ export class App {
     }
   }
   public toggleMenu(): void {
-    this.menu.update((value) => !value);
     if (this.menu()) {
-      setTimeout(() => document.querySelector<HTMLElement>('.mobile-close')?.focus(), 0);
+      this.closeMenu();
+      return;
     }
+    this.menu.set(true);
+    setTimeout(() => document.querySelector<HTMLElement>('.mobile-close')?.focus(), 0);
   }
   public toggleTheme(): void {
     this.dark.update((value) => !value);

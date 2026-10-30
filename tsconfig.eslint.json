@@ -11,8 +11,10 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
+    "types": ["node"],
+    "typeRoots": ["./apps/api/node_modules/@types"]
   },
-  "include": ["apps/**/*.ts", "packages/**/*.ts"],
+  "include": ["packages/domain/*.ts"],
   "exclude": ["**/node_modules", "**/dist", ".local"]
 }

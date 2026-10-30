@@ -6,6 +6,12 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Compacted test and report cards by grouping metadata, priority, and actions; report links now match workspace styling. Moved the mobile theme control beside Menu as a labeled sun/moon icon, with an icon control retained on desktop. Six browser tests including 64 accessibility states and light/dark layout checks at 320/390/768/1280px pass. See [card and header comparisons](docs/ui-refresh.md#compact-test-and-report-cards).
+
+- Replaced oversized execution-history header buttons with compact sort headings and visible direction arrows. Mobile headings adapt to two columns on narrow phones while preserving keyboard sorting and touch targets. Build/lint, four browser tests including the 64-state accessibility matrix, and light/dark layout checks at 320/390/1280px pass. See [before-and-after sorting controls](docs/ui-refresh.md#execution-history-sort-headings).
+
+- Mobile navigation now closes when its dimmed backdrop is clicked and slides out smoothly while the backdrop fades. Close, Escape, and navigation actions restore the menu trigger consistently; reduced-motion settings disable transitions. Fixed sign-in cards drifting left at tablet/zoomed widths by keeping equal automatic side margins. Build/lint, five browser tests including 64 accessibility states, and centered-layout checks at 320/390/840/1280px pass. See [navigation and sign-in evidence](docs/ui-refresh.md#mobile-navigation-and-sign-in-alignment).
+
 - Dialogs now animate their closing transition and backdrop, with immediate dismissal for reduced-motion preferences. Replaced the oversized mobile navigation close button with a compact, labeled icon; project cards keep Open/Edit in one row, and catalog badges no longer touch edit buttons. Build/lint and seven browser tests, including 64 accessibility states, pass. See [dialog and card polish](docs/ui-refresh.md#dialog-and-card-polish).
 
 - The project picker now closes when a pointer press starts and ends outside it, returning focus to its trigger; clicks inside and drags out remain open. Regular selects use compact anchored menus, themed selected options, and inset arrows; scrolling surfaces use slim theme-aware scrollbars. Native select behavior remains the fallback where customizable selects are unsupported. Build, lint, six browser tests (including the 64-state accessibility matrix), and test architecture/reporting checks pass. See [controls and scrollbar evidence](docs/ui-refresh.md#dropdowns-and-scrollbars).
@@ -14,7 +20,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Changed
 
-- Development checks now enforce explicit TypeScript APIs, intentional class visibility, handled promises, safe production boundaries and consistent formatting across maintained source. CI rejects lint warnings and formatting drift. Contributors should run `npm run lint:fix` followed by `npm run format`; see [code quality conventions](docs/code-quality.md). Verified locally with strict type checks, API/domain/web tests, production build, 36 browser tests, and the UI architecture/reporting checks. No product version or database migration is assigned.
+- Development checks now enforce explicit TypeScript APIs, intentional class visibility, handled promises, safe production boundaries and consistent formatting across maintained source. CI rejects lint warnings and formatting drift. Contributors should run `npm run lint:fix` followed by `npm run format`; see [code quality conventions](docs/code-quality.md) and [PR #3](https://github.com/orKonijn/Assertide/pull/3). Verified locally with strict type checks, API/domain/web tests, production build, 36 browser tests, and the UI architecture/reporting checks. No product version or database migration is assigned.
 
 - GitHub verification now runs for pushes to `main` as well as pull requests and the existing feature branch. UI regression tests use the established Page Objects and no longer regenerate committed screenshots during routine runs.
 

@@ -136,3 +136,60 @@ The heading and action are vertically centered and wrap with a defined gap on na
 The drawer clears the header even when opened after scrolling. These are actual post-fix captures; the attempted automated before-state capture failed at sign-in, so no comparable before images are claimed.
 
 Build, lint, and browser checks passed. Projects and settings fit 320, 390, 768, and 1280px viewports without horizontal overflow.
+
+## Mobile navigation and sign-in alignment
+
+A dimmed backdrop now dismisses the mobile drawer when clicked. The drawer slides left and the backdrop fades over 180ms when closing through the backdrop, close icon, menu toggle, Escape, or a navigation link. Focus returns to the menu trigger. Reduced-motion preferences remove the transitions.
+
+The sign-in card keeps equal automatic side margins at desktop, tablet, and phone sizes, including widths reached by browser zoom. Previously, the mobile margin override left-aligned the card whenever the available width was larger than its maximum width.
+
+![Centered sign-in card at 840 CSS pixels](changelog/assets/unreleased/navigation-login-centered-840.png)
+
+The card remains centered at the mobile breakpoint instead of attaching to the left side.
+
+![Mobile drawer with an outside dismissal backdrop](changelog/assets/unreleased/navigation-login-drawer-open.png)
+
+Actual browser closing sequence: [open](changelog/assets/unreleased/navigation-login-drawer-open.png), [mid-close](changelog/assets/unreleased/navigation-login-drawer-closing.png), [closed](changelog/assets/unreleased/navigation-login-drawer-closed.png). The middle capture pauses the real transition at 90ms for inspection.
+
+Verification: production build, lint, automation type checks, test architecture/reporting checks, and five browser tests passed, including 64 accessibility states. Browser measurements confirm equal sign-in margins at 320, 390, 840, and 1280px. The mobile test checks real outside clicks, restored focus, and an active exit animation before the drawer hides. Changes remain Unreleased; no version increment or deployment is claimed.
+
+## Execution-history sort headings
+
+Replaced oversized outlined header buttons with compact, borderless sorting controls. A muted bidirectional arrow marks sortable columns, and the active column uses an accent-colored arrow showing ascending or descending order. Native buttons, keyboard focus, 44px touch targets, and `aria-sort` remain intact.
+
+At typical mobile widths the four headings fit in one row. At widths of 380px or less they form a two-column grid to avoid cramped labels or horizontal scrolling.
+
+![Previous dark mobile sort controls](changelog/assets/unreleased/history-sort-dark-390-before.png)
+
+![Updated dark mobile sort controls](changelog/assets/unreleased/history-sort-dark-390-after.png)
+
+These focused captures use the same 390px viewport and dark theme.
+
+![Updated controls at 320px](changelog/assets/unreleased/history-sort-dark-320-after.png)
+
+Narrow phones keep full labels and touch targets in two rows. Light and dark desktop/mobile screenshots were captured at 320, 390, and 1280px; none had page overflow.
+
+Verification: production build, lint, four browser tests (including the 64-state accessibility matrix and keyboard sorting), and the six viewport/theme checks passed. Changes remain Unreleased; no version increment.
+
+## Compact test and report cards
+
+Test cards group the identifier and priority together, with a smaller source line and a concise Edit action. The accessible edit name still includes the test identifier. Report cards keep the execution link and report action together, with status and expiry beneath; links use the workspace colors and the report action has a clear external-link indicator. Routes, report authorization, and retention behavior are unchanged.
+
+The mobile header now places a labeled sun/moon icon beside Menu. Desktop navigation retains an icon theme control next to Sign out. The header fits at 320px and theme changes persist as before.
+
+Actual running application, dark theme at 768px, before and after:
+
+![Test card before compact grouping](changelog/assets/unreleased/compact-explorer-before.png)
+![Test card with grouped priority and concise edit action](changelog/assets/unreleased/compact-explorer-after.png)
+
+![Report card before grouping](changelog/assets/unreleased/compact-reports-before.png)
+![Report card with compact execution and status layout](changelog/assets/unreleased/compact-reports-after.png)
+
+Actual 320px mobile report views show the theme icon, ready report action, and expiry in both themes:
+
+![Compact light mobile header and report cards](changelog/assets/unreleased/compact-phone-light.png)
+![Compact dark mobile header and report cards](changelog/assets/unreleased/compact-phone-dark.png)
+
+Verification: six browser tests pass, including the 64-state accessibility matrix, catalog editing, project selection, and drawer dismissal/animation. Both routes have no document overflow at 320/390/768/1280px in light and dark themes; the icon switches themes correctly at 320px.
+
+`npm run verify:quick` passes (lint, type checks, local API tests, seven web unit tests, and production build). Eight infrastructure tests remain skipped on Windows. The initial run overlapped browser setup and failed catalog initialization in two API tests; a separate full rerun passed. No release version is assigned; this remains an Unreleased development change.
