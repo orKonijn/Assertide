@@ -287,3 +287,14 @@ Actual running application screenshots:
 Local verification and Page Object architecture/reporting checks pass. The UI remains within the 390px mobile viewport in both themes. No product version is assigned; this is an Unreleased development change.
 
 Nine browser tests passed, including pagination/selection persistence, launching from the header, catalog editing, login, execution/evidence workflows, and 64 accessibility states. Eight infrastructure checks remain skipped on Windows.
+
+## Explorer selection toggle and visible pagination
+
+Select all becomes Deselect all when every enabled test matching the current filters is selected. Deselecting removes those matching tests and preserves selections outside the filter. The selected count appears immediately beside the header launch action. Pagination is now above the catalog, avoiding the need to scroll past ten cards to find it.
+
+Actual running application captures:
+
+![Selected count beside the header execution action](changelog/assets/unreleased/explorer-selection-launch-dark.png)
+![Numbered pages displayed above the catalog](changelog/assets/unreleased/explorer-selection-pagination-dark.png)
+
+Verification: four browser tests passed, including select/deselect across pages and 64 accessibility states. Local lint, formatting, type checks, API and web unit tests, and production build pass; eight infrastructure checks are skipped on Windows. Page Object architecture and reporting checks pass. This is an Unreleased development change with no assigned product version.

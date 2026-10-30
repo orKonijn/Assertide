@@ -16,6 +16,7 @@ import { LoadingState } from '../core/loading-state';
       </div>
       <div class="actions explorer-header-actions">
         <span class="badge">{{ revision().slice(0, 12) || 'Loading revision' }}</span>
+        <span class="selection-count" role="status">{{ selected().length }} selected</span>
         <button
           class="primary"
           [disabled]="!selected().length || starting() || api.identity()?.role === 'viewer'"
@@ -69,9 +70,13 @@ import { LoadingState } from '../core/loading-state';
           ><button
             (click)="selectAll()"
             [disabled]="loading() || !filtered().length"
-            title="Select all enabled tests matching the filters, across every page"
+            [title]="
+              allSelected()
+                ? 'Deselect all matching tests'
+                : 'Select all enabled matching tests across every page'
+            "
           >
-            Select all
+            {{ allSelected() ? 'Deselect all' : 'Select all' }}
           </button>
           <label
             >Kind<select
@@ -100,6 +105,36 @@ import { LoadingState } from '../core/loading-state';
         @if (loading()) {
           <app-loading-state label="Discovering catalog…" />
         } @else {
+          <nav class="catalog-pagination" aria-label="Test pages">
+            <span class="muted" role="status"
+              >{{ filtered().length }} tests · Page {{ currentPage() }} of {{ pageCount() }}</span
+            >
+            <div class="catalog-page-buttons">
+              <button
+                (click)="page.set(currentPage() - 1)"
+                [disabled]="currentPage() === 1"
+                aria-label="Previous test page"
+              >
+                ‹
+              </button>
+              @for (number of pageNumbers(); track number) {
+                <button
+                  (click)="page.set(number)"
+                  [attr.aria-label]="'Test page ' + number"
+                  [attr.aria-current]="currentPage() === number ? 'page' : null"
+                >
+                  {{ number }}
+                </button>
+              }
+              <button
+                (click)="page.set(currentPage() + 1)"
+                [disabled]="currentPage() === pageCount()"
+                aria-label="Next test page"
+              >
+                ›
+              </button>
+            </div>
+          </nav>
           <div class="table-wrap">
             <table class="mobile-result-cards catalog-cards" role="table">
               <thead>
@@ -157,36 +192,6 @@ import { LoadingState } from '../core/loading-state';
               </tbody>
             </table>
           </div>
-          <nav class="catalog-pagination" aria-label="Test pages">
-            <span class="muted" role="status"
-              >{{ filtered().length }} tests · Page {{ currentPage() }} of {{ pageCount() }}</span
-            >
-            <div class="catalog-page-buttons">
-              <button
-                (click)="page.set(currentPage() - 1)"
-                [disabled]="currentPage() === 1"
-                aria-label="Previous test page"
-              >
-                ‹
-              </button>
-              @for (number of pageNumbers(); track number) {
-                <button
-                  (click)="page.set(number)"
-                  [attr.aria-label]="'Test page ' + number"
-                  [attr.aria-current]="currentPage() === number ? 'page' : null"
-                >
-                  {{ number }}
-                </button>
-              }
-              <button
-                (click)="page.set(currentPage() + 1)"
-                [disabled]="currentPage() === pageCount()"
-                aria-label="Next test page"
-              >
-                ›
-              </button>
-            </div>
-          </nav>
         }
       </section>
       <section class="card">
@@ -280,6 +285,10 @@ export class Explorer {
         (this.priority() === 'all' || test.priority === this.priority()),
     ),
   );
+  public readonly allSelected = computed(() => {
+    const enabled = this.filtered().filter((test) => test.enabled);
+    return enabled.length > 0 && enabled.every((test) => this.selected().includes(test.id));
+  });
   public readonly page = signal(1);
   public readonly pageCount = computed(() => Math.max(1, Math.ceil(this.filtered().length / 10)));
   public readonly currentPage = computed(() => Math.min(this.page(), this.pageCount()));
@@ -391,6 +400,12 @@ export class Explorer {
     this.key = crypto.randomUUID();
   }
   public selectAll(): void {
+    if (this.allSelected()) {
+      const matching = new Set(this.filtered().map((test) => test.id));
+      this.selected.update((ids) => ids.filter((id) => !matching.has(id)));
+      this.key = crypto.randomUUID();
+      return;
+    }
     this.selected.update((ids) => [
       ...new Set([
         ...ids,

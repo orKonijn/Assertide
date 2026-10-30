@@ -22,6 +22,9 @@ export class CatalogPage {
   public goToPage(number: number): Promise<void> {
     return this.page.getByRole('button', { name: S.page(number), exact: true }).click();
   }
+  public deselectAll(): Promise<void> {
+    return this.page.getByRole('button', { name: S.deselectAll, exact: true }).click();
+  }
   public selectAll(): Promise<void> {
     return this.page.getByRole('button', { name: S.selectAll, exact: true }).click();
   }

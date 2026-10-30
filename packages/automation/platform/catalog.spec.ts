@@ -38,6 +38,10 @@ test.describe('Catalog metadata', () => {
     await expect(catalog.selection(D.lifecycle)).toBeChecked();
     await catalog.selectAll();
     await expect(catalog.selectedCount).toHaveText('27 tests selected');
+    await catalog.deselectAll();
+    await expect(catalog.selectedCount).toHaveText('0 tests selected');
+    await expect(catalog.startButtons.first()).toBeDisabled();
+    await catalog.selectAll();
     await catalog.goToPage(3);
     await expect(catalog.cases).toHaveCount(7);
     await expect(catalog.startButtons.first()).toBeEnabled();

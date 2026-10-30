@@ -1,6 +1,7 @@
 export const CatalogSelectors = {
   page: (number: number) => `Test page ${number}`,
   selectAll: 'Select all',
+  deselectAll: 'Deselect all',
   selectedCount: 'tests selected',
   heading: 'Test explorer',
   cases: '.catalog-cards input[type=checkbox]',

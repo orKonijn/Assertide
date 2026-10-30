@@ -2073,6 +2073,17 @@ th[aria-sort='descending'] .sort-indicator::before {
   }
 }
 
+.selection-count {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.catalog-pagination {
+  margin: 0 0 16px;
+  padding: 12px 0;
+  border-top: 0;
+  border-bottom: 1px solid var(--border);
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
