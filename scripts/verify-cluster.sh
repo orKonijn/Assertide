@@ -9,6 +9,10 @@ apiVersion: kind.x-k8s.io/v1alpha4
 networking:
   disableDefaultCNI: true
   podSubnet: 192.168.0.0/16
+kubeadmConfigPatches:
+  - |-
+    kind: KubeletConfiguration
+    podPidsLimit: 256
 containerdConfigPatches:
   - |-
     [plugins."io.containerd.cri.v1.images".registry]
@@ -31,8 +35,14 @@ kubectl apply -f deploy/kubernetes/worker-isolation.yaml
 kubectl create namespace assertide
 node --input-type=module -e 'import {deployment} from "./deploy/render.mjs"; const image=process.env.OCI_WORKER_IMAGE; console.log(JSON.stringify(deployment({serviceImage:image,webImage:image,workerImage:image,appOrigin:"https://app.example.test",reportOrigin:"https://reports.example.test",vaultAddress:"https://vault.example.test",vaultRole:"assertide",ingressClass:"nginx",ingressNamespace:"ingress-nginx",tlsSecret:"assertide-tls"})));' > "$RUNNER_TEMP/deployment.json"
 kubectl apply --dry-run=server -f "$RUNNER_TEMP/deployment.json"
+kubectl -n assertide create serviceaccount assertide-execution
+kubectl -n assertide-workers create rolebinding supervisor --role=assertide-execution --serviceaccount=assertide:assertide-execution
+kubectl config view --raw --minify -o json > "$RUNNER_TEMP/scoped-kubeconfig"
+kubectl -n assertide create token assertide-execution --duration=10m > "$RUNNER_TEMP/supervisor-jwt"
+node --input-type=module -e 'import fs from "node:fs"; const p=process.env.RUNNER_TEMP; const config=JSON.parse(fs.readFileSync(p+"/scoped-kubeconfig")); config.users[0].user={token:fs.readFileSync(p+"/supervisor-jwt","utf8").trim()}; fs.writeFileSync(p+"/scoped-kubeconfig",JSON.stringify(config),{mode:0o600});'
+if KUBECONFIG="$RUNNER_TEMP/scoped-kubeconfig" kubectl auth can-i get secrets -n assertide; then echo "Supervisor must not read service secrets"; exit 1; fi
 export TEST_KUBERNETES=true
-(cd apps/api && npx tsx --test test/kubernetes-worker.test.ts)
+(cd apps/api && KUBECONFIG="$RUNNER_TEMP/scoped-kubeconfig" npx tsx --test test/kubernetes-worker.test.ts)
 
 # Real Vault + real Kubernetes TokenReview, isolated from worker namespace.
 kubectl create serviceaccount vault

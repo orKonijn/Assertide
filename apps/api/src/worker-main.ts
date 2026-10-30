@@ -15,7 +15,9 @@ if (
   (!process.env["REDIS_URL"] ||
     !["oci", "kubernetes"].includes(process.env["WORKER_RUNTIME"] ?? ""))
 )
-  throw new Error("Separate execution workers require Redis and OCI isolation");
+  throw new Error(
+    "Separate execution workers require Redis and OCI or Kubernetes isolation",
+  );
 const db = await connectDatabase(process.env["DATABASE_URL"]);
 // The API applies migrations before workers start. Never seed identities here.
 await db.query("SELECT id FROM schema_migrations LIMIT 1");

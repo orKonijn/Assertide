@@ -1,5 +1,7 @@
 # Isolated workers
 
+For Kubernetes Jobs, Vault Transit, production images and deployment manifests, see [production deployment](production-deployment.md). Both isolated runtimes support headed fixtures. Container deployments set `HOST` and `REPORT_HOST` to `0.0.0.0` behind separate ingress origins; local defaults remain loopback.
+
 ## Separate supervisors
 
 Start the API with `LOCAL_RUNNER=false` (the default). It applies migrations and serves the authenticated report gateway independently of workers. After API readiness, start `npm --prefix apps/api run worker` in two separate processes, one with `WORKER_ROLE=execution` and one with `WORKER_ROLE=report`. Both require the same PostgreSQL `DATABASE_URL`, private `S3_BUCKET` configuration, approved source checkout and installed dependencies. Execution additionally requires `REDIS_URL`, `WORKER_RUNTIME=oci`, the immutable `OCI_WORKER_IMAGE` and the secret encryption key. The report worker does not need Docker access, OIDC credentials or the environment encryption key.

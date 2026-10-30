@@ -48,6 +48,20 @@ test("readiness detects dependency failure and operations remain scoped to autho
       },
     });
     assert.equal(broken.status, "unavailable");
+    const oldBackend = process.env["SECRET_BACKEND"];
+    const oldAddress = process.env["VAULT_ADDR"];
+    try {
+      process.env["SECRET_BACKEND"] = "vault";
+      process.env["VAULT_ADDR"] = "http://insecure.invalid";
+      const unhealthyVault = await readiness(db);
+      assert.equal(unhealthyVault.status, "unavailable");
+      assert.equal(unhealthyVault.dependencies["vault"], "unavailable");
+    } finally {
+      if (oldBackend === undefined) delete process.env["SECRET_BACKEND"];
+      else process.env["SECRET_BACKEND"] = oldBackend;
+      if (oldAddress === undefined) delete process.env["VAULT_ADDR"];
+      else process.env["VAULT_ADDR"] = oldAddress;
+    }
     assert.equal(JSON.stringify(broken).includes("private"), false);
     for (const projectId of [localProjectId, randomUUID()]) {
       const id = randomUUID();

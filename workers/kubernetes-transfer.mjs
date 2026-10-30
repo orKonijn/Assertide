@@ -2,6 +2,7 @@ import {
   access,
   mkdir,
   readFile,
+  stat,
   readdir,
   writeFile,
   rename,
@@ -64,10 +65,11 @@ if (mode === "wait") {
       if (!entry.isFile()) throw new Error("Invalid output file");
       const name = path.relative("/output", full).split(path.sep).join("/");
       if (!safe(name)) throw new Error("Invalid output path");
-      const data = await readFile(full);
-      total += data.length;
-      if (data.length > 64 * 1024 * 1024 || total > 512 * 1024 * 1024)
+      const size = (await stat(full)).size;
+      total += size;
+      if (size > 64 * 1024 * 1024 || total > 512 * 1024 * 1024)
         throw new Error("Output exceeds transfer policy");
+      const data = await readFile(full);
       if (
         !process.stdout.write(
           JSON.stringify({ name, data: data.toString("base64") }) + "\n",

@@ -56,6 +56,7 @@ const manifest = workerJob(
   Number(workers),
   process.env["OCI_WORKER_IMAGE"] ?? "",
 );
+let stage = "provisioning";
 try {
   await command(["create", "-f", "-"], JSON.stringify(manifest));
   await command([
@@ -98,6 +99,7 @@ try {
     "/app/workers/kubernetes-transfer.mjs",
     mode,
   ];
+  stage = "source transfer";
   const importer = kubectl(transfer("import"));
   const imported = once(importer, "close");
   importer.stdout.resume();
@@ -130,6 +132,7 @@ try {
   importer.stdin.end(JSON.stringify({ spec: JSON.parse(input) }) + "\n");
   input = "";
   if ((await imported)[0] !== 0) throw new Error("Source transfer failed");
+  stage = "execution";
   // Logs follow ends when the worker container terminates, independently of transfer.
   const logs = kubectl([
     "logs",
@@ -144,6 +147,7 @@ try {
   logs.stderr.pipe(process.stderr);
   if ((await once(logs, "close"))[0] !== 0)
     throw new Error("Worker log stream failed");
+  stage = "artifact transfer";
   const exporter = kubectl(transfer("export"));
   const exported = once(exporter, "close");
   exporter.stdin.end();
@@ -179,7 +183,7 @@ try {
   process.exitCode = z.number().int().min(0).max(255).parse(code);
 } catch {
   console.error(
-    "Kubernetes execution failed; inspect cluster events with an administrator",
+    `Kubernetes ${stage} failed; inspect cluster events with an administrator`,
   );
   process.exitCode = 1;
 } finally {

@@ -126,3 +126,13 @@ export class VaultTransit {
   }
 }
 export const vaultTransit = new VaultTransit();
+
+export async function vaultHealth() {
+  const url = new URL(process.env["VAULT_ADDR"] ?? "");
+  if (url.protocol !== "https:") throw new Error("Vault requires HTTPS");
+  const response = await fetch(
+    new URL("/v1/sys/health?standbyok=true&perfstandbyok=true", url),
+    { redirect: "error", signal: AbortSignal.timeout(2000) },
+  );
+  if (!response.ok) throw new Error("Vault unavailable");
+}

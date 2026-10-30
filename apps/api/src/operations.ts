@@ -5,11 +5,13 @@ import type { SqlConnection } from "./database.ts";
 import type { IdentityService } from "./identity.ts";
 import { objectStore } from "./object-store.ts";
 import { executionLimits } from "./scheduler.ts";
+import { vaultHealth } from "./vault.ts";
 
 export async function readiness(db: SqlConnection) {
   const checks: Record<string, () => Promise<unknown>> = {
     database: () => db.query("SELECT 1"),
   };
+  if (process.env["SECRET_BACKEND"] === "vault") checks["vault"] = vaultHealth;
   const store = objectStore;
   if (store)
     checks["storage"] = () =>
