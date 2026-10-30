@@ -34,7 +34,13 @@ import { LoadingState } from '../core/loading-state';
             }
           </select></label
         >
-        <label>From (UTC)<input type="date" name="from" [(ngModel)]="from" /></label
+        <label
+          >Contains outcome<select name="outcome" [(ngModel)]="outcome">
+            @for (value of ['all', 'passed', 'failed', 'broken', 'skipped']; track value) {
+              <option>{{ value }}</option>
+            }
+          </select></label
+        ><label>From (UTC)<input type="date" name="from" [(ngModel)]="from" /></label
         ><label>Through (UTC)<input type="date" name="to" [(ngModel)]="to" /></label>
         <label
           >Suite<select name="suite" [(ngModel)]="suite">
@@ -128,6 +134,7 @@ export class Runs {
   to = this.route.snapshot.queryParamMap.get('to') ?? '';
   suite = this.route.snapshot.queryParamMap.get('suite') ?? '';
   environment = this.route.snapshot.queryParamMap.get('environment') ?? '';
+  outcome = this.route.snapshot.queryParamMap.get('outcome') ?? 'all';
   readonly suites = signal<Suite[]>([]);
   readonly environments = signal<Environment[]>([]);
   readonly nextCursor = signal<string | null>(null);
@@ -168,6 +175,7 @@ export class Runs {
       queryParams: {
         phase: this.phase,
         browser: this.browser,
+        outcome: this.outcome,
         from: this.from || null,
         to: this.to || null,
         suite: this.suite || null,
@@ -186,6 +194,7 @@ export class Runs {
         projectId: this.api.projectId(),
         phase: this.phase,
         browser: this.browser,
+        outcome: this.outcome,
       });
       if (this.from) query.set('from', this.from);
       if (this.to) query.set('to', this.to);

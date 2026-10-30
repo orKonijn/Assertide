@@ -2,6 +2,34 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { calculateAnalytics } from "../src/analytics.ts";
 
+test("quarantine is explicit and parameter identities cannot create false instability", () => {
+  const runs = Array.from({ length: 5 }, (_, index) => ({
+    endedAt: `2026-10-${20 + index}T10:00:00Z`,
+    results: [
+      {
+        id: "case:a",
+        caseId: "case",
+        status: "passed",
+        parameterFingerprint: "a",
+        attempts: [{ status: "passed" }],
+      },
+      {
+        id: "case:b",
+        caseId: "case",
+        status: "failed",
+        parameterFingerprint: "b",
+        attempts: [{ status: "failed" }],
+      },
+      { id: "quarantine", status: "failed", quarantined: true },
+    ],
+  }));
+  const summary = calculateAnalytics(runs);
+  assert.equal(summary.executed, 10);
+  assert.equal(summary.quarantined, 5);
+  assert.equal(summary.finalPassRate, 0.5);
+  assert.deepEqual(summary.instability, []);
+});
+
 test("analytics keeps API browserless, honors denominators and uses recorded request latency", () => {
   const runs = [
     {
@@ -73,6 +101,7 @@ test("instability requires five comparable runs and latency excludes transport f
       caseId: "LAB-001",
       browser: "api",
       environment: "qa",
+      parameterFingerprint: "default",
       samples: 5,
       failed: 1,
     },

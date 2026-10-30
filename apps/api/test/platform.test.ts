@@ -116,6 +116,18 @@ test("platform authorization, suite concurrency, launch deduplication and cancel
     assert.equal(retry["parentRunId"], id);
     assert.deepEqual(retry["selection"], { testIds: ["LAB-001"] });
     assert.equal((await service.get(admin, id, "run"))["phase"], "completed");
+    const failedHistory = await service.history(admin, localProjectId, {
+      outcome: "failed",
+    });
+    assert.deepEqual(
+      failedHistory.items.map((item) => (item as Record<string, unknown>)["id"]),
+      [id],
+    );
+    assert.equal(
+      (await service.history(admin, localProjectId, { outcome: "broken" }))
+        .items.length,
+      0,
+    );
     const firstPage = await service.history(admin, localProjectId, {
       limit: 1,
       browser: "api",

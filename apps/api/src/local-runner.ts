@@ -567,6 +567,10 @@ export class LocalRunner {
             browser: test.projectName === "api" ? null : test.projectName,
             expectedStatus: test.expectedStatus,
             expectedFailure: test.expectedStatus === "failed",
+            quarantined:
+              run.metadata.find((item) => item.id === caseId)?.quarantined ??
+              false,
+            parameterFingerprint: "default",
             title: spec.title,
             status:
               canceled && (!last || last.status === "interrupted")
@@ -606,6 +610,10 @@ export class LocalRunner {
               browser: project === "api" ? null : project,
               expectedStatus: "passed",
               expectedFailure: false,
+              quarantined:
+                run.metadata.find((item) => item.id === id)?.quarantined ??
+                false,
+              parameterFingerprint: "default",
               title: id,
               status: canceled ? "canceled" : "broken",
               duration: 0,

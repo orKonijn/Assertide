@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Express, Request, Response } from "express";
 import type { SqlConnection } from "./database.ts";
 import { migrate } from "./migrations.ts";
+import { initializeAnalyticsProjection } from "./analytics-projection.ts";
 import { IdentityService, type Principal } from "./identity.ts";
 import { discoverApprovedSource, discoveredCase } from "./discovery.ts";
 import { initializeScheduler } from "./scheduler.ts";
@@ -83,6 +84,7 @@ const metadataInput = z
     owner: z.string().trim().max(120).default(""),
     priority: z.enum(["P0", "P1", "P2"]),
     enabled: z.boolean(),
+    quarantined: z.boolean().default(false),
     tags: z.array(z.string().trim().min(1).max(50)).max(20),
   })
   .strict();
@@ -182,6 +184,7 @@ export class PlatformService {
     await initializeReports(this.db);
     await initializeHistory(this.db);
     await initializeEnvironments(this.db);
+    await initializeAnalyticsProjection(this.db);
   }
   private setCatalog(items: z.infer<typeof discoveredCase>[]) {
     const smoke = new Set([
@@ -289,6 +292,9 @@ export class PlatformService {
           .string()
           .regex(/^[a-z][a-z0-9-]{0,63}$/)
           .optional(),
+        outcome: z
+          .enum(["all", "passed", "failed", "broken", "skipped"])
+          .default("all"),
         cursor: z.string().max(500).optional(),
         limit: z.coerce.number().int().min(1).max(200).default(50),
       })
@@ -312,7 +318,7 @@ export class PlatformService {
       throw new ApiError(422, "Start date must precede end date");
     const rows = (
       await this.db.query<Row>(
-        `SELECT body,version FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind='run' AND ($3='all' OR body->>'phase'=$3) AND ($4='all' OR body->'config'->'browserProjects' ? $4 OR ($4='api' AND EXISTS(SELECT 1 FROM jsonb_array_elements_text(body->'selection'->'testIds') t WHERE t LIKE 'LAB-%'))) AND ($5::text IS NULL OR (body->>'createdAt',id)<($5,$6)) AND ($7::timestamptz IS NULL OR (body->>'createdAt')::timestamptz >= $7) AND ($8::timestamptz IS NULL OR (body->>'createdAt')::timestamptz < $8) AND ($10::text IS NULL OR body->'config'->'suite'->>'id'=$10) AND ($11::text IS NULL OR body->'config'->>'environmentId'=$11) ORDER BY body->>'createdAt' DESC,id DESC LIMIT $9`,
+        `SELECT body,version FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind='run' AND ($3='all' OR body->>'phase'=$3) AND ($4='all' OR body->'config'->'browserProjects' ? $4 OR ($4='api' AND EXISTS(SELECT 1 FROM jsonb_array_elements_text(body->'selection'->'testIds') t WHERE t LIKE 'LAB-%'))) AND ($5::text IS NULL OR (body->>'createdAt',id)<($5,$6)) AND ($7::timestamptz IS NULL OR (body->>'createdAt')::timestamptz >= $7) AND ($8::timestamptz IS NULL OR (body->>'createdAt')::timestamptz < $8) AND ($10::text IS NULL OR body->'config'->'suite'->>'id'=$10) AND ($11::text IS NULL OR body->'config'->>'environmentId'=$11) AND ($12='all' OR EXISTS(SELECT 1 FROM jsonb_array_elements(COALESCE(body->'results','[]'::jsonb)) r WHERE NOT COALESCE((r->>'expectedFailure')::boolean,false) AND (r->>'status'=$12 OR ($12='failed' AND r->>'status'='timedOut')))) ORDER BY body->>'createdAt' DESC,id DESC LIMIT $9`,
         [
           principal.organizationId,
           projectId,
@@ -329,6 +335,7 @@ export class PlatformService {
           filters.limit + 1,
           filters.suite ?? null,
           filters.environment ?? null,
+          filters.outcome,
         ],
       )
     ).rows;

@@ -22,6 +22,10 @@ import { LoadingState } from '../core/loading-state';
         <h2>Edit {{ test.id }} metadata</h2>
         <form (ngSubmit)="saveMetadata()" class="toolbar">
           <label
+            ><input name="quarantined" type="checkbox" [(ngModel)]="quarantined" />Quarantine future
+            results (exclude from headline metrics)</label
+          >
+          <label
             >Feature<input name="feature" [(ngModel)]="feature" required maxlength="120"
           /></label>
           <label>Module<input name="module" [(ngModel)]="module" maxlength="120" /></label>
@@ -199,6 +203,7 @@ export class Explorer {
   tags = '';
   editPriority = 'P1';
   enabled = true;
+  quarantined = false;
   canEdit() {
     return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');
   }
@@ -210,6 +215,7 @@ export class Explorer {
     this.tags = test.tags.join(', ');
     this.editPriority = test.priority;
     this.enabled = test.enabled;
+    this.quarantined = test.quarantined ?? false;
   }
   async saveMetadata() {
     const current = this.editing();
@@ -229,6 +235,7 @@ export class Explorer {
             .filter(Boolean),
           priority: this.editPriority,
           enabled: this.enabled,
+          quarantined: this.quarantined,
         },
         current.version,
       );

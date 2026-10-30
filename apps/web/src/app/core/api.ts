@@ -31,6 +31,7 @@ export interface Environment {
   passwordRef?: { id: string; version: number };
 }
 export interface TestCase {
+  quarantined?: boolean;
   id: string;
   title: string;
   feature: string;
@@ -71,6 +72,14 @@ export interface Run {
   parentRunId?: string;
   cancelRequested?: boolean;
   source?: { revision: string };
+  config?: {
+    environmentId: string;
+    workers: number;
+    retries: number;
+    video: string;
+    headed: boolean;
+    browserProjects: string[];
+  };
   logTail?: string;
   queueReason?: string;
   workerImage?: string;
@@ -96,6 +105,9 @@ export interface Run {
   }[];
 }
 export interface CaseResult {
+  quarantined?: boolean;
+  parameterFingerprint?: string;
+  caseId?: string;
   id: string;
   title: string;
   status: string;

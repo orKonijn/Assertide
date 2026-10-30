@@ -6,6 +6,12 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
+- Added outcome filtering and a rerun review dialog showing frozen selections and environment availability before queueing. Browser checks verify the linked child preserves its selection and source; see [rerun review](docs/investigation.md).
+
+- Added organization-timezone analytics, frozen quarantine badges and parameter-aware comparisons. Incremental database projections materialize completed test instances and daily counts transactionally. Tests cover DST, quarantine denominators, distinct parameter sets, backfill, rollback and deletion; see [analytics definitions](docs/analytics.md).
+
+- Execution and report supervisors can run separately from the API with shared PostgreSQL and private object storage. Linux CI verified the split topology, report reconstruction and all 15 connected browser journeys in commit `99bbd98`; see [worker configuration](docs/isolated-workers.md).
+
 - Added five-second success notifications with a bounded session history, delayed loading placeholders, keyboard-sortable execution history and generated error references. Browser and unit checks verify notification expiry, retained sorting focus and safe correlation logs; see [interaction behavior and screenshot](docs/shared-interactions.md).
 
 - CI now packages the compiled web application and reviewed source with checksums and signed build provenance. Both checks passed for commit `80cbd91`; this is a verified build artifact, not a published product release or signed container image. See [build verification](docs/build-provenance.md).

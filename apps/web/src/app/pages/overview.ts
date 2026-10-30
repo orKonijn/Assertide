@@ -6,6 +6,9 @@ import { LoadingState } from '../core/loading-state';
 import { Api, Run, Environment, Suite, errorMessage } from '../core/api';
 import { PercentPipe, DatePipe, DecimalPipe } from '@angular/common';
 interface Analytics {
+  timeZone: string;
+  quarantined: number;
+  expectedFailures: number;
   executed: number;
   excluded: number;
   finalPassRate: number | null;
@@ -35,6 +38,7 @@ interface Analytics {
     caseId: string;
     browser: string;
     environment: string;
+    parameterFingerprint: string;
     samples: number;
     failed: number;
   }[];
@@ -107,8 +111,18 @@ interface Analytics {
         </select></label
       >
       <button type="submit" [disabled]="loading()">Apply filters</button>
-      <label>From (UTC)<input type="date" name="from" [(ngModel)]="from" /></label>
-      <label>Through (UTC)<input type="date" name="to" [(ngModel)]="to" /></label>
+      <label
+        >From ({{ analytics()?.timeZone ?? 'UTC' }})<input
+          type="date"
+          name="from"
+          [(ngModel)]="from"
+      /></label>
+      <label
+        >Through ({{ analytics()?.timeZone ?? 'UTC' }})<input
+          type="date"
+          name="to"
+          [(ngModel)]="to"
+      /></label>
       <label
         >Environment<select name="environment" [(ngModel)]="environment">
           <option value="">All environments</option>
@@ -168,6 +182,11 @@ interface Analytics {
         </section>
       </div>
       @if (analytics(); as metrics) {
+        <p class="muted">
+          Excluded from headline rates: {{ metrics.quarantined }} quarantined and
+          {{ metrics.expectedFailures }} expected-failure instances. Day buckets:
+          {{ metrics.timeZone }}.
+        </p>
         <section class="card">
           <h2>Previous interval comparison</h2>
           <p>
@@ -285,7 +304,7 @@ interface Analytics {
               <table>
                 <thead>
                   <tr>
-                    <th>Date (UTC)</th>
+                    <th>Date ({{ metrics.timeZone }})</th>
                     <th>Passed</th>
                     <th>Failed/broken</th>
                     <th>Executed</th>
@@ -384,6 +403,11 @@ interface Analytics {
         </div>
       }
       @if (analytics(); as metrics) {
+        <p class="muted">
+          Excluded from headline rates: {{ metrics.quarantined }} quarantined and
+          {{ metrics.expectedFailures }} expected-failure instances. Day buckets:
+          {{ metrics.timeZone }}.
+        </p>
         <section class="card">
           <h2>Test duration and instability</h2>
           <p>
@@ -395,10 +419,14 @@ interface Analytics {
             {{ metrics.apiLatency.transportFailures }} transport failures excluded from completed
             HTTP latency.
           </p>
-          @for (item of metrics.instability; track item.caseId + item.browser + item.environment) {
+          @for (
+            item of metrics.instability;
+            track item.caseId + item.browser + item.environment + item.parameterFingerprint
+          ) {
             <p>
-              {{ item.caseId }} · {{ item.browser }} · {{ item.environment }}:
-              {{ item.failed }} failures in {{ item.samples }} eligible runs.
+              {{ item.caseId }} · {{ item.browser }} · {{ item.environment }} ·
+              {{ item.parameterFingerprint }}: {{ item.failed }} failures in
+              {{ item.samples }} eligible runs.
             </p>
           } @empty {
             <p>No instability candidates with at least five eligible runs.</p>

@@ -21,6 +21,7 @@ export const caseMetadata = z.object({
   feature: z.string(),
   module: z.string().default(""),
   owner: z.string().default(""),
+  quarantined: z.boolean().default(false),
   priority: z.enum(["P0", "P1", "P2"]),
   tags: z.array(z.string()).default([]),
 });
@@ -61,6 +62,8 @@ export async function enrichReport(
       },
       ...metadata.tags.map((value) => ({ name: "tag", value })),
     );
+    if (metadata.quarantined)
+      result.labels.push({ name: "tag", value: "quarantined" });
     if (metadata.owner)
       result.labels.push({ name: "owner", value: metadata.owner });
     if (metadata.module)

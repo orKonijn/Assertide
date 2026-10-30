@@ -25,6 +25,9 @@ test("maintainer metadata controls future selection and survives reload", async 
   await page.getByLabel("Module", { exact: true }).fill("API performance");
   await page.getByLabel("Test owner", { exact: true }).fill("Performance team");
   await page
+    .getByLabel("Quarantine future results (exclude from headline metrics)")
+    .check();
+  await page
     .getByLabel("Enabled for future selections", { exact: true })
     .uncheck();
   await page
@@ -45,6 +48,11 @@ test("maintainer metadata controls future selection and survives reload", async 
     0,
   );
   await page.getByRole("button", { name: "Edit LAB-014", exact: true }).click();
+  await expect(
+    page.getByLabel(
+      "Quarantine future results (exclude from headline metrics)",
+    ),
+  ).toBeChecked();
   await page.screenshot({
     path: "../../docs/changelog/assets/unreleased/catalog-metadata.png",
     fullPage: true,

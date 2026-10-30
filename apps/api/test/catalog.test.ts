@@ -40,6 +40,7 @@ test("catalog metadata is scoped and versioned; disabling never rewrites frozen 
       priority: "P2",
       tags: ["critical"],
       enabled: false,
+      quarantined: true,
     };
     await assert.rejects(
       platform.saveMetadata(
@@ -82,6 +83,11 @@ test("catalog metadata is scoped and versioned; disabling never rewrites frozen 
     ).find((item) => item.id === "LAB-001");
     assert.equal(current?.enabled, false);
     assert.equal(current?.priority, "P2");
+    assert.equal((current as Record<string, unknown>)["quarantined"], true);
+    assert.notEqual(
+      (original["metadata"] as Record<string, unknown>[])[0]?.["quarantined"],
+      true,
+    );
     const otherProject = randomUUID();
     const other = (
       await platform.projectCatalog(

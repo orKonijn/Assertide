@@ -156,6 +156,22 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
   await page
     .getByRole("button", { name: "Rerun checked tests", exact: true })
     .click();
+  await expect(
+    page.getByRole("dialog", { name: "Review rerun" }),
+  ).toContainText("LAB-001");
+  await expect(page).toHaveURL(runUrl);
+  await expect(
+    page.getByRole("button", { name: "Start rerun", exact: true }),
+  ).toBeEnabled();
+  await page.getByRole("dialog", { name: "Review rerun" }).screenshot({
+    path: "../../docs/changelog/assets/unreleased/rerun-review.png",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("dialog", { name: "Review rerun" }).screenshot({
+    path: "../../docs/changelog/assets/unreleased/rerun-review-mobile.png",
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.getByRole("button", { name: "Start rerun", exact: true }).click();
   await expect(page).not.toHaveURL(runUrl);
   await expect(page).toHaveURL(/\/runs\/[a-f0-9-]+$/);
   await expect(page.getByRole("status")).toHaveText("completed", {
@@ -204,6 +220,13 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
   );
   expect(downloadedEvidence).not.toContain(credentials.password);
   expect(JSON.parse(downloadedEvidence).request.method).toBe("POST");
+  await page
+    .getByLabel("JSON pointer", { exact: true })
+    .fill("/response/body/quantity");
+  await page
+    .getByRole("button", { name: "Inspect pointer", exact: true })
+    .click();
+  await expect(page.getByLabel("Selected JSON value")).toHaveText("2");
   await page.screenshot({
     path: "../../docs/changelog/assets/unreleased/api-evidence.png",
     fullPage: true,

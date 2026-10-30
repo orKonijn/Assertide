@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Express } from "express";
 import { IdentityService } from "./identity.ts";
 import { PlatformService } from "./platform.ts";
+import { calendar, organizationCalendar } from "./calendar.ts";
 import {
   summarizeHistory,
   nearestRankP95,
@@ -14,6 +15,8 @@ const resultSchema = z.object({
   browser: z.string().nullable().default(null),
   status: z.string(),
   expectedFailure: z.boolean().default(false),
+  quarantined: z.boolean().default(false),
+  parameterFingerprint: z.string().default("default"),
   attempts: z
     .array(
       z.object({
@@ -60,7 +63,12 @@ const normalize = (status: string): ResultState => {
     ? (status as ResultState)
     : "incomplete";
 };
-export function calculateAnalytics(input: unknown[], browser = "all") {
+export function calculateAnalytics(
+  input: unknown[],
+  browser = "all",
+  timeZone = "UTC",
+) {
+  const dates = calendar(timeZone);
   const runs = input
     .map((value) => completedSchema.parse(value))
     .map((run) => ({
@@ -85,12 +93,13 @@ export function calculateAnalytics(input: unknown[], browser = "all") {
         instances: results.map((result) => ({
           state: normalize(result.status),
           expectedFailure: result.expectedFailure,
+          quarantined: result.quarantined,
           attempts: result.attempts.map((attempt) => normalize(attempt.status)),
         })),
       },
     ]);
   const results = runs.flatMap((run) => run.results);
-  const days = [...new Set(runs.map((run) => run.endedAt.slice(0, 10)))].sort();
+  const days = [...new Set(runs.map((run) => dates.day(run.endedAt)))].sort();
   const durations = runs.flatMap((run) =>
     run.startedAt
       ? [Math.max(0, Date.parse(run.endedAt) - Date.parse(run.startedAt))]
@@ -147,7 +156,7 @@ export function calculateAnalytics(input: unknown[], browser = "all") {
         endpoints.set(key, group);
       }
     for (const result of run.results) {
-      if (result.expectedFailure) continue;
+      if (result.expectedFailure || result.quarantined) continue;
       result.attempts.forEach((attempt, index) => {
         if (!["failed", "timedOut", "broken"].includes(attempt.status)) return;
         evidence.eligibleAttempts++;
@@ -195,6 +204,7 @@ export function calculateAnalytics(input: unknown[], browser = "all") {
   const eligible = results.filter(
     (result) =>
       !result.expectedFailure &&
+      !result.quarantined &&
       ["passed", "failed", "broken", "timedOut"].includes(result.status),
   );
   for (const result of eligible) {
@@ -213,7 +223,13 @@ export function calculateAnalytics(input: unknown[], browser = "all") {
     .sort((a, b) => a - b);
   const identities = new Map<
     string,
-    { caseId: string; browser: string; environment: string; statuses: string[] }
+    {
+      caseId: string;
+      browser: string;
+      environment: string;
+      parameterFingerprint: string;
+      statuses: string[];
+    }
   >();
   for (const run of [...runs].sort((a, b) =>
     b.endedAt.localeCompare(a.endedAt),
@@ -221,6 +237,7 @@ export function calculateAnalytics(input: unknown[], browser = "all") {
     for (const result of run.results) {
       if (
         result.expectedFailure ||
+        result.quarantined ||
         !["passed", "failed", "broken", "timedOut"].includes(result.status)
       )
         continue;
@@ -229,11 +246,13 @@ export function calculateAnalytics(input: unknown[], browser = "all") {
         caseId,
         result.browser,
         run.config.environmentId,
+        result.parameterFingerprint,
       ]);
       const item = identities.get(key) ?? {
         caseId,
         browser: result.browser ?? "api",
         environment: run.config.environmentId,
+        parameterFingerprint: result.parameterFingerprint,
         statuses: [],
       };
       if (item.statuses.length < 10) item.statuses.push(result.status);
@@ -243,6 +262,7 @@ export function calculateAnalytics(input: unknown[], browser = "all") {
   for (const result of results)
     if (
       !result.expectedFailure &&
+      !result.quarantined &&
       ["failed", "broken", "timedOut"].includes(result.status)
     ) {
       const key = result.caseId ?? result.id.split(":")[0]!;
@@ -250,6 +270,8 @@ export function calculateAnalytics(input: unknown[], browser = "all") {
     }
   return {
     ...summarize(results),
+    quarantined: results.filter((result) => result.quarantined).length,
+    expectedFailures: results.filter((result) => result.expectedFailure).length,
     runCount: runs.length,
     evidence: {
       ...evidence,
@@ -308,7 +330,7 @@ export function calculateAnalytics(input: unknown[], browser = "all") {
       day,
       ...summarize(
         runs
-          .filter((run) => run.endedAt.startsWith(day))
+          .filter((run) => dates.day(run.endedAt) === day)
           .flatMap((run) => run.results),
       ),
     })),
@@ -369,10 +391,14 @@ export function mountAnalytics(
       }
       const now = new Date();
       const to = filter.data.to
-        ? new Date(Date.parse(filter.data.to) + 86400_000)
+        ? organizationCalendar.start(
+            new Date(Date.parse(filter.data.to) + 86400_000)
+              .toISOString()
+              .slice(0, 10),
+          )
         : now;
       const from = filter.data.from
-        ? new Date(filter.data.from)
+        ? organizationCalendar.start(filter.data.from)
         : new Date(to.getTime() - filter.data.days * 86400_000);
       const width = to.getTime() - from.getTime();
       if (width <= 0 || width > 366 * 86400_000 || from > now) {
@@ -384,7 +410,7 @@ export function mountAnalytics(
       const previousFrom = new Date(from.getTime() - width);
       const rows = (
         await service.db.query<{ body: unknown }>(
-          "SELECT body FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind='run' AND body->>'phase'='completed' AND (body->>'endedAt')::timestamptz >= $3 AND (body->>'endedAt')::timestamptz < $4 AND ($5::text IS NULL OR body->'config'->>'environmentId'=$5) AND ($6::text IS NULL OR body->'config'->'suite'->>'id'=$6)",
+          "WITH matching AS (SELECT DISTINCT run_id FROM analytics_instances WHERE organization_id=$1 AND project_id=$2 AND ended_at >= $3 AND ended_at < $4 AND ($5::text IS NULL OR environment_id=$5)) SELECT jsonb_strip_nulls(jsonb_build_object('results',(SELECT jsonb_agg(i.result ORDER BY i.ordinal) FROM analytics_instances i WHERE i.run_id=p.id),'endedAt',p.body->'endedAt','startedAt',p.body->'startedAt','config',p.body->'config','artifacts',p.body->'artifacts')) AS body FROM matching m JOIN platform_documents p ON p.id=m.run_id WHERE ($6::text IS NULL OR p.body->'config'->'suite'->>'id'=$6)",
           [
             principal.organizationId,
             projectId,
@@ -411,8 +437,16 @@ export function mountAnalytics(
       const previous = records.filter(
         (run) => Date.parse(run.endedAt) < from.getTime(),
       );
-      const summary = calculateAnalytics(current, filter.data.browser);
-      const baseline = calculateAnalytics(previous, filter.data.browser);
+      const summary = calculateAnalytics(
+        current,
+        filter.data.browser,
+        organizationCalendar.timeZone,
+      );
+      const baseline = calculateAnalytics(
+        previous,
+        filter.data.browser,
+        organizationCalendar.timeZone,
+      );
       const identities = (values: typeof records) =>
         new Set(
           values.flatMap((run) =>
@@ -427,6 +461,7 @@ export function mountAnalytics(
                   result.caseId ?? result.id,
                   result.browser,
                   run.config.environmentId,
+                  result.parameterFingerprint,
                 ]),
               ),
           ),
@@ -435,6 +470,7 @@ export function mountAnalytics(
         previousIds = identities(previous);
       res.set("Cache-Control", "no-store").json({
         ...summary,
+        timeZone: organizationCalendar.timeZone,
         dataAsOf: now.toISOString(),
         generatedAt: now.toISOString(),
         comparison: {
@@ -457,7 +493,7 @@ export function mountAnalytics(
         filters: filter.data,
         definitions: {
           executed:
-            "Passed + failed + broken final instances; excludes skipped, canceled and incomplete",
+            "Passed + failed + broken final instances; excludes expected failures, quarantined, skipped, canceled and incomplete",
           finalPassRate: "Final passed / executed",
           firstAttemptPassRate: "First-attempt passed / executed",
           recoveredFlakyRate: "Passed after an earlier failure / executed",

@@ -1,13 +1,51 @@
-import { Component, inject, signal, DestroyRef } from '@angular/core';
+import { Component, inject, signal, DestroyRef, viewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Api, Run, errorMessage } from '../core/api';
+import { Api, Run, Environment, errorMessage } from '../core/api';
 import { ResultSteps, ResultNotes } from '../core/result-investigation';
 import { ScreenshotViewer } from '../core/screenshot-viewer';
 @Component({
   imports: [RouterLink, DatePipe, ResultSteps, ResultNotes, ScreenshotViewer],
+  styles: [
+    'dialog { color: var(--text); background: var(--surface); border: 1px solid var(--border); max-width: min(40rem, 90vw); border-radius: .75rem; } dialog::backdrop { background: #0009; }',
+  ],
   template: `
+    <dialog #rerunDialog aria-labelledby="rerun-heading">
+      <h2 id="rerun-heading">Review rerun</h2>
+      <p>
+        {{ rerunIds().length }} selected cases · same source revision and frozen execution
+        parameters.
+      </p>
+      <p class="wrap-anywhere">Cases: {{ rerunIds().join(', ') }}</p>
+      <p class="wrap-anywhere">Source: {{ run()?.source?.revision }}</p>
+      @if (run()?.config; as config) {
+        <p>
+          Environment: {{ config.environmentId }} ·
+          {{ environmentAvailable() ? 'Available' : 'Checking or unavailable' }}
+        </p>
+        <p>
+          {{ config.workers }} workers · {{ config.retries }} retries · Video {{ config.video }} ·
+          {{ config.headed ? 'Headed' : 'Headless' }}
+        </p>
+        <p>Browsers: {{ rerunHasBrowser() ? config.browserProjects.join(', ') : 'API only' }}</p>
+      }
+      <p>
+        Current environment limits and source availability are checked again before queueing. The
+        original execution is preserved.
+      </p>
+      @if (rerunError()) {
+        <p class="error" role="alert">{{ rerunError() }}</p>
+      }
+      <button type="button" autofocus (click)="rerunDialog.close()">Cancel rerun</button>
+      <button
+        type="button"
+        [disabled]="busy() || !environmentAvailable() || !rerunIds().length"
+        (click)="startRerun()"
+      >
+        Start rerun
+      </button>
+    </dialog>
     <header class="page-header">
       <div>
         <p class="eyebrow">EXECUTION DETAIL</p>
@@ -138,6 +176,9 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
                 </dd>
               </dl>
             }
+            @if (result.quarantined) {
+              <p class="badge">Quarantined · excluded from headline metrics</p>
+            }
             @if (result.expectedFailure) {
               <p class="badge">Expected failure</p>
             }
@@ -250,6 +291,11 @@ export class RunDetail {
   readonly run = signal<Run | null>(null);
   readonly error = signal('');
   readonly busy = signal(false);
+  private readonly rerunDialog = viewChild.required<ElementRef<HTMLDialogElement>>('rerunDialog');
+  readonly rerunIds = signal<string[]>([]);
+  readonly rerunError = signal('');
+  readonly environmentAvailable = signal(false);
+  private rerunMode: 'all' | 'failed' | 'selected' = 'all';
   readonly disconnected = signal(false);
   readonly selected = signal<string[]>([]);
   readonly focusedResult = signal('');
@@ -362,17 +408,60 @@ export class RunDetail {
     }
   }
   async rerun(mode: 'all' | 'failed' | 'selected' = 'all') {
+    this.rerunMode = mode;
+    const run = this.run();
+    this.rerunIds.set(
+      mode === 'selected'
+        ? [...this.selected()]
+        : mode === 'all'
+          ? [...(run?.selection.testIds ?? [])]
+          : [
+              ...new Set(
+                (run?.results ?? [])
+                  .filter((result) =>
+                    ['failed', 'timedOut', 'broken', 'interrupted'].includes(result.status),
+                  )
+                  .map((result) => result.caseId ?? result.id.split(':')[0]!),
+              ),
+            ],
+    );
+    this.rerunError.set('');
+    this.environmentAvailable.set(false);
+    this.rerunDialog().nativeElement.showModal();
+    try {
+      const environments = await this.api.get<{ items: Environment[] }>(
+        `/projects/${run?.projectId}/environments`,
+      );
+      this.environmentAvailable.set(
+        environments.items.some((item) => item.id === run?.config?.environmentId && item.enabled),
+      );
+      if (!this.environmentAvailable())
+        this.rerunError.set(
+          'The original environment is unavailable. Ask an administrator to restore its policy.',
+        );
+    } catch (error) {
+      this.rerunError.set(errorMessage(error));
+    }
+  }
+  rerunHasBrowser() {
+    return this.rerunIds().some((id) => id.startsWith('UI-'));
+  }
+  async startRerun() {
     this.busy.set(true);
     try {
       const run = await this.api.post<Run>(
         `/runs/${this.id}/reruns`,
-        { mode, ...(mode === 'selected' ? { testIds: this.selected() } : {}) },
+        {
+          mode: this.rerunMode,
+          ...(this.rerunMode === 'selected' ? { testIds: this.rerunIds() } : {}),
+        },
         crypto.randomUUID(),
       );
+      this.rerunDialog().nativeElement.close();
       await this.router.navigateByUrl('/runs');
       await this.router.navigate(['/runs', run.id]);
     } catch (error) {
-      this.error.set(errorMessage(error));
+      this.rerunError.set(errorMessage(error));
     } finally {
       this.busy.set(false);
     }
