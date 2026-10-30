@@ -1,0 +1,1 @@
+{"type":"object","required":["id","userId","title","body"],"properties":{"id":{"type":"integer"},"userId":{"type":"integer"},"title":{"type":"string"},"body":{"type":"string"}},"additionalProperties":false}

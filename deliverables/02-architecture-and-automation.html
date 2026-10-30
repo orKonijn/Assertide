@@ -1,0 +1,350 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Assertide architecture and automation specification</title><style>body{margin:0;background:#f5f6fa;color:#182237;font:15px/1.7 Inter,Arial,sans-serif}header{background:#151e30;color:white;padding:48px max(24px,calc((100% - 1180px)/2))}header p{color:#c4cee2}main{max-width:1180px;margin:auto;padding:36px 24px}h1,h2,h3{line-height:1.3}h1{font-size:36px;letter-spacing:-1px}h2{margin-top:36px}a{color:#5145cd}header a{color:#c8c0ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.card,article{background:white;border:1px solid #d8dfea;border-radius:12px;padding:24px;margin-bottom:18px}.card h2{margin:0;font-size:19px}.card p{color:#58657b}table{border-collapse:collapse;display:block;overflow:auto;font-size:13px;width:100%}th,td{border:1px solid #d8dfea;padding:12px;text-align:left;vertical-align:top}th{background:#eef0f7}pre{background:#151e30;color:#eef3ff;border-radius:9px;padding:20px;overflow:auto;font-size:12px}code{font-family:Consolas,monospace}img{max-width:100%}.badge{display:inline-block;background:#eeebff;color:#5145cd;padding:6px 12px;border-radius:20px;font-size:12px}.warning{border-left:4px solid #926000;background:#fff9eb;padding:18px 22px}.assets{display:flex;gap:24px;flex-wrap:wrap;align-items:center}.assets img{width:140px}.assets .logo{width:235px}footer{font-size:12px;color:#58657b;margin:36px 0}@media(max-width:700px){header{padding:32px 20px}main{padding:20px}h1{font-size:29px}}</style><header><a href="index.html">← Assertide deliverables</a></header><main><article><h1>Assertide architecture and automation specification</h1>
+<h2>Technology baseline</h2>
+<p>Use Angular 22 stable APIs with TypeScript, standalone components, router-level lazy loading, signals for view state, RxJS for event streams, Tailwind CSS and Apache ECharts for accessible interactive charts. Angular's official release table identifies v22 as actively supported; resolve and lock exact compatible patch versions during implementation rather than shipping floating dependencies. Use Node.js 24 LTS, NestJS, PostgreSQL 17, Redis with BullMQ, S3-compatible object storage, and OCI worker containers. Nest's supported BullMQ integration provides queue primitives; PostgreSQL remains the authoritative state ledger. <a href="https://angular.dev/reference/releases">Angular releases</a>, <a href="https://docs.nestjs.com/techniques/queues">Nest queues</a>.</p>
+<p>Use Playwright Test + TypeScript and allure-playwright + allure-js-commons with Allure Report 3. Pin the runner package, browser image and report generator as a tested compatibility set. The checked-in examples are representative specifications, not a certified dependency lockfile. An implementation spike must build a report, open a trace and verify retry grouping before accepting upgrades. Allure 2 history-directory copying is deliberately not part of the Allure 3 design.</p>
+<h2>Architecture</h2>
+<p><img alt="Execution workers, queue, control API, database and private report serving" src="architecture.svg" /></p>
+<p>The diagram shows the proposed runtime boundaries. The Mermaid definitions below remain editable source for implementation documentation.</p>
+<pre><code class="language-mermaid">flowchart LR
+  UI[Angular web client] --&gt;|OIDC session and REST| API[NestJS control API]
+  UI &lt;--&gt;|SSE with cursor| API
+  API --&gt; DB[(PostgreSQL state and outbox)]
+  DB --&gt; DIS[Outbox dispatcher]
+  DIS --&gt; Q[(Redis BullMQ)]
+  Q --&gt; ORCH[Worker orchestrator]
+  ORCH --&gt; W[Isolated Playwright job]
+  W --&gt;|allowed egress only| TARGET[Approved UI and API sandboxes]
+  W --&gt;|events with fencing token| API
+  W --&gt;|scoped upload capability| OBJ[(Private artifact storage)]
+  API --&gt; Q
+  Q --&gt; REPORT[Isolated Allure generation job]
+  OBJ --&gt; REPORT
+  REPORT --&gt; OBJ
+  UI --&gt; GW[Authenticated artifact gateway]
+  GW --&gt; OBJ
+  API --&gt; AGG[Analytics materializer]
+  AGG --&gt; DB
+</code></pre>
+<p>Deploy control API, event ingestion, report generation and execution jobs as separate processes. MVP uses Docker Compose for developer infrastructure and one orchestrator host for trusted suites; production uses Kubernetes Jobs with network policy, resource requests/limits, and isolated service accounts. A queue consumer process alone is not a security boundary. For future untrusted tenant repositories use stronger sandboxing such as dedicated VMs; do not describe ordinary containers as sufficient isolation against hostile code.</p>
+<pre><code class="language-mermaid">sequenceDiagram
+  actor Operator
+  participant UI as Angular
+  participant API as NestJS
+  participant DB as PostgreSQL
+  participant Queue as BullMQ
+  participant Worker as Isolated worker
+  participant Reports as Report worker
+  Operator-&gt;&gt;UI: Start selected tests
+  UI-&gt;&gt;API: POST run + idempotency key
+  API-&gt;&gt;DB: Commit frozen run and outbox
+  API--&gt;&gt;UI: 202 + run ID
+  DB-&gt;&gt;Queue: Dispatcher publishes outbox
+  Queue-&gt;&gt;Worker: Lease and fenced execution
+  Worker-&gt;&gt;API: Ordered attempt events
+  API-&gt;&gt;DB: Deduplicate and persist
+  API--&gt;&gt;UI: SSE progress
+  Worker-&gt;&gt;API: Final artifact manifest
+  API-&gt;&gt;DB: Reconcile terminal result
+  API-&gt;&gt;Queue: Request report generation
+  Queue-&gt;&gt;Reports: Build from immutable results
+  Reports-&gt;&gt;API: Publish ready report pointer
+  API--&gt;&gt;UI: Report ready
+  Operator-&gt;&gt;UI: Open authorized report viewer
+</code></pre>
+<pre><code class="language-mermaid">erDiagram
+  ORGANIZATION ||--o{ PROJECT : owns
+  PROJECT ||--o{ CATALOG_REVISION : versions
+  PROJECT ||--o{ TEST_CASE : catalogs
+  PROJECT ||--o{ SUITE : organizes
+  PROJECT ||--o{ RUN : executes
+  CATALOG_REVISION ||--o{ RUN : freezes
+  RUN ||--o{ RUN_ITEM : expands
+  TEST_CASE ||--o{ RUN_ITEM : identifies
+  RUN_ITEM ||--o{ ATTEMPT : retries
+  ATTEMPT ||--o{ ARTIFACT : captures
+  ATTEMPT ||--o{ API_EXCHANGE : records
+  RUN ||--o{ REPORT : renders
+  RUN ||--o{ RUN_EVENT : streams
+</code></pre>
+<h2>Execution protocol</h2>
+<ol>
+<li>Client submits POST /v1/projects/{projectId}/runs with an Idempotency-Key. Server authorizes project and environment, validates the enum-based configuration, resolves test IDs against a catalog revision, and freezes source SHA, suite membership, parameters and policy version.</li>
+<li>In one DB transaction insert run + run items + outbox record + idempotency response. Dispatcher publishes job with run ID as job ID. Duplicate delivery is expected. No DB/Redis distributed transaction is assumed.</li>
+<li>Orchestrator obtains a lease with monotonically increasing fencing token, checks cancel_requested and per-project/tenant/global quotas, and creates a single isolated job. A database conditional transition elects the owner; Redis locks alone are insufficient.</li>
+<li>Job uses prebuilt approved test bundle. Test discovery and dependency installation also execute code, so perform them in equally restricted jobs. No user-supplied shell command, arbitrary npm install, branch name interpolation or runtime source upload is allowed.</li>
+<li>Reporter emits ordered run events and attempt records, uploads evidence, and sends final manifest. Ingestion deduplicates by (runId, workerId, leaseEpoch, eventId); stale lease epochs cannot mutate state. Event timestamp is evidence only; server sequence establishes replay order.</li>
+<li>Finalizer reconciles all selected items, marks missing results incomplete/broken with reason, commits terminal execution status and queues report generation. DB aggregates are updated idempotently by terminal run version. Report readiness is independent.</li>
+<li>Report job validates and merges raw result files by attempt UUID, attaches sanitized environment/executor information, reads the prior compatible history snapshot, builds Allure 3, uploads an immutable prefix, then atomically publishes a report pointer. A report failure leaves existing results accessible.</li>
+</ol>
+<h2>State machines and cancellation</h2>
+<p>Run phase: queued → provisioning → running → finalizing → completed. Alternative terminal phases: canceled, infrastructure_error, timed_out. Outcome for completed: passed, failed, mixed or empty; empty is rejected before launch except when discovery drift causes a diagnosed infrastructure error. Separate report phase: pending → generating → ready or failed → generating on explicit retry. This avoids saying a run is still running merely because HTML generation is slow.</p>
+<p>Test-instance states: queued, running, passed, failed, broken, skipped, canceled. Attempt states additionally include timed_out and interrupted. Preserve raw Playwright status and expectedStatus; map unexpected assertion failure to failed, fixture/runner/setup failure to broken, deliberate skip to skipped, externally interrupted work to canceled. An expected-failure test that fails is annotated as expected failure and excluded from ordinary product pass/fail KPIs unless the user selects an explicit inclusion policy. Unexpected pass fails the quality gate.</p>
+<p>Cancel is idempotent. Queued work transitions canceled without allocating a worker. Running work records cancel_requested, signals the process group with a 10-second graceful window, then terminates the job if needed. Completed attempts remain; active and not-started items become canceled, never skipped. Finalization uses compare-and-swap on run version: if normal completion wins before cancellation, return completed plus “finished before cancellation.” Worker heartbeat every 5 seconds, lease timeout 30 seconds; lease expiry triggers reconciliation before any replacement. Do not blindly rerun side effects. Mark the abandoned run infrastructure_error and let a user create a new linked run.</p>
+<h2>API contract</h2>
+<p>All endpoints are under /v1, JSON UTF-8, TLS only. IDs are opaque UUIDs. Every query is organization and project scoped. Cursor pages default 50/max 200; sorting has a stable ID tiebreaker. UTC timestamps use RFC 3339. Mutating metadata requires If-Match version. Validation errors use application/problem+json with type, title, status, detail, instance, correlationId and fieldErrors. 400 malformed input, 401 unauthenticated, 403 forbidden, 404 absent or concealed resource, 409 conflict, 412 stale revision, 422 invalid selection/policy, 429 quota with Retry-After, 503 transient control-plane unavailability.</p>
+<table>
+<thead>
+<tr>
+<th>Method and path</th>
+<th>Input / response</th>
+<th>Authorization</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET /me</td>
+<td>Identity, roles, allowed projects</td>
+<td>Authenticated</td>
+</tr>
+<tr>
+<td>GET /projects</td>
+<td>Cursor list, archived filter</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>POST /projects</td>
+<td>Name, approved repository ID</td>
+<td>Admin</td>
+</tr>
+<tr>
+<td>GET /projects/{p}/catalog</td>
+<td>revision, query, tags, kind, priority, cursor</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>POST /projects/{p}/catalog-syncs</td>
+<td>Approved commit SHA; 202 sync ID</td>
+<td>Maintainer</td>
+</tr>
+<tr>
+<td>GET /projects/{p}/suites</td>
+<td>Suite summaries and versions</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>POST /projects/{p}/suites</td>
+<td>Name, description, case IDs, tags</td>
+<td>Maintainer</td>
+</tr>
+<tr>
+<td>PATCH /suites/{s}</td>
+<td>Metadata/membership with If-Match</td>
+<td>Maintainer</td>
+</tr>
+<tr>
+<td>GET /tests/{t}</td>
+<td>Metadata, source locator and latest result</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>PATCH /tests/{t}</td>
+<td>Owner, priority, description; no executable source</td>
+<td>Maintainer</td>
+</tr>
+<tr>
+<td>POST /projects/{p}/runs</td>
+<td>Frozen selection request; 202 run ID and events URL</td>
+<td>Operator</td>
+</tr>
+<tr>
+<td>GET /runs/{r}</td>
+<td>Phase, outcome, counts, snapshot and report phase</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>GET /runs</td>
+<td>Project, dates, suite, env, browser, status, cursor</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>POST /runs/{r}/cancel</td>
+<td>Optional reason; 202 or existing terminal result</td>
+<td>Owner/maintainer</td>
+</tr>
+<tr>
+<td>POST /runs/{r}/reruns</td>
+<td>failed/all/selected, optional approved revision; 202 new run</td>
+<td>Operator</td>
+</tr>
+<tr>
+<td>GET /runs/{r}/events</td>
+<td>SSE; Last-Event-ID; snapshot-required event if expired</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>GET /runs/{r}/results</td>
+<td>Attempt summaries with pagination</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>GET /results/{id}</td>
+<td>Steps, assertion, request metadata, attempts, artifact refs</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>GET /reports</td>
+<td>Filters, build phase, retention date</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>POST /runs/{r}/report-rebuilds</td>
+<td>Idempotent rebuild at same result version</td>
+<td>Maintainer</td>
+</tr>
+<tr>
+<td>GET /reports/{id}/viewer</td>
+<td>Authorized isolated-origin report session</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>POST /artifacts/{id}/download-ticket</td>
+<td>60-second scoped capability</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>GET /projects/{p}/analytics</td>
+<td>window, grouping, comparison; dataAsOf</td>
+<td>Viewer</td>
+</tr>
+<tr>
+<td>GET/POST /projects/{p}/environments</td>
+<td>Metadata / create approved destination</td>
+<td>Viewer/Admin</td>
+</tr>
+<tr>
+<td>PATCH /environments/{e}</td>
+<td>Destination and secret references; If-Match</td>
+<td>Admin</td>
+</tr>
+<tr>
+<td>POST /secret-references</td>
+<td>Provider/key reference; never plaintext readback</td>
+<td>Admin</td>
+</tr>
+<tr>
+<td>GET /audit-events</td>
+<td>Cursor, actor, action, resource</td>
+<td>Admin</td>
+</tr>
+</tbody>
+</table>
+<p>Example launch request:</p>
+<pre><code class="language-json">{
+  &quot;catalogRevision&quot;: &quot;catalog-17&quot;,
+  &quot;selection&quot;: {&quot;testIds&quot;: [&quot;UI-001&quot;, &quot;UI-005&quot;]},
+  &quot;environmentId&quot;: &quot;env-local&quot;,
+  &quot;browserProjects&quot;: [&quot;chromium&quot;],
+  &quot;workers&quot;: 2,
+  &quot;retries&quot;: 1,
+  &quot;headed&quot;: false,
+  &quot;video&quot;: &quot;retain-on-failure&quot;
+}
+</code></pre>
+<p>Only one selection mode is accepted: testIds, suiteId or structured filters. Client labels never determine executable names. Server maps exact IDs to a generated Allure test plan or a vetted runner manifest; never concatenate titles into a shell grep expression. API-only runs require browserProjects=[]; mixed UI/API runs expand browser matrix only for UI cases. Idempotency key is scoped to principal+project+route and stored 24 hours; identical payload repeats the original response, different payload with same key yields 409.</p>
+<p>SSE event shape: {id,runId,sequence,type,occurredAt,payload,schemaVersion}. Keep replay events 24 hours; logs 30 days. If the requested cursor has expired, send resync_required and force GET snapshot. Client drops duplicate sequences and reconnects with exponential backoff capped at 30 seconds. Auth uses same-origin HTTP-only session cookies; never place bearer tokens in stream URLs. Logs are bounded to 10KB/event and 20MB/run with explicit truncation event.</p>
+<h2>Data model</h2>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Key fields and invariants</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Organization / User / Membership</td>
+<td>orgId, userId, role; unique membership; no client-supplied tenant trust</td>
+</tr>
+<tr>
+<td>Project</td>
+<td>orgId, slug, repositoryId, archivedAt; unique (orgId,slug)</td>
+</tr>
+<tr>
+<td>RepositoryRevision</td>
+<td>projectId, commitSha, bundleDigest, trustDecision; immutable</td>
+</tr>
+<tr>
+<td>CatalogRevision</td>
+<td>revisionId, sourceSha, discoveredAt, manifestDigest; immutable</td>
+</tr>
+<tr>
+<td>TestCase</td>
+<td>projectId, stableCaseId, kind, sourcePath, title, tags, module, feature, owner, priority</td>
+</tr>
+<tr>
+<td>CatalogEntry</td>
+<td>catalogRevisionId, caseId, runnerLocator, definitionDigest; tombstone removed cases</td>
+</tr>
+<tr>
+<td>Suite / SuiteMembership</td>
+<td>projectId, version, description; membership snapshots at run creation</td>
+</tr>
+<tr>
+<td>Environment</td>
+<td>orgId, projectId, allowlisted origins, policyVersion, secretRefs; no secret values</td>
+</tr>
+<tr>
+<td>Run</td>
+<td>projectId, revisionId, selectionSnapshot, configSnapshot, phase, outcome, leaseEpoch, version, parentRunId, createdBy, queuedAt, startedAt, endedAt</td>
+</tr>
+<tr>
+<td>RunItem</td>
+<td>runId, caseId, browserOrNull, parameterFingerprint, environmentId, finalState; unique expanded instance key</td>
+</tr>
+<tr>
+<td>Attempt</td>
+<td>runItemId, attemptIndex, rawStatus, expectedStatus, normalizedState, startedAt, durationMs, failureCategory; unique (runItemId,attemptIndex)</td>
+</tr>
+<tr>
+<td>Step / ApiExchange</td>
+<td>attemptId, parentStepId, order, timings, method, sanitizedPath, status, schemaErrors, redactedBodyArtifactId</td>
+</tr>
+<tr>
+<td>Artifact</td>
+<td>orgId, runId, attemptId, objectKey, sha256, mime, bytes, redactionVersion, expiresAt, availability</td>
+</tr>
+<tr>
+<td>Report</td>
+<td>runId, resultVersion, generatorVersion, phase, objectPrefix, historyStreamKey, expiresAt</td>
+</tr>
+<tr>
+<td>RunEvent / Outbox</td>
+<td>runId, sequence, eventId, payloadVersion / delivery state</td>
+</tr>
+<tr>
+<td>AuditEvent</td>
+<td>actor, organization, action, resourceId, before/after safe metadata, requestId</td>
+</tr>
+</tbody>
+</table>
+<p>Foreign keys include organization scope where practical. Index Run(projectId,createdAt DESC,id), Attempt(runItemId,attemptIndex), RunEvent(runId,sequence), TestCase(projectId,stableCaseId). Use PostgreSQL row-level security as defense in depth alongside explicit service authorization. Transaction-scoped tenant setting prevents pooled connection leakage. Partition high-volume attempt/event data by month only after measured need; do not prematurely shard.</p>
+<h2>Automation framework</h2>
+<pre><code class="language-text">apps/web/                  Angular product
+apps/api/                  Nest modules: identity, catalog, execution, artifacts, analytics
+apps/worker/               lease owner and job launcher
+apps/report-worker/        Allure 3 generation and publication
+packages/contracts/        OpenAPI and event schemas
+packages/automation/
+  playwright.config.ts
+  fixtures/                credentials, seeded API resources, environment policy
+  pages/                   LoginPage, InventoryPage, CheckoutPage
+  tests/ui/                login.spec.ts, checkout.spec.ts
+  tests/api/               posts.spec.ts, orders.spec.ts, authorization.spec.ts
+  schemas/                 post.schema.json, order.schema.json
+  reporters/               durable event spool and ingestion client
+  utilities/               redaction, deterministic IDs, API evidence
+  test-data/               synthetic customers and contract fixtures
+infra/                     Compose, job templates, network policies, migrations
+</code></pre>
+<p>Use stable explicit IDs in test titles/annotations and Allure labels; tags @smoke, @regression, @ui, @api. POM wraps user-level actions but assertions stay visible in tests. Fresh browser context per test; unique API entity per test; cleanup in finally/fixture teardown. Shared auth storage may be reused only for independent read-only users. Mutating workers get dedicated identities. Seed random data with run ID for reproducibility, but exclude run ID from Allure identity parameters. Never use fixed sleeps, dependency on execution order, unconditional retry loops, or force-click as default. Trace on retained failure preserves the original failure even when retries are disabled. <a href="https://playwright.dev/docs/best-practices">Playwright practices</a>.</p>
+<p>API tests use a standalone APIRequestContext, schema validation through Ajv strict mode, exact status and contract assertions, and bounded timeouts. Dispose contexts. Measure client-observed request duration with a monotonic clock; report transport and HTTP failures separately. Do not test real auth on JSONPlaceholder: use the controlled API contract in the test plan. Separate API and browser projects prevents accidentally executing API cases three times. <a href="https://playwright.dev/docs/api-testing">API testing</a>, <a href="https://playwright.dev/docs/api/class-apirequestcontext">APIRequestContext</a>.</p>
+<h2>Security and resource policy</h2>
+<p>Allowlist destination origins per environment. Validate DNS resolution and redirect targets at an egress proxy; reject metadata IPs, loopback/private ranges except explicitly provisioned sandbox service addresses, alternate IP encodings, DNS rebinding and non-HTTP schemes. Reject arbitrary headers that alter routing. Public targets default to one worker and no automated retry storm; honor Retry-After and stop on 429 or access challenge. Public caps are our conservative policy, not publisher rate-limit guarantees.</p>
+<p>Run containers non-root, read-only root filesystem, private writable temp directory, no Docker socket, no privileged mode, no host networking, dropped capabilities and seccomp. Use a suitably configured Chromium sandbox; verify the container profile against <a href="https://playwright.dev/docs/docker">Playwright Docker guidance</a>. Request 1 CPU/2GB per browser worker initially; cap tenant at 4 active runs and 8 aggregate workers, project at 2 active runs, run at 4 workers on self-controlled targets. Job timeout 30 minutes; UI test timeout 30 seconds; API request timeout 10 seconds; retries 0–2, default 1 local and 0 public. Headed pools use Xvfb and have the same quotas, with no desktop exposed to the internet.</p>
+<p>Secrets come from a vault via short-lived workload identity and reference IDs. Prevent logging Authorization, Cookie, Set-Cookie, passwords and known sensitive body fields; use allowlisted body capture with 64KB cap. Traces can contain DOM and network secrets despite log redaction: use synthetic test accounts and private storage, disable traces for sensitive environments when adequate sanitization is impossible. Upload via short-lived prefix-scoped credentials; verify checksum, MIME and size. ZIP extraction rejects traversal, symlinks and decompression bombs.</p>
+<p>Reports are active HTML and must live on a separate origin with no app session cookies. Gateway authorizes every report resource using a scoped report session; no public S3 listing or forever-signed URL. Embed with carefully tested iframe sandbox/CSP, allowing scripts only within that isolated origin and no top-level navigation. Provide an “Open in separate viewer” fallback if browser policies block embedding. Serve trace viewer privately; do not upload traces to a public third-party viewer without consent.</p>
+<h2>Retention and operations</h2>
+<p>Default logs/raw results/screenshots 30 days, traces/video 14 days, generated reports 30 days, normalized results 365 days, audit records 365 days. Artifact tombstones preserve result context after evidence expires. Deletion jobs retry with reconciliation, include object versions and incomplete multipart uploads, and record counts; backups age out after 30 days. Export is audited and subject to the same authorization. Report history must not link to expired reports as if available.</p>
+<p>Metrics: queue age, active slots, lease expiry, report failure rate, event ingest lag, upload failures, object bytes, API p95 and authorization denials. Correlate runId and requestId without logging tokens. Alert queue oldest &gt;5m for 10m, lost heartbeat &gt;30s, report failures &gt;5% over 20 jobs. Backup PostgreSQL daily and test restore quarterly. Redis loss is repaired from outbox and DB states; artifact loss is represented explicitly, never silently converted into a passing result.</p>
+<h2>CI and delivery</h2>
+<p>PR pipeline: formatting/typecheck → unit tests for state reducer, authorization and redaction → migration compatibility → isolated API integration → Chromium smoke against local apps → Allure generation/trace check → dependency/image scans → signed build. Nightly: all browsers, regression, auth matrix, cancellation races, replay and worker-loss chaos. Release uses additive DB migrations, canary API + compatible workers, then UI. Rollback retains old schema readers and last compatible runner image. Rotate signing and service credentials, test incident runbooks and rehearse restore before production acceptance. Required gate: zero P0 defects, zero known critical exploitable findings, all data isolation checks passing, complete evidence retention drill.</p></article></main></html>

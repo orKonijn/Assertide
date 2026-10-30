@@ -1,0 +1,23 @@
+{
+  "name": "assertide-automation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "playwright test",
+    "list": "playwright test --list"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
+    "allure": "3.22.1",
+    "allure-playwright": "3.14.0",
+    "typescript": "6.0.2",
+    "zod": "^4.1.0"
+  },
+  "overrides": {
+    "dompurify": "3.4.17"
+  }
+}

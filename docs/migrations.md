@@ -1,0 +1,9 @@
+# Database changes and rollback
+
+The application records additive schema batches in `schema_migrations` with an immutable ID, SHA-256 checksum and applied timestamp. PostgreSQL takes a transaction-scoped advisory lock before ledger creation, serializing API processes on cold start. PGlite serializes transactions internally. Each batch and its marker commit together; failure rolls back both. Editing an applied migration fails startup instead of silently accepting schema drift.
+
+Baseline migrations use the existing `CREATE IF NOT EXISTS` and additive `ALTER` statements. Existing development databases are adopted without deleting memberships, runs, evidence references or credentials. Scheduler outbox reconciliation still runs at each startup; it is intentionally separate from one-time schema work. The ledger is included in normal PostgreSQL backups.
+
+For subsequent changes, add a new migration ID; never edit a recorded statement list. Prefer nullable/defaulted columns and expand/contract changes that old readers tolerate. Run local and PostgreSQL CI checks against fresh and prior schemas. Back up the database and encryption key before a deployment. Start a canary API with matching worker image, check readiness and one controlled run, then increase traffic. Keep the previous application and immutable worker image available. Roll application code back only while old readers remain compatible; otherwise restore into an empty database using the guarded restore tool. There is no destructive automatic down migration.
+
+Tests verify pre-ledger data preservation, additive membership versioning, concurrent application, repeat startup, checksum mismatch refusal, transactional rollback and retry after a failed batch. The same tests run against embedded and CI PostgreSQL databases. Production canary and recovery objectives still require deployment-specific measurements.

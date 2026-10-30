@@ -1,0 +1,59 @@
+# Optional Prometheus Operator resources. Adjust namespace selectors for your installation.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: assertide
+  namespace: assertide
+spec:
+  groups:
+    - name: assertide
+      rules:
+        - alert: AssertideQueueStalled
+          expr: max(assertide_queue_oldest_seconds) > 300
+          for: 5m
+          labels: { severity: warning }
+          annotations:
+            summary: Assertide queued work has waited over five minutes
+            description: Inspect execution supervisor readiness, quotas, Kubernetes events and Redis outbox delivery.
+        - alert: AssertideLeaseExpired
+          expr: max(assertide_expired_leases) > 0
+          for: 2m
+          labels: { severity: critical }
+          annotations:
+            summary: Assertide execution leases are not being renewed
+            description: Inspect PostgreSQL connectivity and supervisors before allowing replacement workers.
+        - alert: AssertideBackupOverdue
+          expr: (time() - kube_cronjob_status_last_successful_time{cronjob="assertide-backup"} > 90000) or ((time() - kube_cronjob_created{cronjob="assertide-backup"} > 90000) unless on(namespace,cronjob) kube_cronjob_status_last_successful_time{cronjob="assertide-backup"})
+          for: 10m
+          labels: { severity: critical }
+          annotations:
+            summary: Assertide has no successful scheduled backup in 25 hours
+            description: Inspect backup Job status and encrypted versioned storage; run and verify a manual backup.
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: assertide
+  namespace: assertide
+spec:
+  selector:
+    matchLabels: { app: assertide-api }
+  podMetricsEndpoints:
+    - port: http
+      path: /internal/metrics
+      interval: 30s
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring
+  namespace: assertide
+spec:
+  podSelector:
+    matchLabels: { app: assertide-api }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: monitoring }
+      ports: [{ port: 4010 }]

@@ -1,0 +1,209 @@
+name: Verify
+on:
+  pull_request:
+  push:
+    branches: [feature/assertide-platform]
+permissions:
+  contents: read
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    services:
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: assertide_test
+          POSTGRES_PASSWORD: local_ci_only
+          POSTGRES_DB: assertide_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U assertide_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - uses: actions/cache@v4
+        id: minio-cache
+        with:
+          path: .local/tools/minio
+          key: minio-linux-7aac2a2c5b7c882e68c1ce017d8256be2feea27f
+      - uses: actions/setup-go@v5
+        if: steps.minio-cache.outputs.cache-hit != 'true'
+        with:
+          go-version: '1.27.3'
+          cache: false
+      - run: node scripts/setup-object-store.mjs
+        if: steps.minio-cache.outputs.cache-hit != 'true'
+      - name: Start private object-store fixture
+        run: |
+          .local/tools/minio server "$RUNNER_TEMP/assertide-objects" --address 127.0.0.1:9000 >/dev/null 2>&1 &
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:9000/minio/health/live >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+        env:
+          MINIO_ROOT_USER: assertide_test
+          MINIO_ROOT_PASSWORD: local_ci_object_store_only
+          MINIO_BROWSER: 'off'
+          MINIO_KMS_SECRET_KEY: ci-key:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      - run: npm ci
+        working-directory: apps/web
+      - run: npm audit --audit-level=high
+        working-directory: apps/web
+      - run: npm run lint
+      - run: node --test deploy/render.test.mjs
+      - run: node --test packages/domain/execution.test.ts
+      - run: node apps/web/node_modules/typescript/bin/tsc -p packages/domain/tsconfig.json
+      - run: npm test -- --watch=false
+        working-directory: apps/web
+      - run: npm run build
+        working-directory: apps/web
+      - run: npm ci
+        working-directory: apps/api
+      - run: npm audit --audit-level=high
+        working-directory: apps/api
+      - run: npm run typecheck
+        working-directory: apps/api
+      - run: npx tsx scripts/setup-bucket.ts
+        working-directory: apps/api
+        env:
+          S3_BUCKET: assertide-test
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_ACCESS_KEY_ID: assertide_test
+          AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
+      - run: npm ci
+        working-directory: packages/automation
+      - run: npm audit --audit-level=high
+        working-directory: packages/automation
+      - run: npm run typecheck
+        working-directory: packages/automation
+      - run: npm test
+        working-directory: apps/api
+      - run: npm test
+        working-directory: apps/api
+        env:
+          TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+          TEST_REDIS_URL: redis://127.0.0.1:6379
+          S3_BUCKET: assertide-test
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_ACCESS_KEY_ID: assertide_test
+          AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
+      - name: Measure reference control-plane load
+        run: npx tsx checks/reference-load.ts
+        working-directory: apps/api
+        env:
+          TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+      - name: Restore a PostgreSQL backup into an empty database
+        run: npx tsx checks/restore-drill.ts
+        working-directory: apps/api
+        env:
+          TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+          PG_TOOL_CONTAINER: ${{ job.services.postgres.id }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reference-load-results
+          path: .local/verification/*.json
+          if-no-files-found: ignore
+      - run: npx playwright install --with-deps chromium
+        working-directory: packages/automation
+      - run: npx tsx --test test/trace-viewer.test.ts
+        working-directory: apps/api
+        env:
+          TEST_TRACE_VIEWER: 'true'
+      - run: node scripts/setup-sandbox.mjs
+      - name: Build immutable isolated worker
+        run: |
+          docker build -f workers/Dockerfile -t assertide-worker:ci .
+          echo "OCI_WORKER_IMAGE=$(docker image inspect --format '{{.Id}}' assertide-worker:ci)" >> "$GITHUB_ENV"
+      - run: npx tsx --test test/oci-worker.test.ts
+        working-directory: apps/api
+      - run: node packages/automation/checks/video.mjs
+      - run: npx playwright test --config platform.config.ts
+        working-directory: packages/automation
+        env:
+          DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+          SEPARATE_WORKERS: 'true'
+          WORKER_RUNTIME: oci
+          REDIS_URL: redis://127.0.0.1:6379
+          S3_BUCKET: assertide-test
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_ACCESS_KEY_ID: assertide_test
+          AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure-screenshots
+          path: packages/automation/test-results/**/*.png
+      - name: Verify encrypted scheduled backups
+        if: ${{ !cancelled() }}
+        run: npx tsx checks/scheduled-backup.ts
+        working-directory: apps/api
+        env:
+          TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+          PG_TOOL_CONTAINER: ${{ job.services.postgres.id }}
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: assertide_test
+          AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
+      - name: Verify Kubernetes Jobs and Vault workload identity
+        if: ${{ !cancelled() }}
+        run: bash scripts/verify-cluster.sh
+        env:
+          DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+          REDIS_URL: redis://127.0.0.1:6379
+          S3_BUCKET: assertide-test
+          S3_ENDPOINT: http://127.0.0.1:9000
+          AWS_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: assertide_test
+          AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cluster-browser-failure-evidence
+          path: packages/automation/test-results
+          if-no-files-found: ignore
+      - name: Build and scan service, web and worker images
+        if: ${{ !cancelled() }}
+        run: bash scripts/verify-images.sh
+        env:
+          DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-sboms
+          path: .local/verification/images
+          if-no-files-found: ignore
+      - name: Package reviewed build inputs and compiled web application
+        run: node scripts/package-build.mjs
+      - name: Attest build provenance
+        if: github.event_name == 'push'
+        uses: actions/attest@v4
+        with:
+          subject-path: .local/build/assertide-build.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: assertide-verified-build
+          path: |
+            .local/build/assertide-build.tgz
+            .local/build/SHA256SUMS
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accessibility-checks
+          path: .local/verification/accessibility.json
+          if-no-files-found: ignore

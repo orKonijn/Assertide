@@ -1,0 +1,75 @@
+@if (loading()) {
+  <main class="login">
+    <h1>Assertide</h1>
+    <p role="status">Connecting to your workspace…</p>
+  </main>
+} @else if (!api.identity()) {
+  <main class="login">
+    <img src="/brand/logo-mark.svg" width="72" height="72" alt="" />
+    <p class="eyebrow">CONFIDENCE, ONE RUN AT A TIME</p>
+    <h1>Your quality workspace.</h1>
+    <p>Discover tests, follow executions, and investigate the evidence in one place.</p>
+    @if (identityError()) {
+      <p role="alert">{{ identityError() }}</p>
+      <button (click)="connect()">Retry connection</button>
+    } @else {
+      <a class="button" [href]="loginUrl()">Continue with SSO</a>
+    }
+    <p class="muted">Sign in with your organization account.</p>
+  </main>
+} @else {
+  <a class="skip" href="#content" (click)="skipToContent($event)">Skip to content</a>
+  <header class="mobile-header">
+    <strong>Assertide</strong
+    ><button
+      #menuButton
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="menu()"
+      aria-controls="workspace-navigation"
+    >
+      Menu
+    </button>
+  </header>
+  <aside
+    id="workspace-navigation"
+    [class.open]="menu()"
+    [attr.role]="menu() ? 'dialog' : null"
+    [attr.aria-modal]="menu() ? 'true' : null"
+    aria-label="Workspace navigation"
+  >
+    <button class="mobile-close" (click)="closeMenu()">Close menu</button>
+    <a class="brand" routerLink="/"
+      ><img src="/brand/logo-mark.svg" width="36" height="36" alt="" />Assertide</a
+    >
+    <p class="workspace">QUALITY WORKSPACE</p>
+    <label
+      >Active project
+      <select [ngModel]="api.projectId()" (ngModelChange)="changeProject($event)">
+        @for (project of api.projects(); track project.id) {
+          <option [value]="project.id">{{ project.name }}</option>
+        }
+      </select>
+    </label>
+    <nav aria-label="Main navigation">
+      @for (link of links; track link[0]) {
+        <a
+          [routerLink]="link[0]"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="menu.set(false)"
+          >{{ link[1] }}</a
+        >
+      }
+    </nav>
+    <div class="account">
+      <span>{{ api.identity()?.name }} · {{ api.identity()?.role }}</span
+      ><button (click)="toggleTheme()">{{ dark() ? 'Light theme' : 'Dark theme' }}</button
+      ><button (click)="api.logout()">Sign out</button>
+    </div>
+  </aside>
+  <main id="content" tabindex="-1" class="content" [attr.inert]="menu() ? '' : null">
+    <app-notifications />
+    <router-outlet />
+  </main>
+}

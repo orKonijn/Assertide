@@ -1,0 +1,70 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Assertide verification and handoff</title><style>body{margin:0;background:#f5f6fa;color:#182237;font:15px/1.7 Inter,Arial,sans-serif}header{background:#151e30;color:white;padding:48px max(24px,calc((100% - 1180px)/2))}header p{color:#c4cee2}main{max-width:1180px;margin:auto;padding:36px 24px}h1,h2,h3{line-height:1.3}h1{font-size:36px;letter-spacing:-1px}h2{margin-top:36px}a{color:#5145cd}header a{color:#c8c0ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.card,article{background:white;border:1px solid #d8dfea;border-radius:12px;padding:24px;margin-bottom:18px}.card h2{margin:0;font-size:19px}.card p{color:#58657b}table{border-collapse:collapse;display:block;overflow:auto;font-size:13px;width:100%}th,td{border:1px solid #d8dfea;padding:12px;text-align:left;vertical-align:top}th{background:#eef0f7}pre{background:#151e30;color:#eef3ff;border-radius:9px;padding:20px;overflow:auto;font-size:12px}code{font-family:Consolas,monospace}img{max-width:100%}.badge{display:inline-block;background:#eeebff;color:#5145cd;padding:6px 12px;border-radius:20px;font-size:12px}.warning{border-left:4px solid #926000;background:#fff9eb;padding:18px 22px}.assets{display:flex;gap:24px;flex-wrap:wrap;align-items:center}.assets img{width:140px}.assets .logo{width:235px}footer{font-size:12px;color:#58657b;margin:36px 0}@media(max-width:700px){header{padding:32px 20px}main{padding:20px}h1{font-size:29px}}</style><header><a href="index.html">← Assertide deliverables</a></header><main><article><h1>Assertide verification and handoff</h1>
+<p>Delivery date: 29 October 2026. All work is <strong>Unreleased</strong>. There is no released product version or proposed release bump because this delivery contains specifications and design artifacts, not a released application. The example package's 0.1.0 version is independent of any future product version.</p>
+<h2>Deliverable status</h2>
+<table>
+<thead>
+<tr>
+<th>Requested deliverable</th>
+<th>Artifact</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A Product specification</td>
+<td>01-product-requirements.md</td>
+<td>Written with scope, stories, roles, acceptance, flows and shared sample data</td>
+</tr>
+<tr>
+<td>B Technical and automation specification</td>
+<td>02-architecture-and-automation.md; examples/</td>
+<td>Written with diagrams, API contracts, models, execution protocol, isolation, retention and representative code</td>
+</tr>
+<tr>
+<td>C Test plan</td>
+<td>03-testing-targets-and-test-plan.md</td>
+<td>51 planned cases: 19 UI, 7 public API, 15 controlled API, 10 platform acceptance cases; none executed</td>
+</tr>
+<tr>
+<td>D Editable Figma design</td>
+<td>Created Figma file; figma-plugin/</td>
+<td><strong>Incomplete.</strong> Provider quota prevented canvas writes; generator supplied, native output not verified</td>
+</tr>
+<tr>
+<td>E Brand identity</td>
+<td>06-brand-and-design-system.md; brand/</td>
+<td>SVG logo, icon, favicon, 18 icons, four mascot poses, palette and tokens created; commercial name/domain clearance unverified</td>
+</tr>
+<tr>
+<td>F Implementation roadmap</td>
+<td>05-roadmap.md</td>
+<td>Six phased delivery plan with dependencies, measurable gates and ordered backlog</td>
+</tr>
+<tr>
+<td>Reporting detail</td>
+<td>04-allure-and-analytics.md</td>
+<td>Allure 3 integration, metrics, evidence, history, security and acceptance defined</td>
+</tr>
+<tr>
+<td>Review companion</td>
+<td>preview.html</td>
+<td>Local HTML design prototype; not Angular production implementation or substitute for editable Figma</td>
+</tr>
+</tbody>
+</table>
+<h2>Verification performed</h2>
+<ul>
+<li>Installed example dependencies and generated package-lock.json. Installation did not execute package lifecycle scripts.</li>
+<li>TypeScript typecheck passed after correcting the Playwright test-ID configuration placement and current Allure metadata function names.</li>
+<li>Playwright test discovery passed: five test instances in two files. Discovery does not run the tests or certify target behavior.</li>
+<li>Local design preview checks exercise all screen/state variants in desktop/mobile and light/dark, detect horizontal overflow and JavaScript page errors, and traverse primary flows A/B/C. Exact final results are in preview-verification.json.</li>
+<li>Captured and inspected light-desktop, dark-desktop and light-mobile screenshots from the local preview. Improved dark-mode icon contrast after review. These are design-preview screenshots only.</li>
+<li>JavaScript syntax checked for the design builder, preview and generated Figma plugin. SVG assets are XML-validated and local documentation links are checked during final packaging.</li>
+<li>The Figma connector was retried on continuation and still returned its Starter-plan tool-call limit. No Figma app/window was available in the connected desktop inventory for a direct continuation. No upgrade, account change or domain purchase was performed.</li>
+</ul>
+<h2>Not verified or not implemented</h2>
+<p>The Figma plugin has not run against the native Figma engine. Its intended 100 screen/state frames, variable modes, text sizing, styles and prototype links require native inspection. The created file at https://www.figma.com/design/Omm8667aVR3UJbtJ5VTYfC is empty and retains its provisional name. This is the remaining blocker to the user's requested actual editable Figma project.</p>
+<p>No backend, Angular application, queue infrastructure, fixture service, security boundary, real Allure report or CI deployment was built. Those are specified for implementation. Public and local target tests were not executed. No production performance, reliability or accessibility conformance is claimed. Preview routing and overflow checks do not replace an accessibility audit or native Figma review. Public target availability can change; preflight and pin local fixtures before implementing the catalog.</p>
+<h2>Files and next engineering action</h2>
+<p>Start at index.html for the complete handoff and preview. Read PRD → architecture → test plan → reporting → roadmap, then implement Phase 1's smallest vertical slice. Use the existing changelog rules in the project root throughout development. Keep the design generator's intended output distinct from verified native canvas state.</p>
+<p>To finish Deliverable D, make Figma editing available or import figma-plugin/manifest.json through Figma desktop, execute the generator, review fonts/layout/component bindings/prototype routes, and record native node IDs and screenshots. Until those steps pass, keep Deliverable D marked incomplete. The local preview is supplied to make the current design concrete and reviewable while that dependency is blocked.</p></article></main></html>

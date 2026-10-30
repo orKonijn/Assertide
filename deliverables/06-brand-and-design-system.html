@@ -1,0 +1,100 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Assertide brand and design system</title><style>body{margin:0;background:#f5f6fa;color:#182237;font:15px/1.7 Inter,Arial,sans-serif}header{background:#151e30;color:white;padding:48px max(24px,calc((100% - 1180px)/2))}header p{color:#c4cee2}main{max-width:1180px;margin:auto;padding:36px 24px}h1,h2,h3{line-height:1.3}h1{font-size:36px;letter-spacing:-1px}h2{margin-top:36px}a{color:#5145cd}header a{color:#c8c0ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.card,article{background:white;border:1px solid #d8dfea;border-radius:12px;padding:24px;margin-bottom:18px}.card h2{margin:0;font-size:19px}.card p{color:#58657b}table{border-collapse:collapse;display:block;overflow:auto;font-size:13px;width:100%}th,td{border:1px solid #d8dfea;padding:12px;text-align:left;vertical-align:top}th{background:#eef0f7}pre{background:#151e30;color:#eef3ff;border-radius:9px;padding:20px;overflow:auto;font-size:12px}code{font-family:Consolas,monospace}img{max-width:100%}.badge{display:inline-block;background:#eeebff;color:#5145cd;padding:6px 12px;border-radius:20px;font-size:12px}.warning{border-left:4px solid #926000;background:#fff9eb;padding:18px 22px}.assets{display:flex;gap:24px;flex-wrap:wrap;align-items:center}.assets img{width:140px}.assets .logo{width:235px}footer{font-size:12px;color:#58657b;margin:36px 0}@media(max-width:700px){header{padding:32px 20px}main{padding:20px}h1{font-size:29px}}</style><header><a href="index.html">← Assertide deliverables</a></header><main><article><h1>Assertide brand and design system</h1>
+<p>Assertide combines “assert” with “tide”: repeated verification that reveals the direction of quality. Pronounce it “assert-tide.” The product promise is <strong>Confidence, one run at a time.</strong> The voice is calm, specific and useful: “2 tests need attention,” “Your evidence is preserved,” “Report generation failed.” Avoid celebratory language when a retry merely hides an earlier failure.</p>
+<h2>Name research and availability</h2>
+<p>Exact-name searches for Assertide and assertide.com on 29 October 2026 returned no relevant established testing product in the reviewed results. This is a preliminary collision screen, not trademark clearance or proof of domain availability. assertide.com, assertide.dev and useassertide.com are naming suggestions only; no registrar availability or ownership was verified, and no domain was purchased. Search relevant trademark registries and obtain domain availability from a registrar before launch. Earlier candidates Veriqo and Qavelo were rejected because searches found existing uses. The empty Figma file retains its early provisional name because the provider quota prevented renaming it; it is not the final brand.</p>
+<h2>Logo</h2>
+<p>The mark is an angular A with a verification stroke, held within a soft square. The diagonal conveys forward progress; the mint check provides a secondary cue. Files: <code>brand/logo-primary.svg</code>, <code>brand/logo-mark.svg</code>, <code>brand/favicon.svg</code>. The wordmark remains editable text and uses Inter with a sans-serif fallback; install Inter for consistent editing. The icon is native SVG paths. Clear space is one-quarter of the mark width on all sides. Minimum mark size 24px; use the standalone favicon at small sizes. Do not stretch, rotate, apply gradients or add drop shadows to the mark. A monochrome implementation may use the same paths with one foreground color when color is unavailable.</p>
+<h2>Palette and typography</h2>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Light</th>
+<th>Dark</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Canvas</td>
+<td>#F5F6FA</td>
+<td>#0D1321</td>
+<td>Application background</td>
+</tr>
+<tr>
+<td>Surface</td>
+<td>#FFFFFF</td>
+<td>#151E30</td>
+<td>Cards, navigation and forms</td>
+</tr>
+<tr>
+<td>Soft surface</td>
+<td>#EEF0F7</td>
+<td>#1C2940</td>
+<td>Controls and secondary emphasis</td>
+</tr>
+<tr>
+<td>Primary text</td>
+<td>#182237</td>
+<td>#F0F3FA</td>
+<td>Titles and body copy</td>
+</tr>
+<tr>
+<td>Secondary text</td>
+<td>#58657B</td>
+<td>#A7B4CC</td>
+<td>Labels and descriptions</td>
+</tr>
+<tr>
+<td>Border</td>
+<td>#D8DFEA</td>
+<td>#33415A</td>
+<td>Grouping; never sole focus indicator</td>
+</tr>
+<tr>
+<td>Brand</td>
+<td>#5145CD</td>
+<td>#B2A7FF</td>
+<td>Actions, links and focused scope</td>
+</tr>
+<tr>
+<td>Brand surface</td>
+<td>#EEEBFF</td>
+<td>#30294F</td>
+<td>Active navigation and notices</td>
+</tr>
+<tr>
+<td>Success</td>
+<td>#147455</td>
+<td>#70DBB2</td>
+<td>Passed and ready</td>
+</tr>
+<tr>
+<td>Failure</td>
+<td>#B92F49</td>
+<td>#FF92A4</td>
+<td>Failed and broken</td>
+</tr>
+<tr>
+<td>Warning</td>
+<td>#926000</td>
+<td>#F5CA78</td>
+<td>Incomplete and policy warnings</td>
+</tr>
+</tbody>
+</table>
+<p>Inter Regular, Medium and Bold are the Figma font contract. Product title 28px/1.45; display 36px; section 18px; body/label 14px; caption 12px. Preview CSS uses a compact screen-specific type scale and an Inter web-font request with Arial fallback if the network is unavailable. Monospace code in production should use a system stack; code in the native Figma generator uses Inter to avoid an unverified secondary font dependency. Use tabular numerals for timing and KPI alignment in implementation.</p>
+<p>Spacing scale: 4, 8, 12, 16, 24, 32, 48px. Container radii 12px, controls 8px, hero artwork 24px. Desktop 1440px with 224px navigation and 32px content padding. Mobile 390px with 16px padding, stacked cards, and labeled data rows. Layout containers use Figma auto-layout. Charts are editable vectors rather than screenshots; their underlying values remain in <code>design-content.json</code>.</p>
+<h2>Icons and mascot</h2>
+<p>The custom 24px icon set uses 1.8px rounded strokes. Eighteen SVG assets cover overview, project, layers/suites, search, play, chart, code, settings, passed, failed, skipped, canceled, running, queued, broken, chevron, download and theme. Status labels always accompany icons; color alone does not communicate outcome. Navigation icon swapping uses a Figma INSTANCE_SWAP property rather than duplicating a variant for every icon.</p>
+<p><strong>Pip</strong> is a small verification robot with a check on its chest and a signal antenna. Four original vector poses are provided: welcome (raised hand), success (check signal), failure (concerned face and alert), loading (progress arc). Pip appears in login, onboarding and empty/error/success views. Keep it out of dense result tables and use restrained expressions for failures. Each pose is a standalone editable SVG and a component in the generator. Loading animation is an implementation specification, not an animated SVG asset: rotate the signal arc over 1.2 seconds, stop it under reduced motion and retain a text status.</p>
+<h2>Components and states</h2>
+<p>The generator builds Button variants Default/Hover/Focus/Disabled/Loading, Status variants Passed/Failed/Running/Queued/Skipped/Canceled/Broken, Metric card, Field, Navigation item, 18 icon components, Brand mark and four Mascot components. Screens use instances of these reusable elements. Text styles and aliased light/dark semantic variables share a primitive collection; spacing/radius variables are bound where applicable. Static icon geometry and plot geometry intentionally remain fixed.</p>
+<p>Interaction requirements for implementation: button press 150ms, page dissolve 200ms, focus ring visible without hover, no movement when reduced motion is requested. Figma prototype links use click navigation with a dissolve. Button hover/focus states are provided as editable variants; the generator does not implement every interactive variant transition. Filters and form values in the local preview are illustrative rather than working product controls.</p>
+<h2>Deliverable status and Figma recovery</h2>
+<p>The actual target file is <a href="https://www.figma.com/design/Omm8667aVR3UJbtJ5VTYfC">the created Figma file</a>. It is empty: the Starter-plan tool limit prevented all design mutations. Do not present that file as a completed editable design.</p>
+<p>The offline development plugin in <code>figma-plugin/</code> generates native Figma text, vectors, auto-layout frames, components, instances, variables, styles and prototype links. Its content covers 12 main screens and 13 supporting states, each at desktop/mobile sizes and in light/dark themes: 100 screen/state frames in total, plus brand foundations and component library. The supporting states include separate new-run and rerun paths so selection and lineage remain consistent.</p>
+<p>To complete the hosted deliverable, import <code>figma-plugin/manifest.json</code> through Figma desktop's development-plugin flow, run it in the created file, then inspect the output. The builder needs a plan that supports two variable modes. If Figma rejects a feature or the required font, it stops with the partial page preserved; do not blindly rerun. It prevents duplicate generation when an Assertide page already exists. The exact import UI may vary by Figma version; the manifest is the entry point.</p>
+<p>Required native validation after import: verify 100 frames, native text and instances, zero full-screen image fills, Inter font family, non-overlapping layouts, two theme modes, readable mobile tables, button variants and flows A/B/C including the Open Allure link. Copy the printed <code>ASSERTIDE_DESIGN_LEDGER</code> from the plugin console into the handoff state record. Capture actual Figma screenshots only after inspecting the canvas. Plugin syntax checks and browser-preview checks do not prove native Figma rendering.</p>
+<h2>Design review preview</h2>
+<p>Open <code>preview.html</code> for a reviewable local prototype. The screen selector exposes every main view and supporting state; theme and mobile controls change the preview. Primary actions, sidebar navigation, case rows and the Open Allure link connect the specified journeys. Values are synthetic, and evidence cards do not claim real screenshots or traces exist. The preview is a companion review artifact, not a substitute for the requested editable Figma project or an implemented Angular application.</p></article></main></html>

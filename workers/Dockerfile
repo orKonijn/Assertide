@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/playwright:v1.64.1-noble
+RUN apt-get update && apt-get install -y --only-upgrade libbrotli1 && rm -rf /var/lib/apt/lists/*
+WORKDIR /app/apps/api
+COPY apps/api/package.json apps/api/package-lock.json ./
+RUN npm ci
+COPY apps/api/src/lab.ts apps/api/src/database.ts apps/api/src/migrations.ts apps/api/src/local-sandbox.ts apps/api/src/worker-fixture.ts ./src/
+COPY packages/automation/package.json packages/automation/package-lock.json /app/packages/automation/
+RUN npm --prefix /app/packages/automation ci
+COPY .local/targets/swag-store/build /app/.local/targets/swag-store/build
+COPY workers/entry.mjs workers/kubernetes-entry.mjs workers/kubernetes-transfer.mjs /app/workers/
+RUN sha256sum /app/packages/automation/package-lock.json | cut -d ' ' -f 1 > /app/automation-lock.sha256
+RUN rm -rf /usr/lib/node_modules/npm /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /usr/bin/npm /usr/bin/npx
+ENV NODE_ENV=development HOME=/tmp PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+USER 10001:10001
+ENTRYPOINT ["node", "--import", "tsx", "/app/workers/entry.mjs"]

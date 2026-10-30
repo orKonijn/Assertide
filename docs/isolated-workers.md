@@ -1,0 +1,23 @@
+# Isolated workers
+
+For Kubernetes Jobs, Vault Transit, production images and deployment manifests, see [production deployment](production-deployment.md). Both isolated runtimes support headed fixtures. Container deployments set `HOST` and `REPORT_HOST` to `0.0.0.0` behind separate ingress origins; local defaults remain loopback.
+
+## Separate supervisors
+
+Start the API with `LOCAL_RUNNER=false` (the default). It applies migrations and serves the authenticated report gateway independently of workers. After API readiness, start `npm --prefix apps/api run worker` in two separate processes, one with `WORKER_ROLE=execution` and one with `WORKER_ROLE=report`. Both require the same PostgreSQL `DATABASE_URL`, private `S3_BUCKET` configuration, approved source checkout and installed dependencies. Execution additionally requires `REDIS_URL`, `WORKER_RUNTIME=oci`, the immutable `OCI_WORKER_IMAGE` and the secret encryption key. The report worker does not need Docker access, OIDC credentials or the environment encryption key.
+
+Execution archives raw evidence before handing a report request to the report worker. A database lease and epoch fence each report claim; generated reports publish from shared storage and can be rebuilt on another host. SIGTERM stops owned work and closes database/queue connections. Scale execution processes to the deployment's quota and host capacity; each supervisor owns one run at a time. The API's live-event endpoint reads persisted events and remains available while a worker restarts.
+
+Linux browser CI uses `SEPARATE_WORKERS=true` in the local fixture launcher to exercise this topology with PostgreSQL, Redis and MinIO. The default Windows embedded-database launcher uses one combined supervisor because PGlite storage cannot be opened by independent processes. Keep the API and report listeners behind their separately configured reverse-proxy origins; they bind to loopback.
+
+Environments can opt into headed browser execution in Settings. Explorer exposes the headed option only when that policy permits it and the API uses OCI workers. Each headed run starts its own Xvfb display inside the same network-isolated container; API-only and Windows local-process launches reject headed mode. Existing environments default to headless. The OCI integration check exercises a real headed Chromium case; inspect the latest PR checks for Linux verification.
+
+Linux workers can execute the approved fixture snapshot in a Docker container. First run `node scripts/setup-sandbox.mjs`, then build `docker build -f workers/Dockerfile -t assertide-worker:local .`. Set `WORKER_RUNTIME=oci` and set `OCI_WORKER_IMAGE` to the immutable ID returned by `docker image inspect --format '{{.Id}}' assertide-worker:local`. Use a non-root supervisor account with access to Docker. Treat that account and the Docker daemon as privileged infrastructure.
+
+Runs freeze the image identifier; a worker refuses a run assigned to a different image. The image contains the installed dependency lock and pinned local store fixture. Entry validates that the approved source lock matches the image before executing it. Changing dependencies requires rebuilding the image. Source is mounted read-only and copied into temporary storage; only the run output directory is writable on the host.
+
+Containers run as the supervisor's non-root UID, with a read-only root, no capabilities, no privilege escalation, bounded memory/CPU/processes and a temporary filesystem. `--network none` blocks external destinations; each container runs its own loopback Lab and store fixtures. The container receives only its run specification and fixture credentials over stdin. Database, object-store, OIDC and encryption credentials stay outside it. This mode supports the approved local targets; arbitrary external target execution is not enabled.
+
+Cancellation, timeout, lease loss and shutdown stop the process and remove its named container. After a supervisor restart, expired leases become infrastructure failures and terminal containers belonging to that host are removed. An unavailable Docker daemon leaves cleanup pending for retry. Host recovery is needed if the entire worker machine remains offline.
+
+Linux CI builds the image and verifies non-root execution, absent cloud credentials, denied root/source writes, blocked external fetch, mixed Lab/browser execution and container removal. The full application browser suite also passes with OCI workers, PostgreSQL, Redis and private MinIO. These checks cover repository-controlled fixtures, not an arbitrary untrusted-code hosting service. The Windows development runner remains a trusted local process.

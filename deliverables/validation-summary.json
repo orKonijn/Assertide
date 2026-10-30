@@ -1,0 +1,13 @@
+{
+  "documentsChecked": 20,
+  "brokenLocalLinks": [],
+  "validSvgAssets": 26,
+  "preview": {
+    "viewsChecked": 100,
+    "overflowFailures": [],
+    "pageErrors": [],
+    "primaryFlows": "passed",
+    "scope": "Local HTML design review only; not Figma rendering or application execution"
+  },
+  "nativeFigma": "blocked by provider quota; not executed"
+}
