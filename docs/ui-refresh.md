@@ -446,3 +446,14 @@ These screenshots show the actual production build with representative intercept
 ![Compact report cards on mobile using fixtures](changelog/assets/unreleased/navigation-reports-reports-390.png)
 
 Lint, ten web unit tests, and production build pass. Browser checks against the production build verify all five shortcuts remain on Settings and update their selected state, and both pages fit 320/390/768/1280px in light/dark themes. The database remains unavailable, so these checks do not verify live API integration or report opening. This remains Unreleased; no product version is assigned or changed.
+
+## Suite list pagination
+
+Test suites now displays ten suites per page with a total count, current page, previous/next controls, and up to five numbered page buttons above the list. First/last controls disable at their boundaries. Page counts clamp when the loaded suite list shrinks, and empty lists retain their existing message. Paging leaves create/edit fields and membership selections intact.
+
+Actual production build with intercepted representative API fixture responses:
+
+![Suite pagination on desktop with fixture data](changelog/assets/unreleased/suite-pagination-1280.png)
+![Suite pagination on mobile with fixture data](changelog/assets/unreleased/suite-pagination-390.png)
+
+Lint, ten web tests, and production build pass. Browser checks verify ten suites on the first page, three on the last page of a 23-suite fixture, disabled boundary controls, retained create/edit form values, and no horizontal overflow at 320/390/768/1280px in light and dark themes. Live database integration remains unverified because the local database is unavailable. No product version is assigned or changed; this remains Unreleased.
