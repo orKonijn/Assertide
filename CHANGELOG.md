@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Redesigned Test suites as compact two-column desktop cards and a single mobile column. A bounded page width, title/priority header, grouped metadata, and distinct Run action reduce empty space while preserving pagination and the sticky editor. Lint/build and fixture-based responsive, paging, and editing checks pass. See [suite card screenshots](docs/ui-refresh.md#compact-suite-card-grid).
+
 - Redesigned Projects with searchable cards, active-project identification, a compact editor, and twelve-project numbered pagination. Search resets paging and drafts survive page changes. Create/Edit suite now sticks beside the desktop suite list with internal scrolling when needed; mobile retains normal flow. Build, web tests, and fixture-based responsive/interaction checks pass. See [project and suite layout evidence](docs/ui-refresh.md#projects-redesign-and-sticky-suite-editor).
 
 - Settings section numbers now retain their label colors at full opacity, fixing insufficient text contrast in light mode. Focused browser contrast checks pass in both themes at desktop, tablet, and phone widths.

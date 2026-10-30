@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import type { Suite, TestCase } from '../core/api';
 import { Api, errorMessage } from '../core/api';
 @Component({
+  host: { class: 'suites-page' },
   imports: [FormsModule],
   template: `<header class="page-header">
       <div>
@@ -51,30 +52,60 @@ import { Api, errorMessage } from '../core/api';
             </button>
           </div>
         </nav>
-        @for (suite of pageSuites(); track suite.id) {
-          <article class="card">
-            <h2>{{ suite.name }}</h2>
-            <p>{{ suite.description }}</p>
-            <p>{{ suite.testIds.length }} tests · revision {{ suite.version }}</p>
-            <p>Priority {{ suite.priority || 'P1' }}</p>
-            <p class="muted">
-              {{ suite.owner || 'No owner assigned' }} · {{ suite.tags.join(', ') }}
-            </p>
-            <div class="actions">
-              @if (canEdit()) {
-                <button [disabled]="busy()" (click)="edit(suite)">Edit {{ suite.name }}</button>
-              }
-              <button
-                [disabled]="busy() || !suite.testIds.length || api.identity()?.role === 'viewer'"
-                (click)="run(suite)"
-              >
-                Run suite
-              </button>
-            </div>
-          </article>
-        } @empty {
-          <section class="card empty">No suites yet. Create a reusable selection.</section>
-        }
+        <div class="suite-card-grid">
+          @for (suite of pageSuites(); track suite.id) {
+            <article class="card suite-card">
+              <div class="suite-card-heading">
+                <span class="suite-mark" aria-hidden="true"
+                  ><svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M5 4h14v16H5z M9 8h6 M9 12h6 M9 16h3" /></svg
+                ></span>
+                <h2>{{ suite.name }}</h2>
+                <span class="badge">{{ suite.priority || 'P1' }}</span>
+              </div>
+              <p>{{ suite.description }}</p>
+              <div class="suite-meta">
+                <span>{{ suite.testIds.length }} tests</span
+                ><span>Revision {{ suite.version }}</span>
+              </div>
+              <p class="muted suite-owner">
+                {{ suite.owner || 'No owner assigned' }}
+                @if (suite.tags.length) {
+                  <span> · {{ suite.tags.join(', ') }}</span>
+                }
+              </p>
+              <div class="actions">
+                @if (canEdit()) {
+                  <button
+                    [disabled]="busy()"
+                    [attr.aria-label]="'Edit ' + suite.name"
+                    (click)="edit(suite)"
+                  >
+                    Edit
+                  </button>
+                }
+                <button
+                  [disabled]="busy() || !suite.testIds.length || api.identity()?.role === 'viewer'"
+                  class="suite-run"
+                  (click)="run(suite)"
+                >
+                  Run suite
+                </button>
+              </div>
+            </article>
+          } @empty {
+            <section class="card empty">No suites yet. Create a reusable selection.</section>
+          }
+        </div>
       </section>
       <form class="card" (ngSubmit)="save()">
         <h2>{{ editing() ? 'Edit suite' : 'Create suite' }}</h2>

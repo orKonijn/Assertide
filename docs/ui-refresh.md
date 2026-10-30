@@ -494,3 +494,14 @@ Actual production UI with representative API fixture responses:
 ![Pinned suite editor after scrolling](changelog/assets/unreleased/suite-editor-sticky.png)
 
 Lint, ten web unit tests, and production build pass. Browser checks confirm 12/11 cards for a 23-project fixture, search/page reset, draft preservation, edit/cancel, empty search, and no horizontal overflow at 320/390/768/1280px in both themes. Separate geometry checks verify desktop pinning, a reachable Save suite button, and non-sticky mobile behavior. These checks use sample responses and do not validate live API persistence. No product version is assigned or changed; this remains Unreleased.
+
+## Compact suite card grid
+
+Suite cards use two columns above 850px and one column on smaller screens. The page is limited to 1280px, with a 300px sticky editor column on desktop. Cards have compact spacing, a suite icon and priority beside the title, grouped test/revision metadata, quiet owner/tags, a short accessible Edit action, and a highlighted Run suite action. Existing ten-suite pagination remains intact.
+
+Actual production UI with representative API fixture responses:
+
+![Compact two-column suite cards on desktop](changelog/assets/unreleased/suite-compact-1280.png)
+![Single-column suite cards on mobile](changelog/assets/unreleased/suite-compact-390.png)
+
+Lint and production build pass. Browser checks confirm two columns on desktop, one on mobile, retained create/edit drafts across pagination, disabled boundary controls, and no horizontal overflow at 320/390/768/1280px in both themes. The editor still pins on desktop and its Save action remains reachable. These checks use fixture data and do not claim live API persistence. No product version is assigned or changed; this remains Unreleased.
