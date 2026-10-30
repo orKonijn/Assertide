@@ -8,6 +8,7 @@
     "npm": ">=11 <12"
   },
   "scripts": {
+    "package": "node scripts/package-build.mjs",
     "setup": "node scripts/setup.mjs",
     "start": "node scripts/dev.mjs",
     "verify:quick": "node scripts/verify.mjs",

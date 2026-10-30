@@ -8,6 +8,10 @@ permissions:
 jobs:
   foundation:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     services:
       redis:
         image: redis:7
@@ -56,6 +60,8 @@ jobs:
           MINIO_BROWSER: 'off'
       - run: npm ci
         working-directory: apps/web
+      - run: npm audit --audit-level=high
+        working-directory: apps/web
       - run: node --test packages/domain/execution.test.ts
       - run: node apps/web/node_modules/typescript/bin/tsc -p packages/domain/tsconfig.json
       - run: npm test -- --watch=false
@@ -63,6 +69,8 @@ jobs:
       - run: npm run build
         working-directory: apps/web
       - run: npm ci
+        working-directory: apps/api
+      - run: npm audit --audit-level=high
         working-directory: apps/api
       - run: npm run typecheck
         working-directory: apps/api
@@ -74,6 +82,8 @@ jobs:
           AWS_ACCESS_KEY_ID: assertide_test
           AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
       - run: npm ci
+        working-directory: packages/automation
+      - run: npm audit --audit-level=high
         working-directory: packages/automation
       - run: npm run typecheck
         working-directory: packages/automation
@@ -134,6 +144,20 @@ jobs:
         with:
           name: browser-failure-screenshots
           path: packages/automation/test-results/**/*.png
+      - name: Package reviewed build inputs and compiled web application
+        run: node scripts/package-build.mjs
+      - name: Attest build provenance
+        if: github.event_name == 'push'
+        uses: actions/attest@v4
+        with:
+          subject-path: .local/build/assertide-build.tgz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: assertide-verified-build
+          path: |
+            .local/build/assertide-build.tgz
+            .local/build/SHA256SUMS
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
