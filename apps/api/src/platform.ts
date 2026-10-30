@@ -525,6 +525,10 @@ export class PlatformService {
       return this.get(principal, existing.run_id, "run");
     }
     let historyFamily = config.selection.testIds;
+    let workerImage =
+      process.env["WORKER_RUNTIME"] === "oci"
+        ? process.env["OCI_WORKER_IMAGE"]
+        : undefined;
     let source: unknown = {
       revision: this.revision,
       manifest: this.manifest,
@@ -569,6 +573,7 @@ export class PlatformService {
       historyFamily = z
         .array(z.string())
         .parse(parent["historyFamily"] ?? parentConfig.selection.testIds);
+      workerImage = z.string().optional().parse(parent["workerImage"]);
       if (Array.isArray(parent["metadata"]))
         metadata = parent["metadata"].filter((item: { id: string }) =>
           config.selection.testIds.includes(item.id),
@@ -600,6 +605,7 @@ export class PlatformService {
       source,
       metadata,
       historyFamily,
+      workerImage,
       environment,
     };
     const result = await this.db.query<Row>(

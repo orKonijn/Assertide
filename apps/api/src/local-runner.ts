@@ -3,7 +3,9 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { randomUUID } from "node:crypto";
+import { randomUUID, randomBytes } from "node:crypto";
+import { ociCommand, stopContainer } from "./oci-worker.ts";
+import { hostname } from "node:os";
 import type { SqlConnection } from "./database.ts";
 import { verifySource } from "./source.ts";
 import { stopProcessTree } from "./process-tree.ts";
@@ -58,6 +60,7 @@ const runSchema = z.object({
   projectId: z.uuid(),
   endedAt: z.iso.datetime().optional(),
   historyFamily: z.array(z.string()).optional(),
+  workerImage: z.string().optional(),
   environment: environmentSchema
     .extend({ version: z.number().optional() })
     .default(defaultEnvironment),
@@ -149,6 +152,11 @@ export class LocalRunner {
   private stopped = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private child: ChildProcess | undefined;
+  private containerId: string | undefined;
+  private async stopChild() {
+    stopProcessTree(this.child);
+    if (this.containerId) await stopContainer(this.containerId);
+  }
   private nextRetentionSweep = 0;
   private readonly owner = randomUUID();
   private epoch = 0;
@@ -156,7 +164,10 @@ export class LocalRunner {
   private operation: Promise<void> = Promise.resolve();
   private transport?: RedisTransport;
   constructor(private readonly db: SqlConnection) {
-    if (process.env["NODE_ENV"] === "production")
+    if (
+      process.env["NODE_ENV"] === "production" &&
+      process.env["WORKER_RUNTIME"] !== "oci"
+    )
       throw new Error("Local runner is forbidden in production");
   }
   async start() {
@@ -196,7 +207,7 @@ export class LocalRunner {
   async stop() {
     this.stopped = true;
     clearTimeout(this.timer);
-    stopProcessTree(this.child);
+    await this.stopChild();
     await this.transport?.close();
     await this.operation;
   }
@@ -218,7 +229,7 @@ export class LocalRunner {
       renewal = renewal
         .then(() => renewLease(this.db, id, this.owner, epoch))
         .catch(() => {
-          stopProcessTree(this.child);
+          return this.stopChild();
         });
     }, 5000);
     try {
@@ -236,6 +247,19 @@ export class LocalRunner {
     this.active = true;
     try {
       await recoverExpiredLeases(this.db);
+      if (process.env["WORKER_RUNTIME"] === "oci") {
+        const orphaned = await this.db.query<{ id: string }>(
+          "SELECT id FROM platform_documents WHERE kind='run' AND body->>'workerRuntime'='oci' AND body->>'workerHost'=$1 AND body->>'phase' IN ('completed','canceled','timed_out','infrastructure_error') AND NOT COALESCE((body->>'containerCleaned')::boolean,false)",
+          [hostname()],
+        );
+        for (const run of orphaned.rows) {
+          await stopContainer(run.id);
+          await this.db.query(
+            "UPDATE platform_documents SET body=body || '{\"containerCleaned\":true}'::jsonb WHERE id=$1",
+            [run.id],
+          );
+        }
+      }
       if (Date.now() >= this.nextRetentionSweep) {
         await expireArtifacts(this.db);
         await expireReports(this.db);
@@ -280,6 +304,11 @@ export class LocalRunner {
     output: string,
     id: string,
     executionEnv: Record<string, string> = {},
+    isolated?: {
+      snapshot: string;
+      workers: number;
+      input: Record<string, unknown>;
+    },
   ): Promise<number> {
     const redact = (text: string) =>
       redactDefault(text)
@@ -292,14 +321,27 @@ export class LocalRunner {
           [id],
         )
       ).rows[0]?.log ?? "";
+    const command = isolated
+      ? ociCommand(id, isolated.snapshot, output, isolated.workers)
+      : { executable: process.execPath, args };
+    if (isolated) {
+      await this.update(id, {
+        workerImage: process.env["OCI_WORKER_IMAGE"],
+        workerRuntime: "oci",
+        workerHost: hostname(),
+      });
+      this.containerId = id;
+    }
     return new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, args, {
+      const child = spawn(command.executable, command.args, {
         cwd: automationRoot,
         windowsHide: true,
         detached: process.platform !== "win32",
         env: { ...process.env, ...executionEnv, RUN_OUTPUT: output },
-        stdio: ["ignore", "pipe", "pipe"],
+        stdio: ["pipe", "pipe", "pipe"],
       });
+      child.stdin?.on("error", () => {});
+      child.stdin?.end(isolated ? JSON.stringify(isolated.input) : undefined);
       this.child = child;
       let logs = previous;
       let sent = "";
@@ -317,7 +359,7 @@ export class LocalRunner {
           pending = pending
             .then(() => this.update(id, { logTail: complete }))
             .catch(() => {
-              stopProcessTree(child);
+              return this.stopChild();
             });
         }
       };
@@ -325,7 +367,7 @@ export class LocalRunner {
       let timedOut = false;
       const timeout = setTimeout(() => {
         timedOut = true;
-        stopProcessTree(child);
+        void this.stopChild();
       }, 30 * 60_000);
       const cancel = setInterval(() => {
         void this.db
@@ -334,9 +376,9 @@ export class LocalRunner {
             [id],
           )
           .then((result) => {
-            if (result.rows[0]?.cancel === "true") stopProcessTree(child);
+            if (result.rows[0]?.cancel === "true") return this.stopChild();
           })
-          .catch(() => stopProcessTree(child));
+          .catch(() => this.stopChild());
       }, 500);
       const clean = () => {
         clearTimeout(timeout);
@@ -346,12 +388,19 @@ export class LocalRunner {
       };
       child.once("error", (error) => {
         clean();
-        reject(error);
+        void (isolated ? stopContainer(id) : Promise.resolve()).then(() => {
+          this.containerId = undefined;
+          reject(error);
+        });
       });
       child.once("close", (code) => {
         flush();
         clean();
         void pending
+          .then(() => (isolated ? stopContainer(id) : undefined))
+          .then(() => {
+            this.containerId = undefined;
+          })
           .then(() => writeFile(path.join(output, "worker.log"), redact(logs)))
           .then(() => resolve(timedOut ? -2 : (code ?? -1)), reject);
       });
@@ -367,6 +416,13 @@ export class LocalRunner {
         .split(password || "\u0000")
         .join("[REDACTED]");
     try {
+      if (
+        run.workerImage !==
+        (process.env["WORKER_RUNTIME"] === "oci"
+          ? process.env["OCI_WORKER_IMAGE"]
+          : undefined)
+      )
+        throw new Error("Frozen worker image is unavailable on this worker");
       if (run.environment.passwordRef)
         password = await resolveSecret(
           this.db,
@@ -403,6 +459,29 @@ export class LocalRunner {
           RUN_BROWSER_URL: run.environment.browserUrl,
           ...(password ? { LAB_PASSWORD: password } : {}),
         },
+        process.env["WORKER_RUNTIME"] === "oci"
+          ? {
+              snapshot,
+              workers: run.config.workers,
+              input: {
+                testIds: run.selection.testIds,
+                workers: run.config.workers,
+                retries: run.config.retries,
+                projects: [
+                  ...(run.selection.testIds.some((id) => id.startsWith("LAB-"))
+                    ? ["api"]
+                    : []),
+                  ...run.config.browserProjects,
+                ],
+                video: run.config.video,
+                password:
+                  password ||
+                  process.env["LAB_PASSWORD"] ||
+                  randomBytes(32).toString("hex"),
+                signingKey: randomBytes(32).toString("hex"),
+              },
+            }
+          : undefined,
       );
       const canceled =
         (
@@ -426,7 +505,12 @@ export class LocalRunner {
                 run.id,
                 resultId,
                 index + 1,
-                attempt.attachments,
+                attempt.attachments.map((attachment) => ({
+                  ...attachment,
+                  ...(attachment.path?.startsWith("/output/")
+                    ? { path: path.join(output, attachment.path.slice(8)) }
+                    : {}),
+                })),
                 redact,
               )),
             );
@@ -484,7 +568,7 @@ export class LocalRunner {
           ? "canceled"
           : code === -2
             ? "timed_out"
-            : code === -1
+            : code !== 0 && code !== 1
               ? "infrastructure_error"
               : "completed",
         endedAt: new Date().toISOString(),

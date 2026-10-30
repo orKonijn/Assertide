@@ -1,0 +1,12 @@
+**/node_modules
+**/.angular
+**/dist
+.git
+.local/**
+!.local/targets/
+!.local/targets/swag-store/
+!.local/targets/swag-store/build/
+!.local/targets/swag-store/build/**
+**/test-results
+**/playwright-report
+**/.env*

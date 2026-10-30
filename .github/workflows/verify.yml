@@ -89,11 +89,18 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: packages/automation
       - run: node scripts/setup-sandbox.mjs
+      - name: Build immutable isolated worker
+        run: |
+          docker build -f workers/Dockerfile -t assertide-worker:ci .
+          echo "OCI_WORKER_IMAGE=$(docker image inspect --format '{{.Id}}' assertide-worker:ci)" >> "$GITHUB_ENV"
+      - run: npx tsx --test test/oci-worker.test.ts
+        working-directory: apps/api
       - run: node packages/automation/checks/video.mjs
       - run: npx playwright test --config platform.config.ts
         working-directory: packages/automation
         env:
           DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+          WORKER_RUNTIME: oci
           REDIS_URL: redis://127.0.0.1:6379
           S3_BUCKET: assertide-test
           S3_ENDPOINT: http://127.0.0.1:9000
