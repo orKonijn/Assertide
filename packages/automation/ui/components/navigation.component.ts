@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import { NavigationSelectors as S } from "../types/navigation.selectors";
 import { AuthenticationSelectors as A } from "../types/authentication.selectors";
 import { workflow } from "../utils/allure.utils";
+import { Routes } from "../types/routes";
 export class NavigationComponent {
   readonly activeProject;
   readonly selectedProject;
@@ -33,9 +34,17 @@ export class NavigationComponent {
     return workflow("Open workspace route", () => this.page.goto(route));
   }
   selectProject(name: string) {
-    return workflow("Switch active project", () =>
-      this.activeProject.selectOption({ label: name }),
-    );
+    return workflow("Switch active project", async () => {
+      // The app uses location.assign, so selection alone does not finish the switch.
+      const navigated = this.page.waitForEvent("framenavigated", {
+        predicate: (frame) =>
+          frame === this.page.mainFrame() &&
+          new URL(frame.url()).pathname === Routes.overview,
+      });
+      await this.activeProject.selectOption({ label: name });
+      await navigated;
+      await this.page.waitForLoadState("load");
+    });
   }
   async openMenuWithKeyboard() {
     await this.menu.focus();
