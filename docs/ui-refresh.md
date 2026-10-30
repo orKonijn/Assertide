@@ -193,3 +193,23 @@ Actual 320px mobile report views show the theme icon, ready report action, and e
 Verification: six browser tests pass, including the 64-state accessibility matrix, catalog editing, project selection, and drawer dismissal/animation. Both routes have no document overflow at 320/390/768/1280px in light and dark themes; the icon switches themes correctly at 320px.
 
 `npm run verify:quick` passes (lint, type checks, local API tests, seven web unit tests, and production build). Eight infrastructure tests remain skipped on Windows. The initial run overlapped browser setup and failed catalog initialization in two API tests; a separate full rerun passed. No release version is assigned; this remains an Unreleased development change.
+
+## Report toolbar and notification bell
+
+Report headings now span a full-width toolbar with a labeled refresh icon beside Action. Refresh is disabled while loading and clears stale errors before retrying. Table headers remain available to assistive technology.
+
+Actual running dark interface at 768px, before and after (sample execution history can grow between captures):
+
+![Reports with a separate refresh button and top notification disclosure](changelog/assets/unreleased/report-toolbar-before.png)
+![Spaced report toolbar with refresh icon and bottom-right bell](changelog/assets/unreleased/report-toolbar-after.png)
+![Report toolbar fitting a 320px phone in light mode](changelog/assets/unreleased/report-toolbar-phone.png)
+
+The bell opens session history in an anchored panel. Its red badge counts unread entries in the retained history (up to 50); opening clears the count without deleting history. Entries arriving while open are read, and later entries restore the badge. The panel closes using its close icon, Escape, or an outside click. Visual toasts no longer interrupt the page; polite screen-reader announcements remain. Logging out clears session history.
+
+Actual 390px captures after saving a sample project:
+
+![Bottom-right bell with a red unread badge](changelog/assets/unreleased/notification-bell-dark.png)
+![Opened dark notification panel with badge cleared](changelog/assets/unreleased/notification-panel-dark.png)
+![Opened light notification panel](changelog/assets/unreleased/notification-panel-light.png)
+
+Verification: `npm run verify:quick` passed, including eight web unit tests; eight infrastructure checks are skipped on Windows. Six browser tests passed, covering the 64-state light/dark accessibility matrix, notification unread/history behavior, outside/Escape dismissal, and mobile navigation. Open notification panels also passed automated accessibility scans in both themes. Report refresh and overflow checks passed at 320/390/768/1280px. Page Object architecture and reporting/redaction checks passed. No product version is assigned; these are Unreleased development changes.

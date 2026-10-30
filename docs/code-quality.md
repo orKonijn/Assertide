@@ -12,6 +12,10 @@ Run these commands from the repository root after installing all three packages 
 
 Run lint fixes before formatting, then review the diff. CI installs API, web and automation dependencies before type-aware linting, and rejects both lint and formatting failures. Infrastructure and Playwright acceptance remain separate CI gates.
 
+## Toolchain
+
+The migration was verified with the locked web toolchain: ESLint 10.13.0, TypeScript ESLint 8.72.1, Angular ESLint 22.6.0, Prettier 3.9.10, TypeScript 6.0.3 and Angular 22.2.4. Automation retains its pinned TypeScript 6.0.2. Package lockfiles remain the reproducible source of installed versions.
+
 ## Conventions
 
 - Explicit accessibility for class fields, methods and constructors. Keep dependencies and implementation-only locators private; expose intentional assertion locators as public readonly.
