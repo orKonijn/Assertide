@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Removed sticky positioning from Create/Edit suite so the full form moves naturally with the page. Internal form/list scrolling remains disabled. Build and fixture-based desktop/mobile flow and selection checks pass.
+
 - Redesigned Create/Edit suite with compact fields, expandable optional metadata, and a searchable four-test membership picker with pagination and selected count. Removed internal scrolling from both the form and test list; selection persists across pages and searches. Build, lint, and responsive fixture-based interaction checks pass. See [suite builder screenshots](docs/ui-refresh.md#suite-builder-without-internal-scrolling).
 
 - New visits now default to dark mode. Saved light/dark preferences continue to apply on reload. Production build and fixture-based browser checks for first visit and both saved choices pass.

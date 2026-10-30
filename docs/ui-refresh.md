@@ -571,3 +571,7 @@ Build and lint pass. Production UI checks with sample API fixtures cover members
 ![Desktop suite builder in light mode](changelog/assets/unreleased/suite-builder-1280-light.png)
 
 ![Mobile suite builder in light mode](changelog/assets/unreleased/suite-builder-390-light.png)
+
+### Suite editor page-flow correction
+
+Following the suite builder redesign, sticky positioning was removed. The form now follows normal page scrolling on desktop and mobile, with no internal form or membership-list scrolling. Production build and fixture-based checks confirm static positioning, movement during page scroll, search, pagination, selection persistence, and edit/reset in both themes. The screenshots above still describe the form appearance; this follow-up changes scrolling behavior.

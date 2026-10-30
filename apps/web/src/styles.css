@@ -3581,8 +3581,7 @@ aside .account {
 
 @media (min-width: 851px) {
   .suite-layout > form.card {
-    position: sticky;
-    top: 24px;
+    position: static;
     align-self: start;
     max-height: none;
     overflow: visible;
