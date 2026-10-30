@@ -3727,3 +3727,97 @@ aside .account {
     gap: 24px;
   }
 }
+
+/* Workspace navigation: compact groups and a single project context card. */
+#workspace-navigation {
+  padding: 24px 14px 16px;
+}
+#workspace-navigation > .brand-logo {
+  margin: 0 8px 24px;
+}
+#workspace-navigation app-project-picker {
+  margin-bottom: 18px;
+}
+#workspace-navigation .project-trigger {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--soft);
+  border-color: var(--border);
+}
+.project-trigger-copy {
+  display: grid;
+  gap: 3px;
+}
+.project-trigger-copy .picker-label {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 500;
+}
+.project-trigger-copy strong {
+  font-size: 13px;
+  font-weight: 650;
+}
+#workspace-navigation nav {
+  gap: 3px;
+  padding-bottom: 24px;
+}
+.nav-section-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 14px 12px 6px;
+}
+.nav-section-label:first-child {
+  padding-top: 0;
+}
+#workspace-navigation nav a {
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  gap: 11px;
+}
+#workspace-navigation nav a.active {
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--brand) 25%, transparent);
+}
+#workspace-navigation nav a.active::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+#workspace-navigation .account {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--canvas);
+  gap: 12px;
+}
+#workspace-navigation .account-actions {
+  margin-top: 0;
+  gap: 8px;
+}
+#workspace-navigation .account-profile {
+  gap: 9px;
+}
+#workspace-navigation .account-avatar {
+  border-radius: 10px;
+  width: 30px;
+  height: 30px;
+}
+#workspace-navigation .account-profile strong {
+  font-size: 12px;
+}
+#workspace-navigation .account-profile div > span {
+  font-size: 10px;
+}
+@media (max-width: 900px) {
+  #workspace-navigation {
+    padding-top: 16px;
+  }
+}

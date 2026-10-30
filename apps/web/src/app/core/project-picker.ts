@@ -8,14 +8,15 @@ import { Api } from './api';
   selector: 'app-project-picker',
   imports: [FormsModule],
   template: `
-    <span class="picker-label">Active project</span>
     <button
       class="project-trigger"
       aria-label="Active project"
       aria-haspopup="dialog"
       (click)="open()"
     >
-      <span>{{ currentName() }}</span>
+      <span class="project-trigger-copy"
+        ><span class="picker-label">Active project</span><strong>{{ currentName() }}</strong></span
+      >
       <svg
         class="project-chevron"
         aria-hidden="true"

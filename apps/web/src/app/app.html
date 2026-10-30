@@ -107,10 +107,18 @@
     <a class="brand brand-logo" routerLink="/"
       ><img src="/brand/assertide-logo.png" alt="Assertide"
     /></a>
-    <p class="workspace">QUALITY WORKSPACE</p>
     <app-project-picker />
     <nav aria-label="Main navigation">
       @for (link of links; track link[0]) {
+        @if ($index === 0) {
+          <span class="nav-section-label">Workspace</span>
+        }
+        @if ($index === 2) {
+          <span class="nav-section-label">Testing</span>
+        }
+        @if ($index === 7) {
+          <span class="nav-section-label">Manage</span>
+        }
         <a
           [routerLink]="link[0]"
           routerLinkActive="active"

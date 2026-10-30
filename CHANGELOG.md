@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Redesigned the sidebar with grouped Workspace, Testing, and Manage navigation, a compact project switcher, a subtle selected-page indicator, and a contained account area while preserving the existing icons. Build, lint, and fixture-based desktop/mobile picker checks pass. See [sidebar screenshots](docs/ui-refresh.md#grouped-workspace-sidebar).
+
 - Combined project search, count, and pagination into one compact toolbar, removing the repeated collection heading and floating page summary. Added the Assertide mark as the browser tab icon. Responsive fixture-based checks and build pass. See [toolbar screenshots](docs/ui-refresh.md#compact-project-toolbar).
 
 - Redesigned Test suites as compact two-column desktop cards and a single mobile column. A bounded page width, title/priority header, grouped metadata, and distinct Run action reduce empty space while preserving pagination and the sticky editor. Lint/build and fixture-based responsive, paging, and editing checks pass. See [suite card screenshots](docs/ui-refresh.md#compact-suite-card-grid).

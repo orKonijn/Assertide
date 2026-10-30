@@ -519,3 +519,17 @@ Production UI with representative intercepted API fixtures: search, empty result
 ![Desktop project toolbar in light mode](changelog/assets/unreleased/projects-toolbar-1280-light.png)
 
 ![Mobile project toolbar in light mode](changelog/assets/unreleased/projects-toolbar-390-light.png)
+
+## Grouped workspace sidebar
+
+The existing navigation icons are retained. Workspace, Testing, and Manage labels organize the links; the active project label now sits inside the switcher, and the selected page uses a subtle dot and tinted background. The account identity and actions share one compact panel. Mobile retains the drawer close control and header theme toggle.
+
+Build and lint pass. The production UI with representative API fixtures was checked in light/dark themes at 390 and 1280 pixels: project picker opening, chevron alignment, and focus restoration pass. Screenshots show the actual UI with sample data, not live backend validation. This change remains Unreleased with no product version assigned.
+
+![Desktop sidebar in dark mode](changelog/assets/unreleased/sidebar-redesign-1280-dark.png)
+
+![Desktop sidebar in light mode](changelog/assets/unreleased/sidebar-redesign-1280-light.png)
+
+![Mobile navigation in dark mode](changelog/assets/unreleased/sidebar-redesign-390-dark.png)
+
+![Mobile navigation in light mode](changelog/assets/unreleased/sidebar-redesign-390-light.png)
