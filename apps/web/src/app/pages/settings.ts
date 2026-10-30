@@ -1,9 +1,10 @@
-import { Component, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+
 import { Api, errorMessage } from '../core/api';
-import { Members } from '../core/members';
 import { Environments } from '../core/environments';
+import { Members } from '../core/members';
 import { Operations } from '../core/operations';
 interface Audit {
   id: string;
@@ -136,23 +137,26 @@ interface ServiceAccount {
     }`,
 })
 export class Settings {
-  readonly api = inject(Api);
-  readonly events = signal<Audit[]>([]);
-  readonly error = signal('');
-  readonly accounts = signal<ServiceAccount[]>([]);
-  readonly token = signal('');
-  readonly busy = signal(false);
-  accountName = '';
-  expiry = 30;
-  constructor() {
-    if (this.api.identity()?.role === 'administrator') void this.loadAccounts();
-    if (this.api.identity()?.role === 'administrator')
+  public readonly api = inject(Api);
+  public readonly events = signal<Audit[]>([]);
+  public readonly error = signal('');
+  public readonly accounts = signal<ServiceAccount[]>([]);
+  public readonly token = signal('');
+  public readonly busy = signal(false);
+  public accountName = '';
+  public expiry = 30;
+  public constructor() {
+    if (this.api.identity()?.role === 'administrator') {
+      void this.loadAccounts();
+    }
+    if (this.api.identity()?.role === 'administrator') {
       void this.api
         .get<{ items: Audit[] }>(`/audit-events?projectId=${this.api.projectId()}`)
         .then((data) => this.events.set(data.items))
         .catch((error) => this.error.set(errorMessage(error)));
+    }
   }
-  async loadAccounts() {
+  public async loadAccounts(): Promise<void> {
     try {
       this.accounts.set(
         (
@@ -165,7 +169,7 @@ export class Settings {
       this.error.set(errorMessage(error));
     }
   }
-  async createAccount() {
+  public async createAccount(): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     this.token.set('');
@@ -183,13 +187,14 @@ export class Settings {
       this.busy.set(false);
     }
   }
-  async changeAccount(account: ServiceAccount, action: 'rotate' | 'revoke') {
+  public async changeAccount(account: ServiceAccount, action: 'rotate' | 'revoke'): Promise<void> {
     if (
       !confirm(
         `${action === 'rotate' ? 'Replace' : 'Revoke'} this credential? Existing callers using it will lose access immediately.`,
       )
-    )
+    ) {
       return;
+    }
     this.busy.set(true);
     this.error.set('');
     this.token.set('');

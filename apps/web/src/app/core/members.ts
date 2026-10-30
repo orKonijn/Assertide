@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+
 import { Api, errorMessage } from './api';
 interface Member {
   subject: string;
@@ -96,45 +97,45 @@ interface Member {
   </section>`,
 })
 export class Members {
-  readonly api = inject(Api);
-  readonly members = signal<Member[]>([]);
-  readonly busy = signal(false);
-  readonly error = signal('');
-  subject = '';
-  name = '';
-  role = 'viewer';
-  selected: string[] = [];
-  editing: Member | null = null;
-  constructor() {
+  public readonly api = inject(Api);
+  public readonly members = signal<Member[]>([]);
+  public readonly busy = signal(false);
+  public readonly error = signal('');
+  public subject = '';
+  public name = '';
+  public role = 'viewer';
+  public selected: string[] = [];
+  public editing: Member | null = null;
+  public constructor() {
     void this.load();
   }
-  async load() {
+  public async load(): Promise<void> {
     try {
       this.members.set((await this.api.get<{ items: Member[] }>('/members')).items);
     } catch (error) {
       this.error.set(errorMessage(error));
     }
   }
-  toggle(id: string) {
+  public toggle(id: string): void {
     this.selected = this.selected.includes(id)
       ? this.selected.filter((value) => value !== id)
       : [...this.selected, id];
   }
-  edit(member: Member) {
+  public edit(member: Member): void {
     this.editing = member;
     this.subject = member.subject;
     this.name = member.name;
     this.role = member.role;
     this.selected = [...member.projectIds];
   }
-  reset() {
+  public reset(): void {
     this.editing = null;
     this.subject = '';
     this.name = '';
     this.role = 'viewer';
     this.selected = [];
   }
-  async save() {
+  public async save(): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     try {

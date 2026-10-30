@@ -2,16 +2,21 @@ import { Component, computed, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 export function atJsonPointer(value: unknown, pointer: string): unknown {
-  if (pointer === '') return value;
-  if (!pointer.startsWith('/') || /~(?![01])/.test(pointer))
+  if (pointer === '') {
+    return value;
+  }
+  if (!pointer.startsWith('/') || /~(?![01])/.test(pointer)) {
     throw new Error('Use an empty pointer for the whole document or a path starting with /.');
+  }
+  let current = value;
   for (const segment of pointer.slice(1).split('/')) {
     const key = segment.replace(/~1/g, '/').replace(/~0/g, '~');
-    if (!value || typeof value !== 'object' || !Object.hasOwn(value, key))
+    if (!current || typeof current !== 'object' || !Object.hasOwn(current, key)) {
       throw new Error('This pointer is not present in the recorded evidence.');
-    value = (value as Record<string, unknown>)[key];
+    }
+    current = (current as Record<string, unknown>)[key];
   }
-  return value;
+  return current;
 }
 @Component({
   selector: 'app-json-evidence',
@@ -59,15 +64,19 @@ export function atJsonPointer(value: unknown, pointer: string): unknown {
   `,
 })
 export class JsonEvidence {
-  readonly value = input.required<string>();
-  readonly expanded = signal(false);
-  pointer = '/response/body';
+  public readonly value = input.required<string>();
+  public readonly expanded = signal(false);
+  public pointer = '/response/body';
   private readonly selection = signal<{ source: string; label: string; text: string } | null>(null);
-  readonly selected = computed(() =>
+  public readonly selected = computed(() =>
     this.selection()?.source === this.value() ? this.selection() : null,
   );
-  readonly pointerError = signal('');
-  inspect(pointer: string) {
+  public readonly pointerError = signal('');
+  public readonly lines = computed(() => this.value().split('\n'));
+  public readonly displayed = computed(() =>
+    (this.expanded() ? this.lines() : this.lines().slice(0, 200)).join('\n'),
+  );
+  public inspect(pointer: string): void {
     this.pointer = pointer;
     this.pointerError.set('');
     this.selection.set(null);
@@ -81,11 +90,7 @@ export class JsonEvidence {
       this.pointerError.set(error instanceof Error ? error.message : 'Evidence is not valid JSON.');
     }
   }
-  readonly lines = computed(() => this.value().split('\n'));
-  readonly displayed = computed(() =>
-    (this.expanded() ? this.lines() : this.lines().slice(0, 200)).join('\n'),
-  );
-  download() {
+  public download(): void {
     const url = URL.createObjectURL(new Blob([this.value()], { type: 'application/json' }));
     const link = document.createElement('a');
     link.href = url;

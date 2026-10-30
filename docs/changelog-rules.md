@@ -17,11 +17,11 @@ Maintain the existing changelog location. Default to `CHANGELOG.md` if there is 
 
 Use `MAJOR.MINOR.PATCH`, such as `1.4.2`.
 
-| Release type | Example | When to use it |
-|---|---|---|
-| **Major** | `1.4.2 → 2.0.0` | A change breaks compatibility with a supported public interface or documented contract. |
-| **Minor** | `1.4.2 → 1.5.0` | A release adds compatible functionality, such as filters, exports, or an integration. |
-| **Patch** | `1.4.2 → 1.4.3` | A release fixes existing behavior while preserving compatibility. |
+| Release type | Example         | When to use it                                                                          |
+| ------------ | --------------- | --------------------------------------------------------------------------------------- |
+| **Major**    | `1.4.2 → 2.0.0` | A change breaks compatibility with a supported public interface or documented contract. |
+| **Minor**    | `1.4.2 → 1.5.0` | A release adds compatible functionality, such as filters, exports, or an integration.   |
+| **Patch**    | `1.4.2 → 1.4.3` | A release fixes existing behavior while preserving compatibility.                       |
 
 Apply these rules:
 
@@ -107,13 +107,13 @@ Include visuals for meaningful interface changes: new screens, redesigned layout
 
 Choose the appropriate format:
 
-| Change | Preferred visual |
-|---|---|
-| New screen or feature | Screenshot showing the feature in use |
-| Meaningful redesign | Comparable before-and-after screenshots |
-| Multi-step interaction | Short recording or a small sequence of screenshots |
-| Visible layout fix | Focused before-and-after comparison |
-| Backend or API change | Relevant request/response example or concise diagram, when useful |
+| Change                 | Preferred visual                                                  |
+| ---------------------- | ----------------------------------------------------------------- |
+| New screen or feature  | Screenshot showing the feature in use                             |
+| Meaningful redesign    | Comparable before-and-after screenshots                           |
+| Multi-step interaction | Short recording or a small sequence of screenshots                |
+| Visible layout fix     | Focused before-and-after comparison                               |
+| Backend or API change  | Relevant request/response example or concise diagram, when useful |
 
 Capture screenshots from the actual running implementation using the available browser or screenshot tools.
 

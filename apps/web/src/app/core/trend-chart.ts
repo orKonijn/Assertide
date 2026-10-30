@@ -1,17 +1,17 @@
+import type { ElementRef } from '@angular/core';
 import {
-  Component,
-  ElementRef,
-  DestroyRef,
   afterNextRender,
+  Component,
+  DestroyRef,
   effect,
   inject,
   input,
   output,
   viewChild,
 } from '@angular/core';
-import { init, use, type EChartsType } from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent } from 'echarts/components';
+import { type EChartsType, init, use } from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
 
 use([LineChart, GridComponent, TooltipComponent, SVGRenderer]);
@@ -22,7 +22,7 @@ use([LineChart, GridComponent, TooltipComponent, SVGRenderer]);
     '<div #chart role="img" aria-label="Daily final and first-attempt pass rates. Exact values and day filters are in the table below." style="height:260px;width:100%"></div>',
 })
 export class TrendChart {
-  readonly points = input.required<
+  public readonly points = input.required<
     {
       day: string;
       finalPassRate: number | null;
@@ -30,10 +30,10 @@ export class TrendChart {
       executed: number;
     }[]
   >();
-  readonly daySelected = output<string>();
+  public readonly daySelected = output<string>();
   private readonly element = viewChild<ElementRef<HTMLDivElement>>('chart');
   private chart?: EChartsType;
-  constructor() {
+  public constructor() {
     const destroy = inject(DestroyRef);
     effect(() => {
       this.points();
@@ -41,10 +41,14 @@ export class TrendChart {
     });
     afterNextRender(() => {
       const node = this.element()?.nativeElement;
-      if (!node) return;
+      if (!node) {
+        return;
+      }
       this.chart = init(node, undefined, { renderer: 'svg' });
       this.chart.on('click', (event) => {
-        if (typeof event.name === 'string') this.daySelected.emit(event.name);
+        if (typeof event.name === 'string') {
+          this.daySelected.emit(event.name);
+        }
       });
       const resize = new ResizeObserver(() => this.chart?.resize());
       resize.observe(node);
@@ -58,7 +62,7 @@ export class TrendChart {
       });
     });
   }
-  private draw() {
+  private draw(): void {
     const styles = getComputedStyle(document.documentElement);
     const color = styles.getPropertyValue('--text').trim() || '#64748b';
     const surface = styles.getPropertyValue('--surface').trim();

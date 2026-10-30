@@ -1,9 +1,14 @@
-import { Queue, Worker, DelayedError } from "bullmq";
-import { z } from "zod";
-import type { SqlConnection, SqlExecutor } from "./database.ts";
-import { migrate } from "./migrations.ts";
-export function executionLimits() {
-  const limit = (name: string, fallback: number, max: number) =>
+import { DelayedError, Queue, Worker } from 'bullmq';
+import { z } from 'zod';
+
+import type { SqlConnection, SqlExecutor } from './database.ts';
+import { migrate } from './migrations.ts';
+export function executionLimits(): {
+  projectRuns: number;
+  organizationRuns: number;
+  organizationWorkers: number;
+} {
+  const limit = (name: string, fallback: number, max: number): number =>
     z.coerce
       .number()
       .int()
@@ -11,17 +16,17 @@ export function executionLimits() {
       .max(max)
       .parse(process.env[name] ?? fallback);
   return {
-    projectRuns: limit("MAX_PROJECT_RUNS", 2, 100),
-    organizationRuns: limit("MAX_ORGANIZATION_RUNS", 4, 500),
-    organizationWorkers: limit("MAX_ORGANIZATION_WORKERS", 8, 1000),
+    projectRuns: limit('MAX_PROJECT_RUNS', 2, 100),
+    organizationRuns: limit('MAX_ORGANIZATION_RUNS', 4, 500),
+    organizationWorkers: limit('MAX_ORGANIZATION_WORKERS', 8, 1000),
   };
 }
 
-export async function initializeScheduler(db: SqlConnection) {
-  await migrate(db, "scheduler-baseline-v1", [
-    "CREATE TABLE IF NOT EXISTS scheduler_mutex (id integer PRIMARY KEY)",
-    "INSERT INTO scheduler_mutex(id) VALUES(1) ON CONFLICT DO NOTHING",
-    "CREATE TABLE IF NOT EXISTS run_outbox (run_id text PRIMARY KEY REFERENCES platform_documents(id), created_at timestamptz NOT NULL DEFAULT now(), published_at timestamptz)",
+export async function initializeScheduler(db: SqlConnection): Promise<void> {
+  await migrate(db, 'scheduler-baseline-v1', [
+    'CREATE TABLE IF NOT EXISTS scheduler_mutex (id integer PRIMARY KEY)',
+    'INSERT INTO scheduler_mutex(id) VALUES(1) ON CONFLICT DO NOTHING',
+    'CREATE TABLE IF NOT EXISTS run_outbox (run_id text PRIMARY KEY REFERENCES platform_documents(id), created_at timestamptz NOT NULL DEFAULT now(), published_at timestamptz)',
   ]);
   await db.query(
     "INSERT INTO run_outbox(run_id) SELECT id FROM platform_documents WHERE kind='run' AND body->>'phase'='queued' ON CONFLICT DO NOTHING",
@@ -31,9 +36,9 @@ export async function claimExecution(
   db: SqlConnection,
   owner: string,
   id?: string,
-) {
+): Promise<Record<string, unknown> | undefined> {
   return db.transaction(async (tx) => {
-    await tx.query("SELECT id FROM scheduler_mutex WHERE id=1 FOR UPDATE");
+    await tx.query('SELECT id FROM scheduler_mutex WHERE id=1 FOR UPDATE');
     const target = (
       await tx.query<{
         id: string;
@@ -45,7 +50,9 @@ export async function claimExecution(
         [id ?? null],
       )
     ).rows[0];
-    if (!target) return undefined;
+    if (!target) {
+      return undefined;
+    }
     const active = (
       await tx.query<{ runs: string; workers: string; project_runs: string }>(
         "SELECT count(*) AS runs,COALESCE(sum((body->'config'->>'workers')::int),0) AS workers,count(*) FILTER(WHERE project_id=$2) AS project_runs FROM platform_documents WHERE organization_id=$1 AND kind='run' AND body->>'phase' IN ('running','provisioning','finalizing')",
@@ -78,12 +85,14 @@ export async function renewLease(
   id: string,
   owner: string,
   epoch: number,
-) {
+): Promise<void> {
   const result = await db.query(
     `UPDATE platform_documents SET body=jsonb_set(body,'{leaseExpires}',to_jsonb(now()+interval '30 seconds')) WHERE id=$1 AND body->>'leaseOwner'=$2 AND (body->>'leaseEpoch')::int=$3 AND (body->>'leaseExpires')::timestamptz>now() RETURNING id`,
     [id, owner, epoch],
   );
-  if (!result.rows.length) throw new Error("Execution lease lost");
+  if (!result.rows.length) {
+    throw new Error('Execution lease lost');
+  }
 }
 export async function updateOwnedRun(
   db: SqlExecutor,
@@ -91,14 +100,16 @@ export async function updateOwnedRun(
   owner: string,
   epoch: number,
   patch: Record<string, unknown>,
-) {
+): Promise<void> {
   const result = await db.query(
     `WITH updated AS (UPDATE platform_documents SET body=body || $1::jsonb || CASE WHEN body->>'cancelRequested'='true' AND $1::jsonb->>'phase'='completed' THEN '{"phase":"canceled","reportPhase":"failed"}'::jsonb ELSE '{}'::jsonb END,version=version+1 WHERE id=$2 AND body->>'leaseOwner'=$3 AND (body->>'leaseEpoch')::int=$4 AND (body->>'leaseExpires')::timestamptz>now() AND (NOT $1::jsonb ? 'phase' OR body->>'phase' IN ('running','provisioning','finalizing')) RETURNING id,body) INSERT INTO run_events(run_id,body) SELECT id,$1::jsonb || jsonb_build_object('phase',body->>'phase','reportPhase',body->>'reportPhase') FROM updated RETURNING run_id`,
     [JSON.stringify(patch), id, owner, epoch],
   );
-  if (!result.rows.length) throw new Error("Stale worker update rejected");
+  if (!result.rows.length) {
+    throw new Error('Stale worker update rejected');
+  }
 }
-export async function recoverExpiredLeases(db: SqlConnection) {
+export async function recoverExpiredLeases(db: SqlConnection): Promise<void> {
   await db.query(
     `UPDATE platform_documents SET body=body || jsonb_build_object('phase','infrastructure_error','reportPhase','failed','endedAt',now(),'diagnostic','Worker lease expired before terminal manifest','leaseEpoch',COALESCE((body->>'leaseEpoch')::int,0)+1),version=version+1 WHERE kind='run' AND body->>'phase' IN ('running','provisioning','finalizing') AND COALESCE((body->>'leaseExpires')::timestamptz,'-infinity'::timestamptz)<now()`,
   );
@@ -114,28 +125,29 @@ export class RedisTransport {
   private timer?: ReturnType<typeof setTimeout>;
   private stopped = false;
   private pumping: Promise<void> = Promise.resolve();
-  constructor(
+  public constructor(
     private readonly db: SqlConnection,
     url: string,
     processRun: (id: string) => Promise<void>,
-    name = "assertide-executions",
+    name = 'assertide-executions',
   ) {
     const parsed = new URL(url);
-    if (!["redis:", "rediss:"].includes(parsed.protocol))
-      throw new Error("Invalid Redis protocol");
+    if (!['redis:', 'rediss:'].includes(parsed.protocol)) {
+      throw new Error('Invalid Redis protocol');
+    }
     const connection = {
       host: parsed.hostname,
       port: Number(parsed.port || 6379),
       username: decodeURIComponent(parsed.username) || undefined,
       password: decodeURIComponent(parsed.password) || undefined,
       db: Number(parsed.pathname.slice(1) || 0),
-      ...(parsed.protocol === "rediss:" ? { tls: {} } : {}),
+      ...(parsed.protocol === 'rediss:' ? { tls: {} } : {}),
     };
     this.queue = new Queue(name, {
       connection: { ...connection, maxRetriesPerRequest: 1 },
       defaultJobOptions: {
         attempts: 10,
-        backoff: { type: "exponential", delay: 1000 },
+        backoff: { type: 'exponential', delay: 1000 },
         removeOnComplete: { age: 86400, count: 10000 },
         removeOnFail: { age: 86400 * 7 },
       },
@@ -146,7 +158,9 @@ export class RedisTransport {
         try {
           await processRun(z.object({ runId: z.uuid() }).parse(job.data).runId);
         } catch (error) {
-          if (!(error instanceof CapacityUnavailable)) throw error;
+          if (!(error instanceof CapacityUnavailable)) {
+            throw error;
+          }
           await job.moveToDelayed(Date.now() + 1000, token);
           throw new DelayedError();
         }
@@ -156,52 +170,40 @@ export class RedisTransport {
         concurrency: 1,
       },
     );
-    this.queue.on("error", () =>
-      console.error("Queue transport unavailable; outbox retained"),
-    );
-    this.worker.on("error", () =>
-      console.error("Worker transport unavailable; reconnecting"),
-    );
+    this.queue.on('error', () => console.error('Queue transport unavailable; outbox retained'));
+    this.worker.on('error', () => console.error('Worker transport unavailable; reconnecting'));
   }
-  async start() {
-    await Promise.all([
-      this.queue.waitUntilReady(),
-      this.worker.waitUntilReady(),
-    ]);
+  public async start(): Promise<void> {
+    await Promise.all([this.queue.waitUntilReady(), this.worker.waitUntilReady()]);
     this.schedule();
   }
-  private schedule() {
-    this.pumping = this.publish()
-      .catch(() => {
-        console.error("Outbox publication delayed; will retry");
-      })
-      .finally(() => {
-        if (!this.stopped) this.timer = setTimeout(() => this.schedule(), 1000);
-      });
-  }
-  async publish() {
+  public async publish(): Promise<void> {
     const rows = (
       await this.db.query<{ run_id: string }>(
         `SELECT o.run_id FROM run_outbox o JOIN platform_documents d ON d.id=o.run_id WHERE d.body->>'phase'='queued' AND (o.published_at IS NULL OR o.published_at<now()-interval '60 seconds') ORDER BY o.created_at LIMIT 100`,
       )
     ).rows;
     for (const row of rows) {
-      await this.queue.add(
-        "execute",
-        { runId: row.run_id },
-        { jobId: row.run_id },
-      );
-      await this.db.query(
-        "UPDATE run_outbox SET published_at=now() WHERE run_id=$1",
-        [row.run_id],
-      );
+      await this.queue.add('execute', { runId: row.run_id }, { jobId: row.run_id });
+      await this.db.query('UPDATE run_outbox SET published_at=now() WHERE run_id=$1', [row.run_id]);
     }
   }
-  async close() {
+  public async close(): Promise<void> {
     this.stopped = true;
     clearTimeout(this.timer);
     await this.pumping;
     await this.worker.close();
     await this.queue.close();
+  }
+  private schedule(): void {
+    this.pumping = this.publish()
+      .catch(() => {
+        console.error('Outbox publication delayed; will retry');
+      })
+      .finally(() => {
+        if (!this.stopped) {
+          this.timer = setTimeout(() => this.schedule(), 1000);
+        }
+      });
   }
 }

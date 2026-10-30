@@ -1,5 +1,5 @@
-import { Component, Injectable, inject, signal, computed, DestroyRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Component, computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 interface Notice {
   id: number;
   message: string;
@@ -7,23 +7,23 @@ interface Notice {
 }
 @Injectable({ providedIn: 'root' })
 export class Notifications {
-  readonly history = signal<Notice[]>([]);
-  readonly active = signal<Notice[]>([]);
+  public readonly history = signal<Notice[]>([]);
+  public readonly active = signal<Notice[]>([]);
   private readonly seenThrough = signal(0);
-  readonly historyOpen = signal(false);
-  readonly unread = computed(() =>
+  public readonly historyOpen = signal(false);
+  public readonly unread = computed(() =>
     this.historyOpen() ? 0 : this.history().filter((item) => item.id > this.seenThrough()).length,
   );
-  setHistoryOpen(open: boolean) {
+  private nextId = 0;
+  private readonly timers = new Set<ReturnType<typeof setTimeout>>();
+  public constructor() {
+    inject(DestroyRef).onDestroy(() => this.clear());
+  }
+  public setHistoryOpen(open: boolean): void {
     this.seenThrough.set(this.nextId);
     this.historyOpen.set(open);
   }
-  private nextId = 0;
-  private readonly timers = new Set<ReturnType<typeof setTimeout>>();
-  constructor() {
-    inject(DestroyRef).onDestroy(() => this.clear());
-  }
-  success(message: string) {
+  public success(message: string): void {
     const item = { id: ++this.nextId, message, at: new Date().toISOString() };
     this.history.update((items) => [item, ...items].slice(0, 50));
     this.active.set([item]);
@@ -33,11 +33,13 @@ export class Notifications {
     }, 5000);
     this.timers.add(timer);
   }
-  dismiss(id: number) {
+  public dismiss(id: number): void {
     this.active.update((items) => items.filter((item) => item.id !== id));
   }
-  clear() {
-    for (const timer of this.timers) clearTimeout(timer);
+  public clear(): void {
+    for (const timer of this.timers) {
+      clearTimeout(timer);
+    }
     this.timers.clear();
     this.historyOpen.set(false);
     this.seenThrough.set(this.nextId);
@@ -145,8 +147,8 @@ export class Notifications {
   `,
 })
 export class NotificationLog {
-  readonly notices = inject(Notifications);
-  onToggle(event: Event) {
+  public readonly notices = inject(Notifications);
+  public onToggle(event: Event): void {
     this.notices.setHistoryOpen((event as ToggleEvent).newState === 'open');
   }
 }

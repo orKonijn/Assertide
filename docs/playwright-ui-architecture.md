@@ -44,17 +44,11 @@ Bad:
 test('user can run a test suite', async ({ page }) => {
   await page.goto('/automation');
 
-  await page
-    .getByRole('button', { name: 'Smoke Tests' })
-    .click();
+  await page.getByRole('button', { name: 'Smoke Tests' }).click();
 
-  await page
-    .getByRole('button', { name: 'Run' })
-    .click();
+  await page.getByRole('button', { name: 'Run' }).click();
 
-  await expect(
-    page.getByTestId('execution-status')
-  ).toHaveText('Passed');
+  await expect(page.getByTestId('execution-status')).toHaveText('Passed');
 });
 ```
 
@@ -64,9 +58,7 @@ Prefer:
 test('user can run a test suite', async () => {
   await automationPage.runSuite(TestSuites.SMOKE);
 
-  await expect(
-    automationPage.executionStatus
-  ).toHaveText(TestRunStatuses.PASSED);
+  await expect(automationPage.executionStatus).toHaveText(TestRunStatuses.PASSED);
 });
 ```
 
@@ -124,7 +116,7 @@ await automationPage.doEverythingAndVerifyItWorks();
 Tests must be logically grouped using:
 
 ```ts
-test.describe()
+test.describe();
 ```
 
 Example:
@@ -175,7 +167,7 @@ Usually one or two levels of nesting is enough.
 Use:
 
 ```ts
-test.beforeEach()
+test.beforeEach();
 ```
 
 for setup required independently by each test.
@@ -203,9 +195,7 @@ test.describe('Automation execution', () => {
   test('runs a smoke suite', async () => {
     await automationPage.runSuite(TestSuites.SMOKE);
 
-    await expect(
-      automationPage.executionStatus
-    ).toHaveText(TestRunStatuses.PASSED);
+    await expect(automationPage.executionStatus).toHaveText(TestRunStatuses.PASSED);
   });
 });
 ```
@@ -217,7 +207,7 @@ test.describe('Automation execution', () => {
 Use:
 
 ```ts
-test.beforeAll()
+test.beforeAll();
 ```
 
 for expensive setup that can safely happen once per worker or suite.
@@ -257,10 +247,7 @@ test.describe('Project automation', () => {
   let automationPage: AutomationPage;
 
   test.beforeAll(async ({ request }) => {
-    projectId = await ProjectApiUtils.createProject(
-      request,
-      TestProjects.AUTOMATION
-    );
+    projectId = await ProjectApiUtils.createProject(request, TestProjects.AUTOMATION);
   });
 
   test.beforeEach(async ({ page }) => {
@@ -275,9 +262,7 @@ test.describe('Project automation', () => {
 
     await automationPage.runSuite(TestSuites.SMOKE);
 
-    await expect(
-      automationPage.executionStatus
-    ).toHaveText(TestRunStatuses.PASSED);
+    await expect(automationPage.executionStatus).toHaveText(TestRunStatuses.PASSED);
   });
 });
 ```
@@ -341,9 +326,7 @@ export const AutomationSelectors = {
 Then:
 
 ```ts
-page.getByTestId(
-  AutomationSelectors.executionStatus
-);
+page.getByTestId(AutomationSelectors.executionStatus);
 ```
 
 ---
@@ -374,10 +357,7 @@ export const AutomationSelectors = {
   reportButton: 'report-button',
 } as const;
 
-export type AutomationSelector =
-  typeof AutomationSelectors[
-    keyof typeof AutomationSelectors
-  ];
+export type AutomationSelector = (typeof AutomationSelectors)[keyof typeof AutomationSelectors];
 ```
 
 Do not scatter raw selector strings throughout POM methods.
@@ -439,18 +419,13 @@ export const TestRunStatuses = {
   FAILED: 'Failed',
 } as const;
 
-export type TestRunStatus =
-  typeof TestRunStatuses[
-    keyof typeof TestRunStatuses
-  ];
+export type TestRunStatus = (typeof TestRunStatuses)[keyof typeof TestRunStatuses];
 ```
 
 Then:
 
 ```ts
-await expect(
-  automationPage.executionStatus
-).toHaveText(TestRunStatuses.PASSED);
+await expect(automationPage.executionStatus).toHaveText(TestRunStatuses.PASSED);
 ```
 
 ---
@@ -544,13 +519,8 @@ Prefer focused modules.
 Bad:
 
 ```ts
-export async function clickRunButton(
-  page: Page
-): Promise<void> {
-  await page.getByRole(
-    'button',
-    { name: 'Run tests' }
-  ).click();
+export async function clickRunButton(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Run tests' }).click();
 }
 ```
 
@@ -716,9 +686,7 @@ Ideal:
 test('user can retry a failed execution', async () => {
   await executionPage.retry();
 
-  await expect(
-    executionPage.status
-  ).toHaveText(TestRunStatuses.RUNNING);
+  await expect(executionPage.status).toHaveText(TestRunStatuses.RUNNING);
 });
 ```
 
@@ -741,9 +709,7 @@ Prefer:
 ```ts
 await automationPage.runSuite(TestSuites.SMOKE);
 
-await expect(
-  automationPage.executionStatus
-).toHaveText(TestRunStatuses.PASSED);
+await expect(automationPage.executionStatus).toHaveText(TestRunStatuses.PASSED);
 ```
 
 Avoid:
@@ -763,7 +729,7 @@ Specs assert state.
 Once Page Objects are initialized, test bodies should rarely access:
 
 ```ts
-page
+page;
 ```
 
 directly.
@@ -901,9 +867,9 @@ Navigation should be explicit.
 Avoid:
 
 ```ts
-page: any
-selector: any
-data: any
+page: any;
+selector: any;
+data: any;
 ```
 
 Use proper Playwright and domain types.
@@ -1253,7 +1219,7 @@ The screenshot should show the actual browser state when the failure occurred.
 Configure Playwright appropriately, for example:
 
 ```ts
-screenshot: 'only-on-failure'
+screenshot: 'only-on-failure';
 ```
 
 Additionally, ensure the screenshot is available or attached within the Allure report.
@@ -1338,19 +1304,12 @@ Conceptually:
 
 ```ts
 export class AllureUtils {
-  static async attachScreenshot(
-    page: Page,
-    name: string
-  ): Promise<void> {
+  static async attachScreenshot(page: Page, name: string): Promise<void> {
     const screenshot = await page.screenshot({
       fullPage: true,
     });
 
-    await allure.attachment(
-      name,
-      screenshot,
-      'image/png'
-    );
+    await allure.attachment(name, screenshot, 'image/png');
   }
 }
 ```
@@ -1386,7 +1345,7 @@ For failed or retried tests, preserve Playwright trace artifacts.
 A useful configuration commonly includes:
 
 ```ts
-trace: 'on-first-retry'
+trace: 'on-first-retry';
 ```
 
 or another repository-appropriate strategy.
@@ -1408,7 +1367,7 @@ Trace information is especially useful for:
 A common Playwright configuration is:
 
 ```ts
-video: 'retain-on-failure'
+video: 'retain-on-failure';
 ```
 
 Retain videos only when they provide useful debugging value.
@@ -1889,9 +1848,7 @@ with no assertion.
 Good:
 
 ```ts
-await expect(
-  automationPage.executionStatus
-).toHaveText(TestRunStatuses.PASSED);
+await expect(automationPage.executionStatus).toHaveText(TestRunStatuses.PASSED);
 ```
 
 with screenshot attached on failure or meaningful milestone.
@@ -2116,29 +2073,15 @@ The spec should still clearly show the assertions.
 Example:
 
 ```ts
-test(
-  'shows passed status after successful execution',
-  async () => {
-    await allure.description(
-      'Verifies successful Playwright suite execution.'
-    );
+test('shows passed status after successful execution', async () => {
+  await allure.description('Verifies successful Playwright suite execution.');
 
-    await automationPage.runSuite(
-      TestSuites.SMOKE
-    );
+  await automationPage.runSuite(TestSuites.SMOKE);
 
-    await allure.step(
-      'Verify execution completed successfully',
-      async () => {
-        await expect(
-          automationPage.executionStatus
-        ).toHaveText(
-          TestRunStatuses.PASSED
-        );
-      }
-    );
-  }
-);
+  await allure.step('Verify execution completed successfully', async () => {
+    await expect(automationPage.executionStatus).toHaveText(TestRunStatuses.PASSED);
+  });
+});
 ```
 
 Do not allow Allure integration to make tests significantly harder to read.

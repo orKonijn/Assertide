@@ -1,9 +1,9 @@
-import type { SqlConnection } from "./database.ts";
-import { migrate } from "./migrations.ts";
+import type { SqlConnection } from './database.ts';
+import { migrate } from './migrations.ts';
 
 /** Transactional derived state: a terminal result and its analytics become visible together. */
-export async function initializeAnalyticsProjection(db: SqlConnection) {
-  await migrate(db, "analytics-instances-v1", [
+export async function initializeAnalyticsProjection(db: SqlConnection): Promise<void> {
+  await migrate(db, 'analytics-instances-v1', [
     `CREATE TABLE analytics_instances (
       run_id text NOT NULL REFERENCES platform_documents(id) ON DELETE CASCADE,
       ordinal integer NOT NULL, organization_id uuid NOT NULL, project_id uuid NOT NULL,
@@ -12,7 +12,7 @@ export async function initializeAnalyticsProjection(db: SqlConnection) {
       final_passed boolean NOT NULL, first_passed boolean NOT NULL, recovered boolean NOT NULL,
       result jsonb NOT NULL, PRIMARY KEY(run_id,ordinal)
     )`,
-    "CREATE INDEX analytics_instances_scope ON analytics_instances(organization_id,project_id,ended_at)",
+    'CREATE INDEX analytics_instances_scope ON analytics_instances(organization_id,project_id,ended_at)',
     `CREATE FUNCTION project_analytics_instances() RETURNS trigger LANGUAGE plpgsql AS $$
     BEGIN
       IF NEW.kind <> 'run' THEN RETURN NEW; END IF;
@@ -39,7 +39,7 @@ export async function initializeAnalyticsProjection(db: SqlConnection) {
       END IF;
       RETURN NEW;
     END $$`,
-    "CREATE TRIGGER analytics_instances_changed AFTER INSERT OR UPDATE ON platform_documents FOR EACH ROW EXECUTE FUNCTION project_analytics_instances()",
+    'CREATE TRIGGER analytics_instances_changed AFTER INSERT OR UPDATE ON platform_documents FOR EACH ROW EXECUTE FUNCTION project_analytics_instances()',
     // Backfill existing finalized records without changing their authoritative bodies.
     `INSERT INTO analytics_instances
       SELECT p.id, ord::integer,p.organization_id,p.project_id,(p.body->>'endedAt')::timestamptz,

@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
-import { firstValueFrom, catchError, throwError } from 'rxjs';
+import { inject, Injectable, signal } from '@angular/core';
+import { catchError, firstValueFrom, throwError } from 'rxjs';
+
 import { Notifications } from './notifications';
 
 export interface Identity {
@@ -131,8 +132,9 @@ export function errorMessage(error: unknown): string {
     const id = error.headers.get('X-Request-ID');
     const reference = id && /^[a-f0-9-]{36}$/.test(id) ? ` Reference: ${id}.` : '';
     const body: unknown = error.error;
-    if (body && typeof body === 'object' && 'title' in body && typeof body.title === 'string')
+    if (body && typeof body === 'object' && 'title' in body && typeof body.title === 'string') {
       return body.title + reference;
+    }
     return error.status === 0
       ? 'The service is unavailable. Please retry.'
       : `Request failed (${error.status}).${reference}`;
@@ -143,10 +145,10 @@ export function errorMessage(error: unknown): string {
 export class Api {
   private readonly http = inject(HttpClient);
   private readonly notices = inject(Notifications);
-  readonly identity = signal<Identity | null>(null);
-  readonly projects = signal<Project[]>([]);
-  readonly projectId = signal('00000000-0000-4000-8000-000000000010');
-  async loadIdentity() {
+  public readonly identity = signal<Identity | null>(null);
+  public readonly projects = signal<Project[]>([]);
+  public readonly projectId = signal('00000000-0000-4000-8000-000000000010');
+  public async loadIdentity(): Promise<void> {
     const identity = await firstValueFrom(this.http.get<Identity>('/v1/me'));
     this.identity.set(identity);
     const selected = localStorage.getItem('assertide-project');
@@ -157,22 +159,26 @@ export class Api {
     );
     this.projects.set((await this.get<{ items: Project[] }>('/projects')).items);
   }
-  selectProject(id: string) {
-    if (!this.identity()?.projectIds.includes(id)) return;
+  public selectProject(id: string): void {
+    if (!this.identity()?.projectIds.includes(id)) {
+      return;
+    }
     localStorage.setItem('assertide-project', id);
     this.projectId.set(id);
   }
-  get<T>(path: string) {
+  public get<T>(path: string): Promise<T> {
     return firstValueFrom(
       this.http.get<T>(`/v1${path}`).pipe(
         catchError((error: unknown) => {
-          if (error instanceof HttpErrorResponse && error.status === 401) this.identity.set(null);
+          if (error instanceof HttpErrorResponse && error.status === 401) {
+            this.identity.set(null);
+          }
           return throwError(() => error);
         }),
       ),
     );
   }
-  post<T>(path: string, body: unknown, key?: string, version?: number) {
+  public post<T>(path: string, body: unknown, key?: string, version?: number): Promise<T> {
     return firstValueFrom(
       this.http
         .post<T>(`/v1${path}`, body, {
@@ -183,28 +189,32 @@ export class Api {
         })
         .pipe(
           catchError((error: unknown) => {
-            if (error instanceof HttpErrorResponse && error.status === 401) this.identity.set(null);
+            if (error instanceof HttpErrorResponse && error.status === 401) {
+              this.identity.set(null);
+            }
             return throwError(() => error);
           }),
         ),
     ).then((result) => {
-      this.notices.success(
-        path.endsWith('/runs') || path.endsWith('/reruns')
-          ? 'Execution requested.'
-          : path.endsWith('/cancel')
-            ? 'Cancellation requested.'
-            : path.endsWith('/report-rebuilds')
-              ? 'Report rebuild requested.'
-              : 'Changes saved.',
-      );
+      let notice = 'Changes saved.';
+      if (path.endsWith('/runs') || path.endsWith('/reruns')) {
+        notice = 'Execution requested.';
+      } else if (path.endsWith('/cancel')) {
+        notice = 'Cancellation requested.';
+      } else if (path.endsWith('/report-rebuilds')) {
+        notice = 'Report rebuild requested.';
+      }
+      this.notices.success(notice);
       return result;
     });
   }
-  patch<T>(path: string, body: unknown, version: number) {
+  public patch<T>(path: string, body: unknown, version: number): Promise<T> {
     return firstValueFrom(
       this.http.patch<T>(`/v1${path}`, body, { headers: { 'If-Match': `"${version}"` } }).pipe(
         catchError((error: unknown) => {
-          if (error instanceof HttpErrorResponse && error.status === 401) this.identity.set(null);
+          if (error instanceof HttpErrorResponse && error.status === 401) {
+            this.identity.set(null);
+          }
           return throwError(() => error);
         }),
       ),
@@ -213,12 +223,12 @@ export class Api {
       return result;
     });
   }
-  async logout() {
+  public async logout(): Promise<void> {
     await firstValueFrom(this.http.post('/auth/logout', {}));
     this.identity.set(null);
     location.assign('/');
   }
-  async launch(
+  public async launch(
     testIds: string[],
     key: string,
     workers: number,
@@ -229,7 +239,7 @@ export class Api {
     environmentId = 'local-lab',
     headed = false,
     suite?: { id: string; version: number },
-  ) {
+  ): Promise<Run> {
     const catalogRevision =
       revision ??
       (await this.get<{ revision: string }>(`/projects/${this.projectId()}/catalog`)).revision;

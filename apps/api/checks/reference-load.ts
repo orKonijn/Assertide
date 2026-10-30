@@ -1,28 +1,26 @@
-import assert from "node:assert/strict";
-import { randomUUID, randomBytes, createHash } from "node:crypto";
-import { performance } from "node:perf_hooks";
-import { mkdir, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import express from "express";
-import { testDatabase } from "../test/database.ts";
-import { IdentityService } from "../src/identity.ts";
-import { PlatformService, mountPlatform } from "../src/platform.ts";
-import { parseDiscovery } from "../src/discovery.ts";
-import {
-  claimExecution,
-  renewLease,
-  updateOwnedRun,
-} from "../src/scheduler.ts";
-import { mountLiveEvents } from "../src/live.ts";
-if (!process.env["TEST_DATABASE_URL"])
-  throw new Error(
-    "Reference load requires an isolated PostgreSQL test database",
-  );
-process.env["MAX_PROJECT_RUNS"] = "4";
-process.env["MAX_ORGANIZATION_RUNS"] = "20";
-process.env["MAX_ORGANIZATION_WORKERS"] = "20";
+import assert from 'node:assert/strict';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { performance } from 'node:perf_hooks';
+import { fileURLToPath } from 'node:url';
+
+import express from 'express';
+import { z } from 'zod';
+
+import { parseDiscovery } from '../src/discovery.ts';
+import { IdentityService } from '../src/identity.ts';
+import { mountLiveEvents } from '../src/live.ts';
+import { mountPlatform, PlatformService } from '../src/platform.ts';
+import { claimExecution, renewLease, updateOwnedRun } from '../src/scheduler.ts';
+import { testDatabase } from '../test/database.ts';
+if (!process.env['TEST_DATABASE_URL']) {
+  throw new Error('Reference load requires an isolated PostgreSQL test database');
+}
+process.env['MAX_PROJECT_RUNS'] = '4';
+process.env['MAX_ORGANIZATION_RUNS'] = '20';
+process.env['MAX_ORGANIZATION_WORKERS'] = '20';
 const db = await testDatabase();
-const identity = new IdentityService(db, "http://127.0.0.1");
+const identity = new IdentityService(db, 'http://127.0.0.1');
 const service = new PlatformService(db);
 await identity.initialize();
 await service.initialize();
@@ -32,20 +30,20 @@ const discovered = parseDiscovery({
   suites: [
     {
       specs: Array.from({ length: 10000 }, (_, index) => ({
-        title: `LAB-${String(index + 1).padStart(3, "0")} Reference case ${index + 1}`,
-        file: "reference.spec.ts",
+        title: `LAB-${String(index + 1).padStart(3, '0')} Reference case ${index + 1}`,
+        file: 'reference.spec.ts',
         line: index + 1,
-        tags: ["reference"],
-        tests: [{ projectName: "api" }],
+        tags: ['reference'],
+        tests: [{ projectName: 'api' }],
       })),
     },
   ],
 });
 service.catalog = discovered.map((item) => ({
   ...item,
-  feature: "Reference load",
-  kind: "api",
-  priority: "P1",
+  feature: 'Reference load',
+  kind: 'api',
+  priority: 'P1',
   enabled: true,
 }));
 const tokens: string[] = [];
@@ -54,15 +52,15 @@ for (let index = 0; index < 50; index++) {
   await identity.provision({
     subject,
     name: subject,
-    role: "operator",
+    role: 'operator',
     organizationId,
     projectIds: projects,
   });
-  const token = randomBytes(32).toString("hex");
+  const token = randomBytes(32).toString('hex');
   tokens.push(token);
   await db.query(
     "INSERT INTO sessions(digest,subject,expires_at) VALUES($1,$2,now()+interval '1 hour')",
-    [createHash("sha256").update(token).digest("hex"), subject],
+    [createHash('sha256').update(token).digest('hex'), subject],
   );
 }
 const now = new Date().toISOString();
@@ -74,18 +72,18 @@ for (let batch = 0; batch < 10; batch++) {
     return {
       id,
       projectId: projects[(batch * 100 + offset) % 5],
-      phase: "completed",
+      phase: 'completed',
       createdAt: now,
       startedAt: now,
       endedAt: now,
-      reportPhase: "expired",
-      selection: { testIds: ["LAB-001"] },
+      reportPhase: 'expired',
+      selection: { testIds: ['LAB-001'] },
       config: { workers: 1, browserProjects: [] },
       results: Array.from({ length: 100 }, (_, index) => ({
-        id: `LAB-${String(index + 1).padStart(3, "0")}`,
-        status: "passed",
+        id: `LAB-${String(index + 1).padStart(3, '0')}`,
+        status: 'passed',
         duration: 10,
-        attempts: [{ status: "passed", duration: 10 }],
+        attempts: [{ status: 'passed', duration: 10 }],
       })),
     };
   });
@@ -98,10 +96,10 @@ const app = express();
 app.use(express.json());
 mountPlatform(app, service, identity);
 mountLiveEvents(app, identity, service);
-const server = app.listen(0, "127.0.0.1");
-await new Promise<void>((resolve) => server.once("listening", resolve));
+const server = app.listen(0, '127.0.0.1');
+await new Promise<void>((resolve) => server.once('listening', resolve));
 const address = server.address();
-assert.ok(address && typeof address !== "string");
+assert.ok(address && typeof address !== 'string');
 const origin = `http://127.0.0.1:${address.port}`;
 const samples: Record<string, number[]> = {
   catalog: [],
@@ -116,105 +114,95 @@ const request = async (
   category: string,
   url: string,
   body?: unknown,
-) => {
+): Promise<unknown> => {
   const start = performance.now();
   const response = await fetch(origin + url, {
-    method: body ? "POST" : "GET",
+    method: body ? 'POST' : 'GET',
     headers: {
       Cookie: `assertide_session=${tokens[index]}`,
-      Origin: "http://127.0.0.1",
-      "Content-Type": "application/json",
-      "Idempotency-Key": randomUUID(),
+      Origin: 'http://127.0.0.1',
+      'Content-Type': 'application/json',
+      'Idempotency-Key': randomUUID(),
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
-  const value = await response.json();
+  const value: unknown = await response.json();
   assert.ok(response.ok, JSON.stringify(value));
   samples[category]!.push(performance.now() - start);
   return value;
 };
 try {
   // Fifty independent authenticated clients remain concurrent across rounds.
-  for (let round = 0; round < 5; round++)
+  for (let round = 0; round < 5; round++) {
     await Promise.all(
       tokens.map(async (_, index) => {
         const project = projects[index % 5];
         await request(
           index,
-          "catalog",
+          'catalog',
           `/v1/projects/${project}/catalog?query=Reference%20case%209999`,
         );
-        await request(
-          index,
-          "metadata",
-          `/v1/runs?projectId=${project}&limit=10`,
-        );
+        await request(index, 'metadata', `/v1/runs?projectId=${project}&limit=10`);
       }),
     );
+  }
   await Promise.all(
     tokens.map(async (_, index) => {
-      const run = await request(
-        index,
-        "launch",
-        `/v1/projects/${projects[index % 5]}/runs`,
-        {
-          catalogRevision: service.revision,
-          selection: { testIds: ["LAB-001"] },
-          environmentId: "local-lab",
-          browserProjects: [],
-          workers: 1,
-          retries: 0,
-          headed: false,
-          video: "off",
-        },
-      );
-      runIds.push(run.id);
+      const run = await request(index, 'launch', `/v1/projects/${projects[index % 5]}/runs`, {
+        catalogRevision: service.revision,
+        selection: { testIds: ['LAB-001'] },
+        environmentId: 'local-lab',
+        browserProjects: [],
+        workers: 1,
+        retries: 0,
+        headed: false,
+        video: 'off',
+      });
+      const parsedRun = z.object({ id: z.string() }).parse(run);
+      runIds.push(parsedRun.id);
     }),
   );
   const claimed: Record<string, unknown>[] = [];
   for (const id of runIds) {
-    const run = await claimExecution(db, "reference-worker", id);
-    if (run) claimed.push(run);
+    const run = await claimExecution(db, 'reference-worker', id);
+    if (run) {
+      claimed.push(run);
+    }
   }
   assert.equal(claimed.length, 20);
-  for (let round = 0; round < 5; round++)
+  for (let round = 0; round < 5; round++) {
     await Promise.all(
       claimed.map(async (run) => {
         const start = performance.now();
-        await renewLease(
-          db,
-          String(run["id"]),
-          "reference-worker",
-          Number(run["leaseEpoch"]),
-        );
-        samples["heartbeat"]!.push(performance.now() - start);
+        await renewLease(db, String(run['id']), 'reference-worker', Number(run['leaseEpoch']));
+        samples['heartbeat']!.push(performance.now() - start);
       }),
     );
+  }
   const marker = randomUUID();
   const liveAbort = new AbortController();
   const streams = await Promise.all(
     tokens.map((token, index) =>
-      fetch(
-        `${origin}/v1/runs/${claimed[index % claimed.length]!["id"]}/events`,
-        {
-          headers: { Cookie: `assertide_session=${token}` },
-          signal: liveAbort.signal,
-        },
-      ),
+      fetch(`${origin}/v1/runs/${claimed[index % claimed.length]!['id']}/events`, {
+        headers: { Cookie: `assertide_session=${token}` },
+        signal: liveAbort.signal,
+      }),
     ),
   );
   const liveStart = performance.now();
   const readings = streams.map(async (response) => {
     assert.equal(response.status, 200);
     const reader = response.body!.getReader();
-    let text = "";
+    let text = '';
     try {
       for (;;) {
         const chunk = await reader.read();
-        if (chunk.done) throw new Error("Live stream closed before update");
+        if (chunk.done) {
+          throw new Error('Live stream closed before update');
+        }
         text += new TextDecoder().decode(chunk.value);
         if (text.includes(marker)) {
-          samples["live"]!.push(performance.now() - liveStart);
+          samples['live']!.push(performance.now() - liveStart);
           return;
         }
       }
@@ -226,13 +214,9 @@ try {
   try {
     await Promise.all(
       claimed.map((run) =>
-        updateOwnedRun(
-          db,
-          String(run["id"]),
-          "reference-worker",
-          Number(run["leaseEpoch"]),
-          { liveProbe: marker },
-        ),
+        updateOwnedRun(db, String(run['id']), 'reference-worker', Number(run['leaseEpoch']), {
+          liveProbe: marker,
+        }),
       ),
     );
     await Promise.all(readings);
@@ -240,7 +224,7 @@ try {
     clearTimeout(deadline);
     liveAbort.abort();
   }
-  const p95 = (values: number[]) =>
+  const p95 = (values: number[]): number =>
     [...values].sort((a, b) => a - b)[Math.ceil(values.length * 0.95) - 1]!;
   const result = {
     recordedAt: new Date().toISOString(),
@@ -249,47 +233,23 @@ try {
     resultInstances: 100000,
     projects: 5,
     activeWorkerLeases: 20,
-    scope:
-      "Control-plane HTTP and worker leases; browser workload and human usability excluded",
+    scope: 'Control-plane HTTP and worker leases; browser workload and human usability excluded',
     p95Ms: Object.fromEntries(
-      Object.entries(samples).map(([name, values]) => [
-        name,
-        Math.round(p95(values) * 100) / 100,
-      ]),
+      Object.entries(samples).map(([name, values]) => [name, Math.round(p95(values) * 100) / 100]),
     ),
     samples: Object.fromEntries(
       Object.entries(samples).map(([name, values]) => [name, values.length]),
     ),
   };
-  const directory = fileURLToPath(
-    new URL("../../../.local/verification/", import.meta.url),
-  );
+  const directory = fileURLToPath(new URL('../../../.local/verification/', import.meta.url));
   await mkdir(directory, { recursive: true });
-  await writeFile(
-    directory + "reference-load.json",
-    JSON.stringify(result, null, 2),
-  );
+  await writeFile(directory + 'reference-load.json', JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result));
-  assert.ok(
-    result.p95Ms["catalog"]! < 1000,
-    "Catalog p95 must be below 1 second",
-  );
-  assert.ok(
-    result.p95Ms["metadata"]! < 500,
-    "Metadata p95 must be below 500ms",
-  );
-  assert.ok(
-    result.p95Ms["launch"]! < 1000,
-    "Launch p95 must be below 1 second",
-  );
-  assert.ok(
-    result.p95Ms["heartbeat"]! < 2000,
-    "Lease updates must be below 2 seconds",
-  );
-  assert.ok(
-    result.p95Ms["live"]! < 2000,
-    "Live event delivery p95 must be below 2 seconds",
-  );
+  assert.ok(result.p95Ms['catalog']! < 1000, 'Catalog p95 must be below 1 second');
+  assert.ok(result.p95Ms['metadata']! < 500, 'Metadata p95 must be below 500ms');
+  assert.ok(result.p95Ms['launch']! < 1000, 'Launch p95 must be below 1 second');
+  assert.ok(result.p95Ms['heartbeat']! < 2000, 'Lease updates must be below 2 seconds');
+  assert.ok(result.p95Ms['live']! < 2000, 'Live event delivery p95 must be below 2 seconds');
 } finally {
   server.closeAllConnections();
   await new Promise<void>((resolve) => server.close(() => resolve()));

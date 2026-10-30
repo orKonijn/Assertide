@@ -1,8 +1,10 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { Api, Run, TestCase, errorMessage } from '../core/api';
+
+import type { Run, TestCase } from '../core/api';
+import { Api, errorMessage } from '../core/api';
 import { JsonEvidence } from '../core/json-evidence';
 
 @Component({
@@ -101,19 +103,20 @@ import { JsonEvidence } from '../core/json-evidence';
     }`,
 })
 export class ApiWorkspace {
-  readonly api = inject(Api);
+  public readonly api = inject(Api);
   private readonly router = inject(Router);
-  readonly tests = signal<TestCase[]>([]);
-  readonly executableTests = computed(() => this.tests().filter((test) => test.enabled));
-  readonly runs = signal<Run[]>([]);
-  readonly selectedRun = signal<Run | null>(null);
-  readonly evidence = signal('');
-  readonly error = signal('');
-  readonly busy = signal(false);
-  constructor() {
+  public readonly tests = signal<TestCase[]>([]);
+  public readonly executableTests = computed(() => this.tests().filter((test) => test.enabled));
+  public readonly runs = signal<Run[]>([]);
+  public readonly selectedRun = signal<Run | null>(null);
+  public readonly evidence = signal('');
+  public readonly error = signal('');
+  public readonly busy = signal(false);
+  private inspectionVersion = 0;
+  public constructor() {
     void this.load();
   }
-  async load() {
+  public async load(): Promise<void> {
     try {
       const [catalog, history] = await Promise.all([
         this.api.get<{ items: TestCase[] }>(`/projects/${this.api.projectId()}/catalog`),
@@ -124,33 +127,39 @@ export class ApiWorkspace {
         .filter((run) => run.selection.testIds.some((id) => id.startsWith('LAB-')))
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       this.runs.set(runs);
-      if (runs[0]) this.choose(runs[0].id);
+      if (runs[0]) {
+        this.choose(runs[0].id);
+      }
     } catch (error) {
       this.error.set(errorMessage(error));
     }
   }
-  choose(id: string) {
+  public choose(id: string): void {
     this.inspectionVersion++;
     this.selectedRun.set(this.runs().find((run) => run.id === id) ?? null);
     this.evidence.set('');
   }
-  async inspect(runId: string, artifactId: string) {
+  public async inspect(runId: string, artifactId: string): Promise<void> {
     const version = ++this.inspectionVersion;
     this.evidence.set('');
     this.error.set('');
     try {
       const evidence = await this.api.get<unknown>(`/runs/${runId}/artifacts/${artifactId}`);
-      if (version === this.inspectionVersion) this.evidence.set(JSON.stringify(evidence, null, 2));
+      if (version === this.inspectionVersion) {
+        this.evidence.set(JSON.stringify(evidence, null, 2));
+      }
     } catch (error) {
-      if (version !== this.inspectionVersion) return;
+      if (version !== this.inspectionVersion) {
+        return;
+      }
       this.evidence.set('');
       this.error.set(errorMessage(error));
     }
   }
-  private inspectionVersion = 0;
-  async start() {
-    if (this.busy() || !this.executableTests().length || this.api.identity()?.role === 'viewer')
+  public async start(): Promise<void> {
+    if (this.busy() || !this.executableTests().length || this.api.identity()?.role === 'viewer') {
       return;
+    }
     this.busy.set(true);
     try {
       const run = await this.api.launch(

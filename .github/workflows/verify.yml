@@ -15,7 +15,7 @@ jobs:
     services:
       redis:
         image: redis:7
-        ports: ["6379:6379"]
+        ports: ['6379:6379']
         options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
       postgres:
         image: postgres:17
@@ -23,7 +23,7 @@ jobs:
           POSTGRES_USER: assertide_test
           POSTGRES_PASSWORD: local_ci_only
           POSTGRES_DB: assertide_test
-        ports: ["5432:5432"]
+        ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U assertide_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
@@ -42,7 +42,7 @@ jobs:
       - uses: actions/setup-go@v5
         if: steps.minio-cache.outputs.cache-hit != 'true'
         with:
-          go-version: "1.27.3"
+          go-version: '1.27.3'
           cache: false
       - run: node scripts/setup-object-store.mjs
         if: steps.minio-cache.outputs.cache-hit != 'true'
@@ -57,13 +57,12 @@ jobs:
         env:
           MINIO_ROOT_USER: assertide_test
           MINIO_ROOT_PASSWORD: local_ci_object_store_only
-          MINIO_BROWSER: "off"
+          MINIO_BROWSER: 'off'
           MINIO_KMS_SECRET_KEY: ci-key:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       - run: npm ci
         working-directory: apps/web
       - run: npm audit --audit-level=high
         working-directory: apps/web
-      - run: npm run lint
       - run: node --test deploy/render.test.mjs
       - run: node --test packages/domain/execution.test.ts
       - run: node apps/web/node_modules/typescript/bin/tsc -p packages/domain/tsconfig.json
@@ -88,6 +87,8 @@ jobs:
         working-directory: packages/automation
       - run: npm audit --audit-level=high
         working-directory: packages/automation
+      - run: npm run lint
+      - run: npm run format:check
       - run: npm run typecheck
         working-directory: packages/automation
       - run: npm test
@@ -123,7 +124,7 @@ jobs:
       - run: npx tsx --test test/trace-viewer.test.ts
         working-directory: apps/api
         env:
-          TEST_TRACE_VIEWER: "true"
+          TEST_TRACE_VIEWER: 'true'
       - run: node scripts/setup-sandbox.mjs
       - name: Build immutable isolated worker
         run: |
@@ -143,7 +144,7 @@ jobs:
         working-directory: packages/automation
         env:
           DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
-          SEPARATE_WORKERS: "true"
+          SEPARATE_WORKERS: 'true'
           WORKER_RUNTIME: oci
           REDIS_URL: redis://127.0.0.1:6379
           S3_BUCKET: assertide-test

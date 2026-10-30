@@ -1,5 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
 import { DatePipe, KeyValuePipe } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
+
 import { Api, errorMessage } from './api';
 interface State {
   status: string;
@@ -79,13 +80,13 @@ interface State {
 })
 export class Operations {
   private readonly api = inject(Api);
-  readonly state = signal<State | null>(null);
-  readonly error = signal('');
-  readonly busy = signal(false);
-  constructor() {
+  public readonly state = signal<State | null>(null);
+  public readonly error = signal('');
+  public readonly busy = signal(false);
+  public constructor() {
     void this.load();
   }
-  async load() {
+  public async load(): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     try {

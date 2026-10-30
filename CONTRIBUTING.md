@@ -2,7 +2,7 @@
 
 Use Node.js 24 and npm 11. Run `npm run setup` from a stopped checkout, then `npm start`. Local identity configuration is generated automatically; credentials remain in ignored `.local/credentials.json`. Never commit that directory or copy its contents into a bug report.
 
-Work on a feature branch and use meaningful Conventional Commits. Before pushing, run `npm run verify:quick` and the browser acceptance tests relevant to the change (`npm run test:e2e` runs all of them). The root lint command covers TypeScript and Angular's external/inline templates. Keep strict types, native control flow, standalone components, lifecycle-safe signals/subscriptions and server-side authorization. Do not suppress checks to hide defects.
+Work on a feature branch and use meaningful Conventional Commits. Before pushing, run `npm run verify:quick` and the browser acceptance tests relevant to the change (`npm run test:e2e` runs all of them). The root lint command covers maintained JavaScript, TypeScript and Angular's external/inline templates. Run `npm run lint:fix` followed by `npm run format` before review; `npm run format:check` is a required CI gate. See [code quality conventions](docs/code-quality.md). Keep strict types, native control flow, standalone components, lifecycle-safe signals/subscriptions and server-side authorization. Do not suppress checks to hide defects.
 
 Tests own their projects or run IDs. Unrelated app journeys use the in-memory authenticated fixture; security/login tests use fresh unauthenticated contexts. Explicitly clear storage state when creating an anonymous context from an authenticated test. Do not use arbitrary sleeps or retries to hide races. The default Playwright artifact policy avoids retaining successful authentication traces.
 

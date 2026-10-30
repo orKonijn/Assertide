@@ -1,6 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Api, Environment, errorMessage } from './api';
+
+import type { Environment } from './api';
+import { Api, errorMessage } from './api';
 interface Secret {
   id: string;
   name: string;
@@ -139,15 +141,21 @@ interface Secret {
     </section>`,
 })
 export class Environments {
-  readonly api = inject(Api);
-  readonly environments = signal<Environment[]>([]);
-  readonly secrets = signal<Secret[]>([]);
-  readonly busy = signal(false);
-  readonly error = signal('');
-  readonly notice = signal('');
-  draft: Environment = this.empty();
-  reference = '';
-  oldReference() {
+  public readonly api = inject(Api);
+  public readonly environments = signal<Environment[]>([]);
+  public readonly secrets = signal<Secret[]>([]);
+  public readonly busy = signal(false);
+  public readonly error = signal('');
+  public readonly notice = signal('');
+  public draft: Environment = this.empty();
+  public reference = '';
+  public rotation = '';
+  public secretName = '';
+  public secretValue = '';
+  public constructor() {
+    void this.load();
+  }
+  public oldReference(): boolean | undefined {
     return (
       this.draft.passwordRef &&
       !this.secrets().some(
@@ -157,13 +165,7 @@ export class Environments {
       )
     );
   }
-  rotation = '';
-  secretName = '';
-  secretValue = '';
-  constructor() {
-    void this.load();
-  }
-  empty(): Environment {
+  public empty(): Environment {
     return {
       id: '',
       name: '',
@@ -178,20 +180,20 @@ export class Environments {
       allowHeaded: false,
     };
   }
-  fresh() {
+  public fresh(): void {
     this.draft = this.empty();
     this.reference = '';
   }
-  edit(item: Environment) {
+  public edit(item: Environment): void {
     this.draft = structuredClone(item);
     this.reference = item.passwordRef ? `${item.passwordRef.id}:${item.passwordRef.version}` : '';
   }
-  toggleBrowser(browser: string) {
+  public toggleBrowser(browser: string): void {
     this.draft.browsers = this.draft.browsers.includes(browser)
       ? this.draft.browsers.filter((value) => value !== browser)
       : [...this.draft.browsers, browser];
   }
-  async load() {
+  public async load(): Promise<void> {
     try {
       const base = `/projects/${this.api.projectId()}`;
       this.environments.set(
@@ -202,7 +204,7 @@ export class Environments {
       this.error.set(errorMessage(error));
     }
   }
-  async saveEnvironment() {
+  public async saveEnvironment(): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     this.notice.set('');
@@ -224,7 +226,7 @@ export class Environments {
       this.busy.set(false);
     }
   }
-  async saveSecret() {
+  public async saveSecret(): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     this.notice.set('');

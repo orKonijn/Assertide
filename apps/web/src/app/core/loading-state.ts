@@ -14,9 +14,9 @@ import { Component, DestroyRef, inject, input, signal } from '@angular/core';
   ],
 })
 export class LoadingState {
-  readonly label = input('Loading…');
-  readonly visible = signal(false);
-  constructor() {
+  public readonly label = input('Loading…');
+  public readonly visible = signal(false);
+  public constructor() {
     const timer = setTimeout(() => this.visible.set(true), 200);
     inject(DestroyRef).onDestroy(() => clearTimeout(timer));
   }

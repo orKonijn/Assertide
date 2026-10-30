@@ -1,9 +1,12 @@
-import { Component, inject, signal, DestroyRef, viewChild, ElementRef } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
+import type { ElementRef } from '@angular/core';
+import { Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Api, Run, Environment, errorMessage } from '../core/api';
-import { ResultSteps, ResultNotes } from '../core/result-investigation';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+
+import type { Environment, Run } from '../core/api';
+import { Api, errorMessage } from '../core/api';
+import { ResultNotes, ResultSteps } from '../core/result-investigation';
 import { ScreenshotViewer } from '../core/screenshot-viewer';
 @Component({
   imports: [RouterLink, DatePipe, ResultSteps, ResultNotes, ScreenshotViewer],
@@ -295,53 +298,29 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
   `,
 })
 export class RunDetail {
-  readonly api = inject(Api);
+  public readonly api = inject(Api);
   private readonly router = inject(Router);
-  id = '';
-  readonly history = signal<{ runId: string; endedAt: string; reportAvailable: boolean }[]>([]);
-  readonly run = signal<Run | null>(null);
-  readonly error = signal('');
-  readonly busy = signal(false);
+  public id = '';
+  public readonly history = signal<{ runId: string; endedAt: string; reportAvailable: boolean }[]>(
+    [],
+  );
+  public readonly run = signal<Run | null>(null);
+  public readonly error = signal('');
+  public readonly busy = signal(false);
   private readonly rerunDialog = viewChild.required<ElementRef<HTMLDialogElement>>('rerunDialog');
-  readonly rerunIds = signal<string[]>([]);
-  readonly rerunError = signal('');
-  readonly environmentAvailable = signal(false);
+  public readonly rerunIds = signal<string[]>([]);
+  public readonly rerunError = signal('');
+  public readonly environmentAvailable = signal(false);
   private rerunMode: 'all' | 'failed' | 'selected' = 'all';
-  readonly disconnected = signal(false);
-  readonly selected = signal<string[]>([]);
-  readonly focusedResult = signal('');
-  readonly expanded = signal<string[]>([]);
-  toggleResult(id: string, event: Event) {
-    const open = (event.target as HTMLDetailsElement).open;
-    this.expanded.update((items) =>
-      open ? [...new Set([...items, id])] : items.filter((item) => item !== id),
-    );
-  }
-  canRerun() {
-    return (
-      this.api.identity()?.role !== 'viewer' &&
-      ['completed', 'canceled', 'infrastructure_error', 'timed_out'].includes(
-        this.run()?.phase ?? '',
-      )
-    );
-  }
-  hasFailures() {
-    return (
-      this.run()?.results?.some((result) =>
-        ['failed', 'timedOut', 'broken', 'interrupted'].includes(result.status),
-      ) ?? false
-    );
-  }
-  toggle(id: string) {
-    this.selected.update((ids) =>
-      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
-    );
-  }
+  public readonly disconnected = signal(false);
+  public readonly selected = signal<string[]>([]);
+  public readonly focusedResult = signal('');
+  public readonly expanded = signal<string[]>([]);
   private stream: EventSource | undefined;
   private lastSequence = 0;
   private loadGeneration = 0;
   private accessRevoked = false;
-  constructor() {
+  public constructor() {
     inject(ActivatedRoute)
       .queryParamMap.pipe(takeUntilDestroyed())
       .subscribe((params) => this.focusedResult.set(params.get('result') ?? ''));
@@ -365,74 +344,72 @@ export class RunDetail {
         this.connect();
       });
   }
-  private connect() {
-    this.stream?.close();
-    const stream = (this.stream = new EventSource(`/v1/runs/${this.id}/events`));
-    const current = () => this.stream === stream && !this.accessRevoked;
-    stream.onopen = () => {
-      if (!current()) return;
-      this.disconnected.set(false);
-      void this.load();
-    };
-    stream.onerror = () => {
-      if (current()) this.disconnected.set(true);
-    };
-    stream.addEventListener('resync', () => {
-      if (!current()) return;
-      this.lastSequence = 0;
-      void this.load();
-    });
-    stream.addEventListener('update', (event: MessageEvent<string>) => {
-      if (!current()) return;
-      const sequence = Number(event.lastEventId);
-      if (Number.isSafeInteger(sequence) && sequence > this.lastSequence) {
-        this.lastSequence = sequence;
-        void this.load();
-      }
-    });
-    stream.addEventListener('access_revoked', () => {
-      if (!current()) return;
-      this.accessRevoked = true;
-      this.loadGeneration++;
-      stream.close();
-      this.run.set(null);
-      this.history.set([]);
-      this.error.set('');
-      this.api.identity.set(null);
-    });
-    void this.load();
+  public toggleResult(id: string, event: Event): void {
+    const open = (event.target as HTMLDetailsElement).open;
+    this.expanded.update((items) =>
+      open ? [...new Set([...items, id])] : items.filter((item) => item !== id),
+    );
   }
-  async load() {
-    if (this.accessRevoked) return;
+  public canRerun(): boolean {
+    return (
+      this.api.identity()?.role !== 'viewer' &&
+      ['completed', 'canceled', 'infrastructure_error', 'timed_out'].includes(
+        this.run()?.phase ?? '',
+      )
+    );
+  }
+  public hasFailures(): boolean {
+    return (
+      this.run()?.results?.some((result) =>
+        ['failed', 'timedOut', 'broken', 'interrupted'].includes(result.status),
+      ) ?? false
+    );
+  }
+  public toggle(id: string): void {
+    this.selected.update((ids) =>
+      ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id],
+    );
+  }
+  public async load(): Promise<void> {
+    if (this.accessRevoked) {
+      return;
+    }
     const id = this.id;
     const generation = ++this.loadGeneration;
-    const current = () =>
+    const current = (): boolean =>
       generation === this.loadGeneration && id === this.id && !this.accessRevoked;
     try {
       const run = await this.api.get<Run>(`/runs/${id}`);
-      if (!current()) return;
+      if (!current()) {
+        return;
+      }
       this.run.set(run);
       this.history.set([]);
       if (run.historyStream) {
         const data = await this.api.get<{
           items: { runId: string; endedAt: string; reportAvailable: boolean }[];
         }>(`/runs/${id}/history`);
-        if (!current()) return;
+        if (!current()) {
+          return;
+        }
         this.history.set(data.items);
       }
       this.error.set('');
     } catch (error) {
-      if (!current()) return;
+      if (!current()) {
+        return;
+      }
       this.error.set(errorMessage(error));
     }
   }
-  async cancel() {
+  public async cancel(): Promise<void> {
     if (
       !confirm(
         'Stop this execution? Completed results are preserved; active and pending tests will be canceled.',
       )
-    )
+    ) {
       return;
+    }
     this.busy.set(true);
     try {
       this.run.set(await this.api.post<Run>(`/runs/${this.id}/cancel`, {}));
@@ -442,24 +419,24 @@ export class RunDetail {
       this.busy.set(false);
     }
   }
-  async rerun(mode: 'all' | 'failed' | 'selected' = 'all') {
+  public async rerun(mode: 'all' | 'failed' | 'selected' = 'all'): Promise<void> {
     this.rerunMode = mode;
     const run = this.run();
-    this.rerunIds.set(
-      mode === 'selected'
-        ? [...this.selected()]
-        : mode === 'all'
-          ? [...(run?.selection.testIds ?? [])]
-          : [
-              ...new Set(
-                (run?.results ?? [])
-                  .filter((result) =>
-                    ['failed', 'timedOut', 'broken', 'interrupted'].includes(result.status),
-                  )
-                  .map((result) => result.caseId ?? result.id.split(':')[0]!),
-              ),
-            ],
-    );
+    if (mode === 'selected') {
+      this.rerunIds.set([...this.selected()]);
+    } else if (mode === 'all') {
+      this.rerunIds.set([...(run?.selection.testIds ?? [])]);
+    } else {
+      this.rerunIds.set([
+        ...new Set(
+          (run?.results ?? [])
+            .filter((result) =>
+              ['failed', 'timedOut', 'broken', 'interrupted'].includes(result.status),
+            )
+            .map((result) => result.caseId ?? result.id.split(':')[0]),
+        ),
+      ]);
+    }
     this.rerunError.set('');
     this.environmentAvailable.set(false);
     this.rerunDialog().nativeElement.showModal();
@@ -470,18 +447,19 @@ export class RunDetail {
       this.environmentAvailable.set(
         environments.items.some((item) => item.id === run?.config?.environmentId && item.enabled),
       );
-      if (!this.environmentAvailable())
+      if (!this.environmentAvailable()) {
         this.rerunError.set(
           'The original environment is unavailable. Ask an administrator to restore its policy.',
         );
+      }
     } catch (error) {
       this.rerunError.set(errorMessage(error));
     }
   }
-  rerunHasBrowser() {
+  public rerunHasBrowser(): boolean {
     return this.rerunIds().some((id) => id.startsWith('UI-'));
   }
-  async startRerun() {
+  public async startRerun(): Promise<void> {
     this.busy.set(true);
     try {
       const run = await this.api.post<Run>(
@@ -501,7 +479,7 @@ export class RunDetail {
       this.busy.set(false);
     }
   }
-  async rebuild() {
+  public async rebuild(): Promise<void> {
     this.busy.set(true);
     try {
       this.run.set(await this.api.post<Run>(`/runs/${this.id}/report-rebuilds`, {}));
@@ -510,5 +488,52 @@ export class RunDetail {
     } finally {
       this.busy.set(false);
     }
+  }
+  private connect(): void {
+    this.stream?.close();
+    const stream = (this.stream = new EventSource(`/v1/runs/${this.id}/events`));
+    const current = (): boolean => this.stream === stream && !this.accessRevoked;
+    stream.onopen = () => {
+      if (!current()) {
+        return;
+      }
+      this.disconnected.set(false);
+      void this.load();
+    };
+    stream.onerror = () => {
+      if (current()) {
+        this.disconnected.set(true);
+      }
+    };
+    stream.addEventListener('resync', () => {
+      if (!current()) {
+        return;
+      }
+      this.lastSequence = 0;
+      void this.load();
+    });
+    stream.addEventListener('update', (event: MessageEvent<string>) => {
+      if (!current()) {
+        return;
+      }
+      const sequence = Number(event.lastEventId);
+      if (Number.isSafeInteger(sequence) && sequence > this.lastSequence) {
+        this.lastSequence = sequence;
+        void this.load();
+      }
+    });
+    stream.addEventListener('access_revoked', () => {
+      if (!current()) {
+        return;
+      }
+      this.accessRevoked = true;
+      this.loadGeneration++;
+      stream.close();
+      this.run.set(null);
+      this.history.set([]);
+      this.error.set('');
+      this.api.identity.set(null);
+    });
+    void this.load();
   }
 }

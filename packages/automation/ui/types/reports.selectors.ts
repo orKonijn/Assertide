@@ -1,1 +1,1 @@
-export const ReportsSelectors = { expand: "Expand all" } as const;
+export const ReportsSelectors = { expand: 'Expand all' } as const;

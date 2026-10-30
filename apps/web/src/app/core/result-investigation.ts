@@ -1,8 +1,11 @@
-import { Component, input, inject, signal, OnInit } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import type { OnInit } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Api, errorMessage, ResultStep } from './api';
+
+import type { ResultStep } from './api';
+import { Api, errorMessage } from './api';
 @Component({
   selector: 'app-result-steps',
   imports: [NgTemplateOutlet],
@@ -31,7 +34,7 @@ import { Api, errorMessage, ResultStep } from './api';
     ><ng-container [ngTemplateOutlet]="tree" [ngTemplateOutletContext]="{ $implicit: steps() }" />`,
 })
 export class ResultSteps {
-  readonly steps = input<ResultStep[]>([]);
+  public readonly steps = input<ResultStep[]>([]);
 }
 interface Note {
   id: string;
@@ -87,22 +90,22 @@ interface Note {
     }`,
 })
 export class ResultNotes implements OnInit {
-  readonly runId = input.required<string>();
-  readonly resultId = input.required<string>();
-  readonly api = inject(Api);
-  readonly notes = signal<Note[]>([]);
-  readonly previous = signal<{
+  public readonly runId = input.required<string>();
+  public readonly resultId = input.required<string>();
+  public readonly api = inject(Api);
+  public readonly notes = signal<Note[]>([]);
+  public readonly previous = signal<{
     runId: string;
     endedAt: string;
     result: { status: string; duration: number };
   } | null>(null);
-  readonly error = signal('');
-  readonly busy = signal(false);
-  text = '';
-  ngOnInit() {
+  public readonly error = signal('');
+  public readonly busy = signal(false);
+  public text = '';
+  public ngOnInit(): void {
     void this.load();
   }
-  async load() {
+  public async load(): Promise<void> {
     try {
       const response = await this.api.get<{ items: Note[] }>(`/runs/${this.runId()}/annotations`);
       this.notes.set(response.items.filter((note) => note.resultId === this.resultId()));
@@ -121,7 +124,7 @@ export class ResultNotes implements OnInit {
       this.error.set(errorMessage(error));
     }
   }
-  async save() {
+  public async save(): Promise<void> {
     this.busy.set(true);
     this.error.set('');
     try {

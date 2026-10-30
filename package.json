@@ -8,11 +8,14 @@
     "npm": ">=11 <12"
   },
   "scripts": {
-    "lint": "node apps/web/node_modules/eslint/bin/eslint.js apps packages --max-warnings=0",
+    "lint": "node apps/web/node_modules/eslint/bin/eslint.js . --max-warnings=0",
     "package": "node scripts/package-build.mjs",
     "setup": "node scripts/setup.mjs",
     "start": "node scripts/dev.mjs",
     "verify:quick": "node scripts/verify.mjs",
-    "test:e2e": "node scripts/e2e.mjs"
+    "test:e2e": "node scripts/e2e.mjs",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "node apps/web/node_modules/prettier/bin/prettier.cjs . --write",
+    "format:check": "node apps/web/node_modules/prettier/bin/prettier.cjs . --check"
   }
 }
