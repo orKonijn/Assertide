@@ -14,4 +14,9 @@ export class DiagnosticProbePage {
       throw new Error(`Synthetic failure ${secret}`);
     });
   }
+  public verify(): Promise<void> {
+    return workflow('Verify protected diagnostic page', async () => {
+      await this.page.getByLabel(Selectors.token, { exact: true }).waitFor();
+    });
+  }
 }

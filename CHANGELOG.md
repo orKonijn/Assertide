@@ -24,6 +24,10 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 - Compacted execution summaries with an expandable frozen-test selection, aligned history filters in a responsive grid, and grouped filter actions. Content links now look like clickable buttons while preserving navigation and evidence downloads. Local verification, 12 browser tests including 64 accessibility states, and light/dark layout checks at 320/390/768/1280px pass. See [execution layout and link comparisons](docs/ui-refresh.md#execution-summaries-filters-and-button-links).
 
+- Local startup now automatically starts MinIO after its one-time setup, restores saved storage settings, and waits for readiness before starting the API. Existing services are reused; explicitly configured external storage is preserved. Verified six startup checks and a real cold app start with MinIO initially stopped. Earlier affected reports were rebuilt successfully; see [storage startup and recovery](docs/object-storage.md#local-real-service-verification).
+
+- Each named browser workflow step now attaches a masked screenshot to Allure, including failed steps, while successful tests also retain a final image. Sensitive tests opt out of automatic step/success captures. Reporting checks verify per-step attachment ownership and redaction; four report acceptance tests verify viewing, downloads and rebuilding. Existing executions need a new run to collect missing images. See [step evidence and screenshot](docs/regression-coverage.md#allure-step-images).
+
 - Spaced report headings across a shared toolbar and moved Refresh to a labeled icon beside Action. Notification history now opens from a bottom-right bell; a red unread count clears when opened, and new actions restore it. Visual toast popups are replaced by the badge, while screen-reader announcements remain. Six browser tests, the 64-state accessibility matrix, open-panel accessibility checks, and local verification pass. See [report toolbar and notification evidence](docs/ui-refresh.md#report-toolbar-and-notification-bell).
 
 - Compacted test and report cards by grouping metadata, priority, and actions; report links now match workspace styling. Moved the mobile theme control beside Menu as a labeled sun/moon icon, with an icon control retained on desktop. Six browser tests including 64 accessibility states and light/dark layout checks at 320/390/768/1280px pass. See [card and header comparisons](docs/ui-refresh.md#compact-test-and-report-cards).
@@ -45,6 +49,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - GitHub verification now runs for pushes to `main` as well as pull requests and the existing feature branch. UI regression tests use the established Page Objects and no longer regenerate committed screenshots during routine runs.
 
 ### Added
+
+- Added 50 API and 50 UI regression cases covering state preservation, concurrency, tenant/role boundaries, idempotency, pagination, checkout recovery, persisted carts and responsive purchase flows. The catalogue now contains 65 API and 62 UI cases. `npm run test:regression` runs the full controlled suite, and CI retains its evidence. Page Objects now wait for navigation destinations before capturing step images or continuing. See [case ranges, coverage and verification](docs/regression-coverage.md).
 
 - Replaced the long native project dropdown with a searchable project dialog. Names wrap, the current project appears first, and results scroll within a bounded panel. Browser tests verify search, empty results, switching and persistence, mobile Escape/focus restoration, and dark-mode accessibility; build and lint pass. [Mobile picker screenshot](docs/changelog/assets/unreleased/project-picker-mobile.png).
 

@@ -1,6 +1,13 @@
 import { expect, test as base } from '@playwright/test';
 
-import { failureContext, metadata, redact, resetSecrets } from '../utils/allure.utils';
+import {
+  failureContext,
+  metadata,
+  redact,
+  resetSecrets,
+  screenshot,
+  setStepScreenshotPage,
+} from '../utils/allure.utils';
 export const test = base.extend<{
   diagnostics: { errors: string[]; secrets: string[] };
   sensitive: boolean;
@@ -9,6 +16,7 @@ export const test = base.extend<{
   diagnostics: [
     async ({ page, browser, browserName, sensitive }, use, info) => {
       resetSecrets();
+      setStepScreenshotPage(sensitive ? undefined : page);
       const errors: string[] = [];
       const secrets: string[] = [];
       const consoleErrors: string[] = [];
@@ -26,8 +34,15 @@ export const test = base.extend<{
         }
       });
       await metadata(info, `${browserName} ${browser.version()}`);
-      await use({ errors, secrets });
-      await failureContext(page, info, sensitive ? [] : [...errors, ...consoleErrors], secrets);
+      try {
+        await use({ errors, secrets });
+        if (info.status === 'passed' && !sensitive && !page.isClosed()) {
+          await screenshot(page, 'final-state.png');
+        }
+        await failureContext(page, info, sensitive ? [] : [...errors, ...consoleErrors], secrets);
+      } finally {
+        setStepScreenshotPage();
+      }
     },
     { auto: true },
   ],

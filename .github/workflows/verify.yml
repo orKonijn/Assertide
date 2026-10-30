@@ -135,6 +135,15 @@ jobs:
       - run: node packages/automation/checks/architecture.mjs
       - run: node packages/automation/checks/reporting.mjs
       - run: node packages/automation/checks/video.mjs
+      - name: Verify all controlled API and cross-browser regression cases
+        run: npm run test:regression
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: controlled-regression-evidence
+          path: .local/automation-results
+          if-no-files-found: ignore
+          retention-days: 14
       - uses: actions/cache@v4
         with:
           path: .local/platform-history

@@ -1,6 +1,10 @@
 import { type Locator, type Page, test, type TestInfo } from '@playwright/test';
 import * as allure from 'allure-js-commons';
 const knownSecrets = new Set<string>();
+let stepPage: Page | undefined;
+export function setStepScreenshotPage(page?: Page): void {
+  stepPage = page;
+}
 export function registerSecret(secret: string): void {
   if (secret) {
     knownSecrets.add(secret);
@@ -21,6 +25,15 @@ export const workflow = <T>(name: string, action: () => Promise<T>): Promise<T> 
         }
       }
       throw error;
+    } finally {
+      if (stepPage && !stepPage.isClosed()) {
+        await screenshot(stepPage, 'step-state.png').catch(async () => {
+          await test.info().attach('screenshot-unavailable.txt', {
+            body: 'The browser could not capture this step; the original test outcome is preserved.',
+            contentType: 'text/plain',
+          });
+        });
+      }
     }
   });
 export function safeUrl(value: string): string {

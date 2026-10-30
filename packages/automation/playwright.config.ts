@@ -23,10 +23,10 @@ export default defineConfig({
     trace: 'off',
   },
   projects: [
-    { name: 'api', testMatch: 'lab.spec.ts' },
+    { name: 'api', testMatch: 'lab*.spec.ts' },
     ...(['chromium', 'firefox', 'webkit'] as const).map((browserName) => ({
       name: browserName,
-      testMatch: 'store.spec.ts',
+      testMatch: 'store*.spec.ts',
       use: {
         browserName,
         baseURL: process.env['RUN_BROWSER_URL'] ?? 'http://127.0.0.1:4013',

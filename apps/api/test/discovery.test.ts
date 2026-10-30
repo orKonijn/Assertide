@@ -47,7 +47,9 @@ await test('failed discovery preserves the last successfully activated catalog',
   try {
     const original = new PlatformService(db);
     await original.initialize();
-    assert.equal(original.catalog.length, 27);
+    assert.equal(original.catalog.length, 127);
+    assert.equal(original.catalog.filter((item) => item.kind === 'api').length, 65);
+    assert.equal(original.catalog.filter((item) => item.kind === 'ui').length, 62);
     assert.ok(original.catalog.every((item) => item.file && item.line > 0));
     const failed = new PlatformService(db, async () => {
       throw new Error('Fixture discovery failure');

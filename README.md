@@ -4,13 +4,15 @@ QA automation control plane specified in [the product requirements](deliverables
 
 ## Implementation status
 
-The runnable application includes automatic local OIDC sign-in, project/member administration, source-backed discovery, editable suites, queued execution, live logs, attempt investigation, Allure 3 history and private viewers, scoped CI credentials, encrypted environment references, and transactional historical analytics. It executes 15 controlled Lab cases and 12 store cases across three browsers; 14 supplemental public-practice cases are available through an explicitly manual command. Linux CI exercises PostgreSQL, Redis, MinIO and separate execution/report supervisors with isolated OCI jobs. Windows development runs trusted fixtures locally.
+The runnable application includes automatic local OIDC sign-in, project/member administration, source-backed discovery, editable suites, queued execution, live logs, attempt investigation, Allure 3 history and private viewers, scoped CI credentials, encrypted environment references, and transactional historical analytics. It includes 65 controlled API cases and 62 UI cases across three browsers, with masked screenshots for each named browser workflow step; 14 supplemental public-practice cases are available through an explicitly manual command. Run `npm run test:regression` for all controlled cases; see [coverage and commands](docs/regression-coverage.md). Linux CI exercises PostgreSQL, Redis, MinIO and separate execution/report supervisors with isolated OCI jobs. Windows development runs trusted fixtures locally.
 
 See [implementation, test coverage and remaining production gates](docs/implementation-verification.md). The files in `deliverables` are the original specifications, design previews and illustrative examples. No product release or production deployment is claimed.
 
 ## Web development
 
 For a new local checkout with Node.js 24 and npm 11 installed, run `npm run setup` once, then `npm start`. Open [Assertide locally](http://127.0.0.1:4200). Sign in as `admin` using the generated password in the ignored `.local/credentials.json`; issuer, client ID and callback settings are automatic. Stop the services with Ctrl+C. Run `npm run verify:quick` for local domain/API/web checks and `npm run test:e2e` for connected browser acceptance. The default local setup uses embedded PostgreSQL and filesystem evidence; S3 and isolated Linux workers remain optional infrastructure configurations below.
+
+Once [local MinIO](docs/object-storage.md#local-real-service-verification) is configured, `npm start` restores its saved configuration, starts MinIO automatically if needed, and waits for storage readiness. There is no need to launch it in a separate terminal. Explicit external S3 settings take precedence.
 
 Use Node.js 24 and npm 11. In `apps/web`, run `npm ci`, then `npm start`. Run `npm run build` for a production build and `npm test -- --watch=false` for unit tests.
 

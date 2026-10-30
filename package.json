@@ -14,6 +14,7 @@
     "start": "node scripts/dev.mjs",
     "verify:quick": "node scripts/verify.mjs",
     "test:e2e": "node scripts/e2e.mjs",
+    "test:regression": "npm --prefix packages/automation run test:regression --",
     "lint:fix": "npm run lint -- --fix",
     "format": "node apps/web/node_modules/prettier/bin/prettier.cjs . --write",
     "format:check": "node apps/web/node_modules/prettier/bin/prettier.cjs . --check"

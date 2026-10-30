@@ -9,6 +9,7 @@ const files = [
     .filter((name) => name.endsWith('.spec.ts'))
     .map((name) => `platform/${name}`),
   'tests/store.spec.ts',
+  'tests/store-advanced.spec.ts',
   'practice/web.spec.ts',
 ];
 const violations = [];
