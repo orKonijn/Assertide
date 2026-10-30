@@ -97,13 +97,15 @@ import { LoadingState } from '../core/loading-state';
                 @for (test of filtered(); track test.id) {
                   <tr>
                     <td data-label="Select">
-                      <input
-                        type="checkbox"
-                        [checked]="selected().includes(test.id)"
-                        [disabled]="!test.enabled"
-                        (change)="toggle(test.id)"
-                        [attr.aria-label]="'Select ' + test.id"
-                      />
+                      <label class="case-selection">
+                        <input
+                          type="checkbox"
+                          [checked]="selected().includes(test.id)"
+                          [disabled]="!test.enabled"
+                          (change)="toggle(test.id)"
+                          [attr.aria-label]="'Select ' + test.id"
+                        />
+                      </label>
                     </td>
                     <td data-label="Test case">
                       <strong>{{ test.id }}</strong
