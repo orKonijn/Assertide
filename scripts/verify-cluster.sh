@@ -48,7 +48,7 @@ export TEST_KUBERNETES=true
 kubectl create serviceaccount vault
 kubectl create serviceaccount assertide-vault
 kubectl create clusterrolebinding vault-reviewer --clusterrole=system:auth-delegator --serviceaccount=default:vault
-kubectl run vault --image=hashicorp/vault:1.21 --env=VAULT_DEV_ROOT_TOKEN_ID=ci-only-vault-root --env=VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 --overrides='{"spec":{"serviceAccountName":"vault"}}'
+kubectl run vault --image=hashicorp/vault:1.21 --env=VAULT_DEV_ROOT_TOKEN_ID=ci-only-vault-root --env=VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 --override-type=strategic --overrides='{"spec":{"serviceAccountName":"vault","containers":[{"name":"vault","readinessProbe":{"httpGet":{"path":"/v1/sys/health","port":8200},"periodSeconds":1,"failureThreshold":60}}]}}'
 kubectl wait --for=condition=Ready pod/vault --timeout=120s
 kubectl exec vault -- sh -ec '
   export VAULT_ADDR=http://127.0.0.1:8200 VAULT_TOKEN=ci-only-vault-root
