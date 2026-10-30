@@ -50,13 +50,18 @@ test("readiness detects dependency failure and operations remain scoped to autho
     assert.equal(broken.status, "unavailable");
     const oldBackend = process.env["SECRET_BACKEND"];
     const oldAddress = process.env["VAULT_ADDR"];
+    const oldRole = process.env["WORKER_ROLE"];
     try {
       process.env["SECRET_BACKEND"] = "vault";
       process.env["VAULT_ADDR"] = "http://insecure.invalid";
       const unhealthyVault = await readiness(db);
       assert.equal(unhealthyVault.status, "unavailable");
       assert.equal(unhealthyVault.dependencies["vault"], "unavailable");
+      process.env["WORKER_ROLE"] = "report";
+      assert.equal((await readiness(db)).status, "ready");
     } finally {
+      if (oldRole === undefined) delete process.env["WORKER_ROLE"];
+      else process.env["WORKER_ROLE"] = oldRole;
       if (oldBackend === undefined) delete process.env["SECRET_BACKEND"];
       else process.env["SECRET_BACKEND"] = oldBackend;
       if (oldAddress === undefined) delete process.env["VAULT_ADDR"];

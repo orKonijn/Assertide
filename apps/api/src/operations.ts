@@ -11,7 +11,11 @@ export async function readiness(db: SqlConnection) {
   const checks: Record<string, () => Promise<unknown>> = {
     database: () => db.query("SELECT 1"),
   };
-  if (process.env["SECRET_BACKEND"] === "vault") checks["vault"] = vaultHealth;
+  if (
+    process.env["SECRET_BACKEND"] === "vault" &&
+    process.env["WORKER_ROLE"] !== "report"
+  )
+    checks["vault"] = vaultHealth;
   const store = objectStore;
   if (store)
     checks["storage"] = () =>
