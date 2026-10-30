@@ -2,11 +2,11 @@ FROM node:24-bookworm AS node
 FROM golang:1.27.3-bookworm AS kubectl-build
 WORKDIR /build
 RUN git clone --depth 1 --branch v1.37.2 https://github.com/kubernetes/kubernetes.git . \
- && test "$(git rev-parse HEAD)" = "1755f07c19a1d4a25955616aabdfdd66e0fbe224"
+ && test "$(git rev-parse HEAD)" = "c50e5395f1ae2d4a2c05f28fdcc38c0916cc1a32"
 ENV GOWORK=off CGO_ENABLED=0
 # Rebuild the upstream client with patched transport dependencies.
 RUN go mod edit -require=golang.org/x/net@v0.60.0 -require=golang.org/x/text@v0.41.0 \
- && go build -mod=mod -trimpath -ldflags="-s -w -X k8s.io/component-base/version.gitVersion=v1.37.2-assertide.1 -X k8s.io/component-base/version.gitCommit=1755f07c19a1d4a25955616aabdfdd66e0fbe224" -o /kubectl ./cmd/kubectl
+ && go build -mod=mod -trimpath -ldflags="-s -w -X k8s.io/component-base/version.gitVersion=v1.37.2-assertide.1 -X k8s.io/component-base/version.gitCommit=c50e5395f1ae2d4a2c05f28fdcc38c0916cc1a32" -o /kubectl ./cmd/kubectl
 FROM postgres:17-bookworm AS service
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
