@@ -928,6 +928,10 @@ app-project-picker {
   margin-bottom: 8px;
 }
 .project-trigger {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  line-height: 1.5;
   width: 100%;
   justify-content: space-between;
   text-align: left;
@@ -1077,7 +1081,10 @@ select option {
 .project-trigger {
   padding-right: 18px;
 }
-.project-trigger > span:last-child {
+.project-trigger > .project-chevron {
+  color: var(--muted);
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   margin-left: 4px;
 }

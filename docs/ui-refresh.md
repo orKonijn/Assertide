@@ -468,3 +468,14 @@ Actual production build with sample API responses and an inert live-event connec
 ![Stacked execution overview on mobile with fixtures](changelog/assets/unreleased/execution-overview-390.png)
 
 Lint, ten web unit tests, and production build pass. Browser checks cover the queued state, disabled rerun controls, expanding 127 selected identifiers, and no horizontal overflow at 320/390/768/1280px in both themes. These are layout checks; they do not verify queue processing or live database behavior. The previously recorded local database startup problem remains outside this UI change. No product version is assigned or changed; this remains Unreleased.
+
+## Project selector chevron
+
+The active-project selector uses a 16px SVG chevron instead of a font-dependent text glyph. The icon stays centered, retains its inset, and does not shrink when project names wrap. The button retains its accessible name and dialog behavior.
+
+Actual production UI with representative API fixture responses:
+
+![Project selector in the dark mobile drawer](changelog/assets/unreleased/project-trigger-390-dark.png)
+![Project selector in the light desktop sidebar](changelog/assets/unreleased/project-trigger-1280-light.png)
+
+Lint and production build pass. Browser checks confirm vertical icon alignment, dialog opening, and focus restoration at 390/1280px in both themes. Live API integration was not exercised. This remains Unreleased with no product version change.
