@@ -27,4 +27,22 @@ test.describe('Catalog metadata', () => {
     await catalog.editMetadata(D.latency);
     await expect(catalog.quarantined).toBeChecked();
   });
+  test('pagination preserves selection and select all includes every page', async () => {
+    await expect(catalog.cases).toHaveCount(10);
+    await expect(catalog.startButtons).toHaveCount(2);
+    await expect(catalog.startButtons.first()).toBeDisabled();
+    await catalog.selection(D.lifecycle).check();
+    await catalog.goToPage(2);
+    await expect(catalog.cases).toHaveCount(10);
+    await catalog.goToPage(1);
+    await expect(catalog.selection(D.lifecycle)).toBeChecked();
+    await catalog.selectAll();
+    await expect(catalog.selectedCount).toHaveText('27 tests selected');
+    await catalog.goToPage(3);
+    await expect(catalog.cases).toHaveCount(7);
+    await expect(catalog.startButtons.first()).toBeEnabled();
+    await catalog.search(D.lifecycle);
+    await expect(catalog.cases).toHaveCount(1);
+    await expect(catalog.selection(D.lifecycle)).toBeChecked();
+  });
 });

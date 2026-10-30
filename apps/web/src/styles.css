@@ -1988,6 +1988,91 @@ th[aria-sort='descending'] .sort-indicator::before {
   }
 }
 
+.explorer-header-actions {
+  justify-content: flex-end;
+  align-items: center;
+}
+.catalog-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.catalog-pagination > span {
+  font-size: 12px;
+}
+.catalog-page-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.catalog-page-buttons button {
+  min-width: 40px;
+  min-height: 44px;
+  padding: 8px;
+}
+.catalog-page-buttons button[aria-current='page'] {
+  background: var(--brand);
+  color: var(--surface);
+  border-color: var(--brand);
+}
+.case-selection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.case-selection input[type='checkbox'] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  margin: 0;
+  border: 2px solid var(--muted);
+  border-radius: 6px;
+  background: var(--surface);
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+.case-selection input[type='checkbox']::before {
+  content: '';
+  width: 9px;
+  height: 5px;
+  border: solid var(--surface);
+  border-width: 0 0 2px 2px;
+  transform: rotate(-45deg) scale(0);
+}
+.case-selection input[type='checkbox']:checked {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.case-selection input[type='checkbox']:checked::before {
+  transform: rotate(-45deg) scale(1);
+}
+.case-selection input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+.case-selection input[type='checkbox']:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+@media (forced-colors: active) {
+  .case-selection input[type='checkbox'] {
+    appearance: auto;
+  }
+  .case-selection input[type='checkbox']::before {
+    content: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

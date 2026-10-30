@@ -270,3 +270,20 @@ Actual 390px mobile layouts:
 Layout and selection-expansion checks pass at 320/390/768/1280px in both themes. No product version is assigned; this is an Unreleased layout correction.
 
 Local verification passes (lint, type checks, API tests, eight web unit tests, production build; eight Windows infrastructure skips). Six browser tests passed, including 64 accessibility states, execution, mobile evidence viewing, reruns, and evidence downloads.
+
+## Explorer pagination and launch controls
+
+The Test explorer header includes a Start execution button using the same selection, configuration, permissions, and busy state as the existing configuration action. The catalog shows ten tests per page with numbered navigation and previous/next controls. Search or filter changes return to page one; selections survive paging. Select all adds every enabled test matching the current filters across all pages, preserving earlier selections. Disabled tests remain unavailable.
+
+Checkboxes use themed rounded borders, a clear checkmark, disabled styling, and visible keyboard focus. Native controls are retained for forced-colors mode.
+
+Actual running application screenshots:
+
+![Explorer header with a second execution action in dark mode](changelog/assets/unreleased/explorer-launch-dark.png)
+![Numbered catalog pagination and result count](changelog/assets/unreleased/explorer-pagination-dark.png)
+![Selected test checkbox on dark mobile](changelog/assets/unreleased/explorer-checkbox-dark.png)
+![Selected test checkbox on light mobile](changelog/assets/unreleased/explorer-checkbox-light.png)
+
+Local verification and Page Object architecture/reporting checks pass. The UI remains within the 390px mobile viewport in both themes. No product version is assigned; this is an Unreleased development change.
+
+Nine browser tests passed, including pagination/selection persistence, launching from the header, catalog editing, login, execution/evidence workflows, and 64 accessibility states. Eight infrastructure checks remain skipped on Windows.

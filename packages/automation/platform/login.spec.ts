@@ -24,7 +24,7 @@ test.describe('SSO authentication', () => {
     await expect(navigation.heading).toHaveText('Quality at a glance');
     await catalog.goto();
     await expect(catalog.selection(D.lifecycle)).toBeVisible();
-    await expect(catalog.cases).toHaveCount(27);
+    await expect(catalog.cases).toHaveCount(10);
     await navigation.setTheme('dark');
     await viewport(page, 'mobile');
     await expect(navigation.menu).toBeVisible();

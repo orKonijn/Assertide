@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Added Start execution to the Test explorer header, ten-test numbered pagination, and Select all across every page of matching enabled tests. Selections persist between pages and filters reset pagination. Catalog checkboxes now have themed checked, disabled, and focus states. Nine browser tests including 64 accessibility states, local verification, and architecture/reporting checks pass. See [explorer pagination and controls](docs/ui-refresh.md#explorer-pagination-and-launch-controls).
+
 - Rebalanced execution summaries into aligned phase/selection cards and a full-width report card, so report actions no longer form a tall narrow column. Buttons wrap on phones and report status sits beside its heading. Local verification, six browser tests including 64 accessibility states, and light/dark checks at 320/390/768/1280px pass. See [balanced summary comparisons](docs/ui-refresh.md#balanced-execution-summary).
 
 - Refined notification history with a compact header, subtle close icon, activity icons, smaller timestamps, and a clearer empty state. The panel opens and closes smoothly, respecting reduced-motion preferences. Local verification, three browser tests including 64 accessibility states, and open-panel scans in both themes pass. See [notification panel comparisons](docs/ui-refresh.md#notification-panel-refinement).

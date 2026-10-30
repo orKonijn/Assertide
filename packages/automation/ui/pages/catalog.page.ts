@@ -1,20 +1,34 @@
-import type { Locator, Response } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 import { CatalogSelectors as S } from '../types/catalog.selectors';
 import { Routes } from '../types/routes';
 import { workflow } from '../utils/allure.utils';
 export class CatalogPage {
+  public readonly selectedCount;
+  public readonly startButtons;
   public readonly heading;
   public readonly cases;
   public readonly quarantined;
-  public constructor(private readonly page: Page) {
+  public constructor(public readonly page: Page) {
+    this.selectedCount = page.getByText(/^[0-9]+ tests selected$/);
+    this.startButtons = page.getByRole('button', {
+      name: S.start,
+      exact: true,
+    });
     this.heading = page.getByRole('heading', { name: S.heading, exact: true });
-    this.cases = page.getByRole('checkbox');
+    this.cases = page.locator(S.cases);
     this.quarantined = page.getByLabel(S.quarantined);
   }
-  public goto(): Promise<Response | null> {
-    return workflow('Open test explorer', () => this.page.goto(Routes.explorer));
+  public goToPage(number: number): Promise<void> {
+    return this.page.getByRole('button', { name: S.page(number), exact: true }).click();
+  }
+  public selectAll(): Promise<void> {
+    return this.page.getByRole('button', { name: S.selectAll, exact: true }).click();
+  }
+  public goto(): Promise<void> {
+    return workflow('Open test explorer', async () => {
+      await this.page.goto(Routes.explorer);
+    });
   }
   public selection(id: string): Locator {
     return this.page.getByLabel(S.select(id), { exact: true });
@@ -23,7 +37,10 @@ export class CatalogPage {
     return this.page.getByRole('button', { name: S.edit(id), exact: true });
   }
   public editMetadata(id: string): Promise<void> {
-    return workflow('Edit catalog metadata', () => this.editButton(id).click());
+    return workflow('Edit catalog metadata', async () => {
+      await this.search(id);
+      await this.editButton(id).click();
+    });
   }
   public updateMetadata(input: {
     module: string;
@@ -45,8 +62,10 @@ export class CatalogPage {
   public select(ids: readonly string[]): Promise<void> {
     return workflow('Select catalog cases', async () => {
       for (const id of ids) {
+        await this.search(id);
         await this.selection(id).check();
       }
+      await this.search('');
     });
   }
   public selectEnvironment(name: string): Promise<string[]> {
@@ -54,7 +73,7 @@ export class CatalogPage {
   }
   public startExecution(): Promise<void> {
     return workflow('Start selected execution', () =>
-      this.page.getByRole('button', { name: S.start, exact: true }).click(),
+      this.page.getByRole('button', { name: S.start, exact: true }).first().click(),
     );
   }
 }

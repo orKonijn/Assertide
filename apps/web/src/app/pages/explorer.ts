@@ -14,7 +14,16 @@ import { LoadingState } from '../core/loading-state';
         <h1>Test explorer</h1>
         <p class="muted">Select approved tests from the local Lab catalog.</p>
       </div>
-      <span class="badge">{{ revision().slice(0, 12) || 'Loading revision' }}</span>
+      <div class="actions explorer-header-actions">
+        <span class="badge">{{ revision().slice(0, 12) || 'Loading revision' }}</span>
+        <button
+          class="primary"
+          [disabled]="!selected().length || starting() || api.identity()?.role === 'viewer'"
+          (click)="start()"
+        >
+          {{ starting() ? 'Starting…' : 'Start execution' }}
+        </button>
+      </div>
     </header>
     @if (error()) {
       <p class="error" role="alert">{{ error() }} <button (click)="load()">Retry</button></p>
@@ -57,7 +66,13 @@ import { LoadingState } from '../core/loading-state';
               [ngModel]="query()"
               (ngModelChange)="search($event)"
               placeholder="Case ID, title or feature" /></label
-          ><button (click)="selectAll()">Select visible</button>
+          ><button
+            (click)="selectAll()"
+            [disabled]="loading() || !filtered().length"
+            title="Select all enabled tests matching the filters, across every page"
+          >
+            Select all
+          </button>
           <label
             >Kind<select
               aria-label="Test kind"
@@ -96,7 +111,7 @@ import { LoadingState } from '../core/loading-state';
                 </tr>
               </thead>
               <tbody>
-                @for (test of filtered(); track test.id) {
+                @for (test of pageTests(); track test.id) {
                   <tr>
                     <td data-label="Select">
                       <label class="case-selection">
@@ -142,6 +157,36 @@ import { LoadingState } from '../core/loading-state';
               </tbody>
             </table>
           </div>
+          <nav class="catalog-pagination" aria-label="Test pages">
+            <span class="muted" role="status"
+              >{{ filtered().length }} tests · Page {{ currentPage() }} of {{ pageCount() }}</span
+            >
+            <div class="catalog-page-buttons">
+              <button
+                (click)="page.set(currentPage() - 1)"
+                [disabled]="currentPage() === 1"
+                aria-label="Previous test page"
+              >
+                ‹
+              </button>
+              @for (number of pageNumbers(); track number) {
+                <button
+                  (click)="page.set(number)"
+                  [attr.aria-label]="'Test page ' + number"
+                  [attr.aria-current]="currentPage() === number ? 'page' : null"
+                >
+                  {{ number }}
+                </button>
+              }
+              <button
+                (click)="page.set(currentPage() + 1)"
+                [disabled]="currentPage() === pageCount()"
+                aria-label="Next test page"
+              >
+                ›
+              </button>
+            </div>
+          </nav>
         }
       </section>
       <section class="card">
@@ -235,6 +280,16 @@ export class Explorer {
         (this.priority() === 'all' || test.priority === this.priority()),
     ),
   );
+  public readonly page = signal(1);
+  public readonly pageCount = computed(() => Math.max(1, Math.ceil(this.filtered().length / 10)));
+  public readonly currentPage = computed(() => Math.min(this.page(), this.pageCount()));
+  public readonly pageTests = computed(() =>
+    this.filtered().slice((this.currentPage() - 1) * 10, this.currentPage() * 10),
+  );
+  public readonly pageNumbers = computed(() => {
+    const start = Math.max(1, Math.min(this.currentPage() - 2, this.pageCount() - 4));
+    return Array.from({ length: Math.min(5, this.pageCount()) }, (_, index) => start + index);
+  });
   public constructor() {
     void this.load();
   }
@@ -317,6 +372,7 @@ export class Explorer {
     }
   }
   public search(value: string): void {
+    this.page.set(1);
     this.query.set(value);
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -335,11 +391,14 @@ export class Explorer {
     this.key = crypto.randomUUID();
   }
   public selectAll(): void {
-    this.selected.set(
-      this.filtered()
-        .filter((test) => test.enabled)
-        .map((test) => test.id),
-    );
+    this.selected.update((ids) => [
+      ...new Set([
+        ...ids,
+        ...this.filtered()
+          .filter((test) => test.enabled)
+          .map((test) => test.id),
+      ]),
+    ]);
     this.key = crypto.randomUUID();
   }
   public async start(): Promise<void> {
