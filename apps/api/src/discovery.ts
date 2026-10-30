@@ -41,7 +41,7 @@ export function parseDiscovery(input: unknown) {
   ];
   const cases = new Map<string, z.infer<typeof discoveredCase>>();
   for (const item of data.suites.flatMap(flatten)) {
-    const match = /^(LAB|UI)-\d{3}(?= )/.exec(item.title);
+    const match = /^(LAB|UI)-\d{3,8}(?= )/.exec(item.title);
     if (!match)
       throw new Error("Discovered test lacks an approved stable case ID");
     const id = match[0];

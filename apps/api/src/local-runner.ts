@@ -73,7 +73,7 @@ const runSchema = z.object({
     .extend({ version: z.number().optional() })
     .default(defaultEnvironment),
   selection: z.object({
-    testIds: z.array(z.string().regex(/^(LAB|UI)-\d{3}$/)).min(1),
+    testIds: z.array(z.string().regex(/^(LAB|UI)-\d{3,8}$/)).min(1),
   }),
   config: configuration,
 });

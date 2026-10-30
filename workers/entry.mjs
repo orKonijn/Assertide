@@ -12,7 +12,7 @@ for await (const chunk of process.stdin) {
 }
 const spec = z
   .object({
-    testIds: z.array(z.string().regex(/^(LAB|UI)-\d{3}$/)).min(1),
+    testIds: z.array(z.string().regex(/^(LAB|UI)-\d{3,8}$/)).min(1),
     workers: z.number().int().min(1).max(4),
     retries: z.number().int().min(0).max(2),
     projects: z

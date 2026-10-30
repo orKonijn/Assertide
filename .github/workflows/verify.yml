@@ -86,6 +86,17 @@ jobs:
           S3_ENDPOINT: http://127.0.0.1:9000
           AWS_ACCESS_KEY_ID: assertide_test
           AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
+      - name: Measure reference control-plane load
+        run: npx tsx checks/reference-load.ts
+        working-directory: apps/api
+        env:
+          TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reference-load-results
+          path: .local/verification/reference-load.json
+          if-no-files-found: ignore
       - run: npx playwright install --with-deps chromium
         working-directory: packages/automation
       - run: npx tsx --test test/trace-viewer.test.ts

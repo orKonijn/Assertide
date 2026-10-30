@@ -1,6 +1,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseDiscovery } from "../src/discovery.ts";
+test("discovery accepts ten thousand distinct stable case identifiers", () => {
+  const items = parseDiscovery({
+    suites: [
+      {
+        specs: Array.from({ length: 10000 }, (_, index) => ({
+          title: `LAB-${String(index + 1).padStart(3, "0")} Reference case`,
+          file: "reference.spec.ts",
+          line: index + 1,
+          tests: [{ projectName: "api" }],
+        })),
+      },
+    ],
+  });
+  assert.equal(items.length, 10000);
+  assert.ok(items.some((item) => item.id === "LAB-10000"));
+});
 import { PlatformService } from "../src/platform.ts";
 import { testDatabase } from "./database.ts";
 
