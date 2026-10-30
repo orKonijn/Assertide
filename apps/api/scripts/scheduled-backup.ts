@@ -20,6 +20,7 @@ const client = new S3Client({
     : {}),
 });
 const directory = await mkdtemp(path.join(tmpdir(), "assertide-backup-"));
+let stage = "storage configuration";
 try {
   if (
     (await client.send(new GetBucketVersioningCommand({ Bucket: bucket })))
@@ -27,8 +28,10 @@ try {
   )
     throw new Error("Backup bucket versioning is required");
   const file = path.join(directory, "database.dump");
+  stage = "database dump";
   const metadata = await backupDatabase(database, file);
   const key = `postgres/${metadata.createdAt.replaceAll(":", "-")}/${metadata.sha256}.dump`;
+  stage = "encrypted upload";
   const saved = await client.send(
     new PutObjectCommand({
       Bucket: bucket,
@@ -41,6 +44,7 @@ try {
     }),
   );
   if (!saved.VersionId) throw new Error("Backup did not return a version ID");
+  stage = "upload verification";
   const head = await client.send(
     new HeadObjectCommand({
       Bucket: bucket,
@@ -53,6 +57,7 @@ try {
     head.Metadata?.["sha256"] !== metadata.sha256
   )
     throw new Error("Backup upload verification failed");
+  stage = "metadata upload";
   await client.send(
     new PutObjectCommand({
       Bucket: bucket,
@@ -73,7 +78,7 @@ try {
   );
 } catch {
   console.error(
-    "Scheduled backup failed; inspect database and private backup storage health",
+    `Scheduled backup failed during ${stage}; inspect database and private backup storage health`,
   );
   process.exitCode = 1;
 } finally {

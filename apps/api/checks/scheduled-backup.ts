@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { randomUUID, createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -23,6 +24,13 @@ await client.send(
     VersioningConfiguration: { Status: "Enabled" },
   }),
 );
+const localCredentials = JSON.parse(
+  await readFile(
+    new URL("../../../.local/credentials.json", import.meta.url),
+    "utf8",
+  ),
+) as { encryptionKey: string };
+assert.match(localCredentials.encryptionKey, /^[a-f0-9]{64}$/);
 const child = spawn(
   process.execPath,
   [
@@ -34,6 +42,7 @@ const child = spawn(
     env: {
       ...process.env,
       BACKUP_S3_BUCKET: bucket,
+      SECRET_ENCRYPTION_KEY: localCredentials.encryptionKey,
       DATABASE_URL: process.env["TEST_DATABASE_URL"],
     },
     stdio: ["ignore", "pipe", "pipe"],

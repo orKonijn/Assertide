@@ -149,6 +149,7 @@ jobs:
           name: browser-failure-screenshots
           path: packages/automation/test-results/**/*.png
       - name: Verify encrypted scheduled backups
+        if: ${{ !cancelled() }}
         run: npx tsx checks/scheduled-backup.ts
         working-directory: apps/api
         env:
@@ -159,8 +160,10 @@ jobs:
           AWS_ACCESS_KEY_ID: assertide_test
           AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
       - name: Verify Kubernetes Jobs and Vault workload identity
+        if: ${{ !cancelled() }}
         run: bash scripts/verify-cluster.sh
       - name: Build and scan service, web and worker images
+        if: ${{ !cancelled() }}
         run: bash scripts/verify-images.sh
       - uses: actions/upload-artifact@v4
         if: always()

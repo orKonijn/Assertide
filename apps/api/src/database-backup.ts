@@ -105,7 +105,11 @@ export async function backupDatabase(url: string, file: string) {
     if (
       present &&
       !keyFingerprint() &&
-      (await db.query("SELECT id FROM secret_versions LIMIT 1")).rows.length
+      (
+        await db.query(
+          "SELECT id FROM secret_versions WHERE ciphertext NOT LIKE 'vault:%' LIMIT 1",
+        )
+      ).rows.length
     )
       throw new Error(
         "Back up the secret encryption key separately before backing up encrypted credentials",
