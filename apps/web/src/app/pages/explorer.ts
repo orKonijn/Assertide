@@ -114,6 +114,22 @@ import { LoadingState } from '../core/loading-state';
                 >{{ filtered().length }} tests · Page {{ currentPage() }} of {{ pageCount() }}</span
               >
             </div>
+            <label class="catalog-sort"
+              >Sort by<select
+                aria-label="Sort tests"
+                [ngModel]="sort()"
+                (ngModelChange)="sort.set($event); search(query())"
+              >
+                <option value="id-asc">Case ID · ascending</option>
+                <option value="id-desc">Case ID · descending</option>
+                <option value="title-asc">Title · A–Z</option>
+                <option value="title-desc">Title · Z–A</option>
+                <option value="feature-asc">Feature · A–Z</option>
+                <option value="feature-desc">Feature · Z–A</option>
+                <option value="priority-asc">Priority · P0 first</option>
+                <option value="priority-desc">Priority · P2 first</option>
+              </select></label
+            >
             <div class="catalog-page-buttons">
               <button
                 (click)="page.set(currentPage() - 1)"
@@ -272,6 +288,21 @@ export class Explorer {
   public readonly kind = signal(this.route.snapshot.queryParamMap.get('kind') ?? 'all');
   public readonly priority = signal(this.route.snapshot.queryParamMap.get('priority') ?? 'all');
   public readonly query = signal(this.route.snapshot.queryParamMap.get('query') ?? '');
+  public readonly sort = signal(this.route.snapshot.queryParamMap.get('sort') ?? 'id-asc');
+  public readonly sorted = computed(() => {
+    const [field, direction] = this.sort().split('-');
+    const key = field === 'title' || field === 'feature' || field === 'priority' ? field : 'id';
+    return [...this.filtered()].sort((a, b) => {
+      const comparison = a[key].localeCompare(b[key], undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+      return (
+        (comparison || a.id.localeCompare(b.id, undefined, { numeric: true })) *
+        (direction === 'desc' ? -1 : 1)
+      );
+    });
+  });
   public readonly selected = signal<string[]>([]);
   public readonly loading = signal(true);
   public readonly starting = signal(false);
@@ -313,7 +344,7 @@ export class Explorer {
   public readonly pageCount = computed(() => Math.max(1, Math.ceil(this.filtered().length / 10)));
   public readonly currentPage = computed(() => Math.min(this.page(), this.pageCount()));
   public readonly pageTests = computed(() =>
-    this.filtered().slice((this.currentPage() - 1) * 10, this.currentPage() * 10),
+    this.sorted().slice((this.currentPage() - 1) * 10, this.currentPage() * 10),
   );
   public readonly pageNumbers = computed(() => {
     const start = Math.max(1, Math.min(this.currentPage() - 2, this.pageCount() - 4));
@@ -407,6 +438,7 @@ export class Explorer {
       relativeTo: this.route,
       queryParams: {
         query: value || null,
+        sort: this.sort() === 'id-asc' ? null : this.sort(),
         kind: this.kind() === 'all' ? null : this.kind(),
         priority: this.priority() === 'all' ? null : this.priority(),
       },

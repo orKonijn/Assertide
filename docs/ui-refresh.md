@@ -389,3 +389,20 @@ Mobile views:
 ![Execution cards on a phone](changelog/assets/unreleased/table-redesign-runs-mobile.png)
 
 Local lint, formatting, type checks, API/web tests, and production build pass; eight infrastructure checks remain skipped on Windows. Six browser scenarios pass, including 64 accessibility states, catalog editing/selection/pagination, and execution filtering/sorting. Both tables fit 320/390/768/1280px viewports in light and dark themes without horizontal page overflow. This remains Unreleased with no product version assigned or changed.
+
+## Settings readability and catalog sorting
+
+Settings now has section shortcuts for health, members, environments, service accounts, and audit. Forms use consistent groups and spacing, tables align headings and values, and audit rows become labeled cards on mobile. Account controls separate the name and role beside an initial avatar, with compact theme and sign-out actions.
+
+Explorer sorting sits above the table and supports case ID, title, feature, and priority in both directions. Sorting happens before the ten-row page slice, resets pagination to page one, and persists in the URL. Changing sort retains selections. Edit icons now sit beside case IDs on desktop, and hover backgrounds are quieter.
+
+Actual running views:
+
+![Settings before the readability redesign](changelog/assets/unreleased/settings-before.png)
+![Settings with section shortcuts and compact account controls](changelog/assets/unreleased/settings-sort-settings-1280.png)
+![Grouped member form and aligned table in light mode](changelog/assets/unreleased/settings-members-light.png)
+![Settings on a dark phone](changelog/assets/unreleased/settings-sort-settings-390.png)
+![Explorer sorting and revised rows on desktop](changelog/assets/unreleased/settings-sort-explorer-1280.png)
+![Explorer sorting on mobile](changelog/assets/unreleased/settings-sort-explorer-390.png)
+
+Verification: local lint, formatting, type checks, API/web tests, and production build pass. Six browser scenarios pass, including 64 accessibility states, metadata editing, sorting across pages/reloads, selection, pagination, and environment credential execution. Page Object architecture/reporting checks pass. Settings and explorer have no horizontal page overflow at 320/390/768/1280px in both themes; the Members shortcut reaches its section. Eight infrastructure tests remain skipped on Windows. No release version is assigned or changed; these changes remain Unreleased.

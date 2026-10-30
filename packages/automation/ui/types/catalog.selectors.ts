@@ -6,6 +6,7 @@ export const CatalogSelectors = {
   heading: 'Test explorer',
   cases: '.catalog-cards input[type=checkbox]',
   search: 'Search tests',
+  sort: 'Sort tests',
   module: 'Module',
   owner: 'Test owner',
   quarantined: 'Quarantine future results (exclude from headline metrics)',

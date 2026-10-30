@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Reorganized Settings with section shortcuts, grouped forms, readable tables, and compact account controls. Refined explorer row actions and added ascending/descending sorting by case ID, title, feature, or priority before pagination; the sort choice survives reloads. Six browser scenarios, responsive light/dark checks, and local verification pass. See [settings and sorting evidence](docs/ui-refresh.md#settings-readability-and-catalog-sorting).
+
 - Redesigned Test explorer and Executions tables with compact rows, lighter headers, icon edit actions, selected-row highlighting, and clearer phase badges. Selection, pagination, and sorting remain available. Local verification, six browser tests including 64 accessibility states, and light/dark responsive checks pass. See [table redesign evidence](docs/ui-refresh.md#catalog-and-execution-table-redesign).
 
 - Redesigned API workspace with a compact execution summary, clearer exchange rows, and a focused evidence inspector. Recorded exchanges now paginate ten at a time; paging preserves the selected evidence and changing executions resets it. Local verification, six browser scenarios including 64 accessibility states, evidence-download/pagination checks, and mobile/dark layout checks pass. See [API workspace screenshots](docs/ui-refresh.md#api-workspace-and-exchange-pagination).
