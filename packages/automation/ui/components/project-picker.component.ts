@@ -15,6 +15,24 @@ export class ProjectPickerComponent {
   open() {
     return workflow("Open project picker", () => this.trigger.click());
   }
+  clickOutside() {
+    return workflow("Dismiss picker from its backdrop", () =>
+      this.page.mouse.click(4, 4),
+    );
+  }
+  async clickPadding() {
+    const box = await this.dialog.boundingBox();
+    if (!box) throw new Error("Project picker is not visible");
+    await this.page.mouse.click(box.x + 10, box.y + 10);
+  }
+  async dragOutside() {
+    const box = await this.dialog.boundingBox();
+    if (!box) throw new Error("Project picker is not visible");
+    await this.page.mouse.move(box.x + 10, box.y + 10);
+    await this.page.mouse.down();
+    await this.page.mouse.move(4, 4);
+    await this.page.mouse.up();
+  }
   searchFor(name: string) {
     return workflow("Search accessible projects", () => this.search.fill(name));
   }

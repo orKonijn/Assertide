@@ -37,4 +37,20 @@ test.describe("Project picker", () => {
     await expect(picker.trigger).toBeFocused();
     await expect(navigation.closeMenu).toBeVisible();
   });
+  test("only a click starting and ending outside dismisses the picker", async ({
+    page,
+  }) => {
+    for (const size of ["desktop", "mobile"] as const) {
+      await viewport(page, size);
+      if (size === "mobile") await navigation.menu.click();
+      await picker.open();
+      await picker.clickPadding();
+      await expect(picker.dialog).toBeVisible();
+      await picker.dragOutside();
+      await expect(picker.dialog).toBeVisible();
+      await picker.clickOutside();
+      await expect(picker.dialog).not.toBeVisible();
+      await expect(picker.trigger).toBeFocused();
+    }
+  });
 });

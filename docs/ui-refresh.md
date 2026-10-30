@@ -38,6 +38,26 @@ Dark mode preserves readable text and the white logo treatment.
 
 Sign-in uses a focused card and full-width action.
 
+## Dropdowns and scrollbars
+
+Regular select controls now use rounded anchored menus with themed selected options and arrows inset from the right edge. They retain native select semantics, Angular form values, keyboard selection, and Escape dismissal. The project-switch dialog remains searchable, and clicking or tapping its backdrop closes it and returns focus; starting a drag inside the dialog does not dismiss it.
+
+Scrollbars use a slim thumb and transparent track, with light/dark tokens and a forced-colors fallback. The enhanced menus use [the browser's customizable select API](https://developer.chrome.com/blog/a-customizable-select); browsers without support keep the native option menu and receive the restyled closed control and inset arrow.
+
+![Anchored dropdown on a light desktop](changelog/assets/unreleased/controls-light-1280.png)
+
+The menu stays anchored to its field, with rounded options and the current selection highlighted.
+
+![Anchored dropdown in dark mode on mobile](changelog/assets/unreleased/controls-dark-390.png)
+
+The browser places the menu above the field when that gives it more room. This is not a modal dialog.
+
+![Slim sidebar scrollbar on mobile](changelog/assets/unreleased/controls-scrollbar-mobile.png)
+
+The navigation uses a narrow themed scrollbar, preserving room for its content. Original user-supplied evidence: [dropdown](changelog/assets/unreleased/controls-dropdown-reported.png), [scrollbar](changelog/assets/unreleased/controls-scrollbar-reported.png). Those crops are not pixel-matched to the new captures.
+
+Validation: production build, lint, automation type checks, architecture/reporting checks, six browser tests including all 64 accessibility states, and direct option selection/Escape checks in light/dark at 390px and 1280px. Desktop and mobile tests cover backdrop dismissal, inside padding, drag-out protection, and restored focus. Changes remain Unreleased without a version increment.
+
 ## Site-wide review
 
 Reviewed overview, projects, suites, test explorer, execution history, reports, API workspace, and settings at 320, 768, and 1440 CSS pixels in light and dark themes. The browser acceptance suite additionally exercises run details, live monitoring, reruns, screenshot dialogs, JSON evidence, report access, credentials, and keyboard navigation. Its accessibility matrix covers 64 states at 390/768/1440px.

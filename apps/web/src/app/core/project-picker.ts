@@ -21,6 +21,8 @@ import { Api } from './api';
       class="project-dialog"
       aria-labelledby="project-picker-title"
       (close)="query.set('')"
+      (pointerdown)="backdropStart($event)"
+      (pointerup)="backdropEnd($event)"
     >
       <div class="section-heading">
         <div>
@@ -66,6 +68,7 @@ import { Api } from './api';
   `,
 })
 export class ProjectPicker {
+  private backdropPointer = false;
   readonly api = inject(Api);
   readonly query = signal('');
   readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
@@ -86,9 +89,28 @@ export class ProjectPicker {
       });
   });
   open() {
+    this.backdropPointer = false;
     this.query.set('');
     this.dialog().nativeElement.showModal();
     this.dialog().nativeElement.querySelector('input')?.focus();
+  }
+  private outside(event: PointerEvent) {
+    const dialog = this.dialog().nativeElement;
+    const box = dialog.getBoundingClientRect();
+    return (
+      event.target === dialog &&
+      (event.clientX < box.left ||
+        event.clientX > box.right ||
+        event.clientY < box.top ||
+        event.clientY > box.bottom)
+    );
+  }
+  backdropStart(event: PointerEvent) {
+    this.backdropPointer = event.button === 0 && this.outside(event);
+  }
+  backdropEnd(event: PointerEvent) {
+    if (this.backdropPointer && this.outside(event)) this.dialog().nativeElement.close();
+    this.backdropPointer = false;
   }
   choose(id: string) {
     this.dialog().nativeElement.close();

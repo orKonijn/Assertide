@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- The project picker now closes when a pointer press starts and ends outside it, returning focus to its trigger; clicks inside and drags out remain open. Regular selects use compact anchored menus, themed selected options, and inset arrows; scrolling surfaces use slim theme-aware scrollbars. Native select behavior remains the fallback where customizable selects are unsupported. Build, lint, six browser tests (including the 64-state accessibility matrix), and test architecture/reporting checks pass. See [controls and scrollbar evidence](docs/ui-refresh.md#dropdowns-and-scrollbars).
+
 - Fixed crowded suite/member/rerun actions, off-screen member-table controls on phones, oversized membership lists, and suite editors stretched to the full list height. Long labels wrap within panels; the suite form appears before the list on mobile. Chart tooltips now match dark mode and stay inside the chart. Verified eight primary routes at 320/768/1440px in both themes, all 27 browser acceptance tests (including 64 accessibility states), and local build/lint/type/unit checks. See [site-wide review and screenshots](docs/ui-refresh.md#site-wide-review).
 
 ### Changed
