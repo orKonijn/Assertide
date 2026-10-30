@@ -88,6 +88,10 @@ jobs:
           AWS_SECRET_ACCESS_KEY: local_ci_object_store_only
       - run: npx playwright install --with-deps chromium
         working-directory: packages/automation
+      - run: npx tsx --test test/trace-viewer.test.ts
+        working-directory: apps/api
+        env:
+          TEST_TRACE_VIEWER: 'true'
       - run: node scripts/setup-sandbox.mjs
       - name: Build immutable isolated worker
         run: |

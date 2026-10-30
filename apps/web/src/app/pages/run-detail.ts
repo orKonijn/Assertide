@@ -141,6 +141,14 @@ import { Api, Run, errorMessage } from '../core/api';
                   @if (artifact.unavailableReason) {
                     <p>{{ artifact.name }}: {{ artifact.unavailableReason }}</p>
                   } @else {
+                    @if (artifact.name === 'trace') {
+                      <a
+                        [href]="'/v1/runs/' + id + '/traces/' + artifact.id"
+                        target="_blank"
+                        rel="noopener"
+                        >Open private trace viewer</a
+                      >
+                    }
                     <a [href]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
                       >Download {{ artifact.name }}</a
                     >

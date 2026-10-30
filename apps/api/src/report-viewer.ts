@@ -15,6 +15,7 @@ import { objectStore } from "./object-store.ts";
 import { reportManifest } from "./report-storage.ts";
 import { readFile } from "node:fs/promises";
 import { reportBundleName, mediaBundleName } from "./report-bundle.ts";
+import { traceArtifact, serveTraceResource } from "./trace-viewer.ts";
 
 const digest = (token: string) =>
   createHash("sha256").update(token).digest("hex");
@@ -23,13 +24,85 @@ export async function mountReportViewer(
   db: SqlConnection,
   identity: IdentityService,
   platform: PlatformService,
+  options: { port?: number; origin?: string } = {},
 ) {
+  let viewerOrigin =
+    options.origin ?? process.env["REPORT_ORIGIN"] ?? "http://localhost:4012";
+  const reportUrl = new URL(viewerOrigin);
+  if (
+    reportUrl.pathname !== "/" ||
+    reportUrl.search ||
+    reportUrl.hash ||
+    !["http:", "https:"].includes(reportUrl.protocol)
+  )
+    throw new Error("REPORT_ORIGIN must be an HTTP origin without a path");
+  if (
+    process.env["NODE_ENV"] === "production" &&
+    (reportUrl.protocol !== "https:" ||
+      reportUrl.hostname ===
+        new URL(process.env["APP_ORIGIN"] ?? "http://127.0.0.1:4200").hostname)
+  )
+    throw new Error(
+      "Production report origin requires HTTPS and a separate hostname",
+    );
   await db.query(
     "CREATE TABLE IF NOT EXISTS report_tickets (digest text PRIMARY KEY, run_id text NOT NULL, subject text NOT NULL, expires_at timestamptz NOT NULL, redeemed boolean NOT NULL DEFAULT false)",
   );
   await db.query(
-    "ALTER TABLE report_tickets ADD COLUMN IF NOT EXISTS auth_digest text, ADD COLUMN IF NOT EXISTS auth_kind text, ADD COLUMN IF NOT EXISTS report_directory text",
+    "ALTER TABLE report_tickets ADD COLUMN IF NOT EXISTS auth_digest text, ADD COLUMN IF NOT EXISTS auth_kind text, ADD COLUMN IF NOT EXISTS report_directory text, ADD COLUMN IF NOT EXISTS view_path text",
   );
+  app.get("/v1/runs/:id/traces/:artifact", async (req, res) => {
+    try {
+      const principal = await identity.principal(req);
+      if (!principal) {
+        res.status(401).end();
+        return;
+      }
+      const id = z.uuid().parse(req.params["id"]);
+      const run = await platform.get(principal, id, "run");
+      const artifact = traceArtifact(
+        run,
+        z.uuid().parse(req.params["artifact"]),
+      );
+      if (
+        artifact.unavailableReason ||
+        new Date(artifact.expiresAt) <= new Date()
+      ) {
+        res.status(410).send("Trace expired");
+        return;
+      }
+      const binding = identity.credential(req);
+      if (!binding) {
+        res.status(401).end();
+        return;
+      }
+      const token = randomBytes(32).toString("hex");
+      const viewPath = `trace-viewer/index.html?trace=${encodeURIComponent(`/reports/${id}/traces/${artifact.id}.zip`)}`;
+      await db.query(
+        "INSERT INTO report_tickets(digest,run_id,subject,expires_at,auth_digest,auth_kind,report_directory,view_path) VALUES($1,$2,$3,now()+interval '60 seconds',$4,$5,$6,$7)",
+        [
+          digest(token),
+          id,
+          principal.subject,
+          binding.digest,
+          binding.kind,
+          run["reportDirectory"] ?? null,
+          viewPath,
+        ],
+      );
+      await platform.audit(
+        principal,
+        String(run["projectId"]),
+        "trace.opened",
+        artifact.id,
+      );
+      res
+        .set({ "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" })
+        .redirect(`${viewerOrigin}/open?ticket=${token}`);
+    } catch {
+      res.status(404).end();
+    }
+  });
   app.get("/v1/runs/:id/report-download", async (req, res) => {
     res.set({
       "Cache-Control": "no-store",
@@ -148,7 +221,7 @@ export async function mountReportViewer(
         res
           .set("Cache-Control", "no-store")
           .set("Referrer-Policy", "no-referrer")
-          .redirect(`http://localhost:4012/open?ticket=${token}`);
+          .redirect(`${viewerOrigin}/open?ticket=${token}`);
       } catch {
         res.status(404).end();
       }
@@ -169,8 +242,8 @@ export async function mountReportViewer(
       return;
     }
     const row = (
-      await db.query<{ run_id: string }>(
-        "UPDATE report_tickets SET redeemed=true,expires_at=now()+interval '15 minutes' WHERE digest=$1 AND expires_at>now() AND NOT redeemed RETURNING run_id",
+      await db.query<{ run_id: string; view_path: string | null }>(
+        "UPDATE report_tickets SET redeemed=true,expires_at=now()+interval '15 minutes' WHERE digest=$1 AND expires_at>now() AND NOT redeemed RETURNING run_id,view_path",
         [digest(ticket)],
       )
     ).rows[0];
@@ -181,10 +254,11 @@ export async function mountReportViewer(
     res.cookie("assertide_report", ticket, {
       httpOnly: true,
       sameSite: "lax",
+      secure: viewerOrigin.startsWith("https:"),
       path: `/reports/${row.run_id}/`,
       maxAge: 900_000,
     });
-    res.redirect(`/reports/${row.run_id}/index.html`);
+    res.redirect(`/reports/${row.run_id}/${row.view_path ?? "index.html"}`);
   });
   viewer.use("/reports/:id", async (req, res, next) => {
     const id = String(req.params["id"]);
@@ -228,8 +302,9 @@ export async function mountReportViewer(
         project_id: string;
         organization_id: string;
         directory: string | null;
+        body: Record<string, unknown>;
       }>(
-        "SELECT project_id,organization_id,body->>'reportDirectory' AS directory FROM platform_documents WHERE id=$1",
+        "SELECT project_id,organization_id,body,body->>'reportDirectory' AS directory FROM platform_documents WHERE id=$1",
         [id],
       )
     ).rows[0];
@@ -241,6 +316,7 @@ export async function mountReportViewer(
       res.status(403).end();
       return;
     }
+    if (await serveTraceResource(req, res, next, id, run.body)) return;
     const directory = row.report_directory ?? "";
     if (!/^report(?:-[a-f0-9-]{36})?$/.test(directory)) {
       res.status(404).end();
@@ -303,10 +379,18 @@ export async function mountReportViewer(
         .send("Report asset unavailable");
     },
   );
-  const server = viewer.listen(4012, "127.0.0.1");
+  const server = viewer.listen(
+    options.port ?? Number(process.env["REPORT_PORT"] ?? 4012),
+    "127.0.0.1",
+  );
   await new Promise<void>((resolve, reject) => {
     server.once("listening", resolve);
     server.once("error", reject);
   });
+  if (options.port === 0 && !options.origin) {
+    const address = server.address();
+    if (address && typeof address !== "string")
+      viewerOrigin = `http://127.0.0.1:${address.port}`;
+  }
   return server;
 }
