@@ -152,3 +152,37 @@ export async function deleteWorkerJob(id: string) {
     });
   });
 }
+
+export async function cancelWorkerJob(id: string) {
+  return await new Promise<boolean>((resolve) => {
+    const child = spawn(
+      "kubectl",
+      [
+        "--namespace",
+        workerNamespace(),
+        "--request-timeout=5s",
+        "exec",
+        `job/${jobName(id)}`,
+        "-c",
+        "transfer",
+        "--",
+        "node",
+        "/app/workers/kubernetes-transfer.mjs",
+        "cancel",
+      ],
+      { windowsHide: true, stdio: "ignore" },
+    );
+    const timer = setTimeout(() => {
+      child.kill();
+      resolve(false);
+    }, 6000);
+    child.once("error", () => {
+      clearTimeout(timer);
+      resolve(false);
+    });
+    child.once("exit", (code) => {
+      clearTimeout(timer);
+      resolve(code === 0);
+    });
+  });
+}

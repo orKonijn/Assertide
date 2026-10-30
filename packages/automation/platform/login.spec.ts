@@ -62,13 +62,23 @@ test("SSO authenticates and opens the real catalog", async ({ page }) => {
   await page
     .getByRole("checkbox", { name: "Select UI-011", exact: true })
     .check();
+  const executionStarted = Date.now();
   await page
     .getByRole("button", { name: "Start execution", exact: true })
     .click();
   await expect(page).toHaveURL(/\/runs\/[a-f0-9-]+$/);
   await expect(page.getByRole("status")).toHaveText("completed", {
-    timeout: 20_000,
+    // This asserts full completion of 18 cases, not the API launch-latency SLO.
+    // Kubernetes includes scheduling and evidence transfer in that condition.
+    timeout: process.env["WORKER_RUNTIME"] === "kubernetes" ? 60_000 : 20_000,
   });
+  console.log(
+    JSON.stringify({
+      verification: "18-case-execution",
+      runtime: process.env["WORKER_RUNTIME"] ?? "local",
+      elapsedMs: Date.now() - executionStarted,
+    }),
+  );
   await expect(
     page.getByText("LAB-001 · passed", { exact: false }),
   ).toBeVisible();

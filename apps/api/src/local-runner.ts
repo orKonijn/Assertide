@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { randomUUID, randomBytes } from "node:crypto";
 import { ociCommand, stopContainer } from "./oci-worker.ts";
-import { kubernetesCommand } from "./kubernetes-worker.ts";
+import { kubernetesCommand, cancelWorkerJob } from "./kubernetes-worker.ts";
 import { hostname } from "node:os";
 import {
   stepSchema,
@@ -184,7 +184,32 @@ export class LocalRunner {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private child: ChildProcess | undefined;
   private containerId: string | undefined;
+  private cancellation: Promise<void> | undefined;
+  private cancellationTimer: ReturnType<typeof setTimeout> | undefined;
   private async stopChild() {
+    if (
+      process.env["WORKER_RUNTIME"] === "kubernetes" &&
+      this.containerId &&
+      this.child
+    ) {
+      const id = this.containerId;
+      const child = this.child;
+      if (!this.cancellation) {
+        this.cancellationTimer = setTimeout(() => {
+          stopProcessTree(child);
+          void stopContainer(id);
+        }, 10000);
+        this.cancellationTimer.unref();
+        this.cancellation = cancelWorkerJob(id).then(async (accepted) => {
+          if (!accepted) {
+            stopProcessTree(child);
+            await stopContainer(id);
+          }
+        });
+      }
+      await this.cancellation;
+      return;
+    }
     stopProcessTree(this.child);
     if (this.containerId) await stopContainer(this.containerId);
   }
@@ -424,6 +449,9 @@ export class LocalRunner {
           .catch(() => this.stopChild());
       }, 500);
       const clean = () => {
+        clearTimeout(this.cancellationTimer);
+        this.cancellationTimer = undefined;
+        this.cancellation = undefined;
         clearTimeout(timeout);
         clearInterval(cancel);
         clearInterval(liveLog);

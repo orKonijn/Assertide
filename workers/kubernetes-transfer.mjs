@@ -83,4 +83,6 @@ if (mode === "wait") {
   await walk("/output");
 } else if (mode === "done") {
   await writeFile("/input/done", "");
+} else if (mode === "cancel") {
+  await writeFile("/input/cancel", "");
 } else throw new Error("Unknown transfer operation");
