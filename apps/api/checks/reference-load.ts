@@ -8,7 +8,12 @@ import { testDatabase } from "../test/database.ts";
 import { IdentityService } from "../src/identity.ts";
 import { PlatformService, mountPlatform } from "../src/platform.ts";
 import { parseDiscovery } from "../src/discovery.ts";
-import { claimExecution, renewLease } from "../src/scheduler.ts";
+import {
+  claimExecution,
+  renewLease,
+  updateOwnedRun,
+} from "../src/scheduler.ts";
+import { mountLiveEvents } from "../src/live.ts";
 if (!process.env["TEST_DATABASE_URL"])
   throw new Error(
     "Reference load requires an isolated PostgreSQL test database",
@@ -92,6 +97,7 @@ for (let batch = 0; batch < 10; batch++) {
 const app = express();
 app.use(express.json());
 mountPlatform(app, service, identity);
+mountLiveEvents(app, identity, service);
 const server = app.listen(0, "127.0.0.1");
 await new Promise<void>((resolve) => server.once("listening", resolve));
 const address = server.address();
@@ -102,6 +108,7 @@ const samples: Record<string, number[]> = {
   metadata: [],
   launch: [],
   heartbeat: [],
+  live: [],
 };
 const runIds: string[] = [];
 const request = async (
@@ -164,7 +171,7 @@ try {
       runIds.push(run.id);
     }),
   );
-  const claimed = [];
+  const claimed: Record<string, unknown>[] = [];
   for (const id of runIds) {
     const run = await claimExecution(db, "reference-worker", id);
     if (run) claimed.push(run);
@@ -183,6 +190,56 @@ try {
         samples["heartbeat"]!.push(performance.now() - start);
       }),
     );
+  const marker = randomUUID();
+  const liveAbort = new AbortController();
+  const streams = await Promise.all(
+    tokens.map((token, index) =>
+      fetch(
+        `${origin}/v1/runs/${claimed[index % claimed.length]!["id"]}/events`,
+        {
+          headers: { Cookie: `assertide_session=${token}` },
+          signal: liveAbort.signal,
+        },
+      ),
+    ),
+  );
+  const liveStart = performance.now();
+  const readings = streams.map(async (response) => {
+    assert.equal(response.status, 200);
+    const reader = response.body!.getReader();
+    let text = "";
+    try {
+      for (;;) {
+        const chunk = await reader.read();
+        if (chunk.done) throw new Error("Live stream closed before update");
+        text += new TextDecoder().decode(chunk.value);
+        if (text.includes(marker)) {
+          samples["live"]!.push(performance.now() - liveStart);
+          return;
+        }
+      }
+    } finally {
+      await reader.cancel();
+    }
+  });
+  const deadline = setTimeout(() => liveAbort.abort(), 10000);
+  try {
+    await Promise.all(
+      claimed.map((run) =>
+        updateOwnedRun(
+          db,
+          String(run["id"]),
+          "reference-worker",
+          Number(run["leaseEpoch"]),
+          { liveProbe: marker },
+        ),
+      ),
+    );
+    await Promise.all(readings);
+  } finally {
+    clearTimeout(deadline);
+    liveAbort.abort();
+  }
   const p95 = (values: number[]) =>
     [...values].sort((a, b) => a - b)[Math.ceil(values.length * 0.95) - 1]!;
   const result = {
@@ -228,6 +285,10 @@ try {
   assert.ok(
     result.p95Ms["heartbeat"]! < 2000,
     "Lease updates must be below 2 seconds",
+  );
+  assert.ok(
+    result.p95Ms["live"]! < 2000,
+    "Live event delivery p95 must be below 2 seconds",
   );
 } finally {
   server.closeAllConnections();

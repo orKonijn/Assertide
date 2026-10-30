@@ -132,3 +132,9 @@ jobs:
         with:
           name: browser-failure-screenshots
           path: packages/automation/test-results/**/*.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accessibility-checks
+          path: .local/verification/accessibility.json
+          if-no-files-found: ignore

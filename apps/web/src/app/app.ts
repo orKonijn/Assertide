@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, viewChild, ElementRef } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { Api } from './core/api';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
+  host: { '(document:keydown)': 'onKeydown($event)', '(window:resize)': 'onResize()' },
 })
 export class App {
   readonly api = inject(Api);
@@ -17,6 +18,41 @@ export class App {
   readonly identityError = signal('');
   readonly dark = signal(localStorage.getItem('assertide-theme') === 'dark');
   readonly menu = signal(false);
+  readonly menuButton = viewChild<ElementRef<HTMLButtonElement>>('menuButton');
+  skipToContent(event: Event) {
+    event.preventDefault();
+    document.getElementById('content')?.focus();
+  }
+  closeMenu() {
+    if (this.menu()) {
+      this.menu.set(false);
+      this.menuButton()?.nativeElement.focus();
+    }
+  }
+  onResize() {
+    if (window.innerWidth > 850) this.closeMenu();
+  }
+  onKeydown(event: KeyboardEvent) {
+    if (!this.menu()) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeMenu();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const elements = Array.from(
+      document.querySelectorAll<HTMLElement>('aside button,aside a,aside select'),
+    ).filter((element) => !element.hasAttribute('disabled') && element.offsetParent !== null);
+    const first = elements[0],
+      last = elements.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first?.focus();
+    }
+  }
   readonly links = [
     ['/', 'Overview'],
     ['/projects', 'Projects'],
@@ -49,6 +85,8 @@ export class App {
   }
   toggleMenu() {
     this.menu.update((value) => !value);
+    if (this.menu())
+      setTimeout(() => document.querySelector<HTMLElement>('.mobile-close')?.focus(), 0);
   }
   changeProject(id: string) {
     this.api.selectProject(id);

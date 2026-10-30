@@ -106,7 +106,7 @@ interface ServiceAccount {
       </section>
       <section class="card">
         <h2>Audit trail</h2>
-        <div class="table-wrap">
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Audit events table">
           <table>
             <thead>
               <tr>

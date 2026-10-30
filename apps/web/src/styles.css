@@ -35,6 +35,11 @@ body {
 a {
   color: var(--brand);
 }
+.content a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
 button,
 input,
 select,
@@ -120,6 +125,7 @@ p {
   color: var(--brand);
 }
 aside {
+  overflow-y: auto;
   position: fixed;
   inset: 0 auto 0 0;
   width: 224px;
@@ -128,6 +134,9 @@ aside {
   padding: 28px 18px;
   display: flex;
   flex-direction: column;
+}
+aside > * {
+  flex-shrink: 0;
 }
 .brand {
   display: flex;
@@ -263,6 +272,14 @@ td {
 .mobile-header {
   display: none;
 }
+.mobile-close {
+  display: none;
+}
+summary {
+  min-height: 44px;
+  padding: 12px 0;
+  cursor: pointer;
+}
 .skip {
   position: absolute;
   left: -10000px;
@@ -299,6 +316,13 @@ pre {
   margin-left: auto;
 }
 @media (max-width: 850px) {
+  .mobile-close {
+    display: inline-flex;
+    margin-bottom: 12px;
+  }
+  label:has(input[type='checkbox']) {
+    min-height: 44px;
+  }
   aside {
     display: none;
     z-index: 20;
@@ -350,5 +374,6 @@ pre {
   * {
     scroll-behavior: auto !important;
     transition: none !important;
+    animation: none !important;
   }
 }

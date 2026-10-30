@@ -51,10 +51,10 @@ export async function startLocalIdentity(
       }
       res.set(
         "Content-Security-Policy",
-        `default-src 'none'; form-action 'self' ${new URL(callback).origin}; frame-ancestors 'none'`,
+        `default-src 'none'; style-src 'unsafe-inline'; form-action 'self' ${new URL(callback).origin}; frame-ancestors 'none'`,
       );
       res.send(
-        '<!doctype html><html lang="en"><meta charset="utf-8"><title>Assertide local sign in</title><main><h1>Assertide local sign in</h1><p>Development identity provider</p><form method="post"><label>Account <select name="account"><option>admin</option><option>operator</option><option>viewer</option></select></label><label>Password <input name="password" type="password" autocomplete="current-password" required></label><button>Sign in</button></form></main></html>',
+        '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Assertide local sign in</title><style>body{font:16px system-ui,sans-serif;background:#f5f6fa;color:#182237;margin:0;padding:24px}main{max-width:420px;margin:8vh auto;background:white;padding:28px;border:1px solid #d8dfea;border-radius:16px}h1{font-size:26px;line-height:1.2}p{line-height:1.6;color:#58657b}label{display:block;font-weight:600;margin:20px 0}input,select,button{font:inherit;box-sizing:border-box;min-height:44px;border:1px solid #58657b;border-radius:8px;padding:10px;width:100%;margin-top:8px}button{background:#5145cd;color:white;font-weight:600;cursor:pointer}:focus-visible{outline:3px solid #5145cd;outline-offset:3px}</style><main><h1>Assertide local sign in</h1><p>Choose an account for your local workspace.</p><form method="post"><label>Account <select name="account"><option>admin</option><option>operator</option><option>viewer</option></select></label><label>Password <input name="password" type="password" autocomplete="current-password" required></label><button>Sign in</button></form><p>Development identity provider</p></main></html>',
       );
     } catch {
       res
