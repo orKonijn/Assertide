@@ -90,7 +90,7 @@ import { LoadingState } from '../core/loading-state';
                   <th>Select</th>
                   <th>Test case</th>
                   <th class="hide-mobile">Feature</th>
-                  <th>Priority</th>
+                  <th class="hide-mobile">Priority</th>
                 </tr>
               </thead>
               <tbody>
@@ -108,9 +108,12 @@ import { LoadingState } from '../core/loading-state';
                       </label>
                     </td>
                     <td data-label="Test case">
-                      <strong>{{ test.id }}</strong
-                      ><br />{{ test.title }}
-                      <p class="muted">
+                      <div class="case-heading">
+                        <strong>{{ test.id }}</strong
+                        ><span class="badge mobile-priority">{{ test.priority }}</span>
+                      </div>
+                      <div class="case-title">{{ test.title }}</div>
+                      <p class="muted case-source">
                         {{ test.file }}:{{ test.line }} · {{ test.tags.join(', ') }}
                       </p>
                       <div class="actions catalog-actions">
@@ -118,12 +121,14 @@ import { LoadingState } from '../core/loading-state';
                           <span class="badge">Disabled</span>
                         }
                         @if (canEdit()) {
-                          <button (click)="edit(test)">Edit {{ test.id }}</button>
+                          <button (click)="edit(test)" [attr.aria-label]="'Edit ' + test.id">
+                            Edit
+                          </button>
                         }
                       </div>
                     </td>
                     <td class="hide-mobile">{{ test.feature }}</td>
-                    <td data-label="Priority">
+                    <td class="hide-mobile" data-label="Priority">
                       <span class="badge">{{ test.priority }}</span>
                     </td>
                   </tr>

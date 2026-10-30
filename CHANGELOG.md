@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Compacted test and report cards by grouping metadata, priority, and actions; report links now match workspace styling. Moved the mobile theme control beside Menu as a labeled sun/moon icon, with an icon control retained on desktop. Six browser tests including 64 accessibility states and light/dark layout checks at 320/390/768/1280px pass. See [card and header comparisons](docs/ui-refresh.md#compact-test-and-report-cards).
+
 - Replaced oversized execution-history header buttons with compact sort headings and visible direction arrows. Mobile headings adapt to two columns on narrow phones while preserving keyboard sorting and touch targets. Build/lint, four browser tests including the 64-state accessibility matrix, and light/dark layout checks at 320/390/1280px pass. See [before-and-after sorting controls](docs/ui-refresh.md#execution-history-sort-headings).
 
 - Mobile navigation now closes when its dimmed backdrop is clicked and slides out smoothly while the backdrop fades. Close, Escape, and navigation actions restore the menu trigger consistently; reduced-motion settings disable transitions. Fixed sign-in cards drifting left at tablet/zoomed widths by keeping equal automatic side margins. Build/lint, five browser tests including 64 accessibility states, and centered-layout checks at 320/390/840/1280px pass. See [navigation and sign-in evidence](docs/ui-refresh.md#mobile-navigation-and-sign-in-alignment).

@@ -21,14 +21,43 @@
   <a class="skip" href="#content" (click)="skipToContent($event)">Skip to content</a>
   <header class="mobile-header">
     <a class="brand-logo" routerLink="/"><img src="/brand/assertide-logo.png" alt="Assertide" /></a>
-    <button
-      #menuButton
-      (click)="toggleMenu()"
-      [attr.aria-expanded]="menu()"
-      aria-controls="workspace-navigation"
-    >
-      Menu
-    </button>
+    <div class="header-actions">
+      <button
+        class="theme-toggle icon-button"
+        (click)="toggleTheme()"
+        [attr.aria-label]="dark() ? 'Light theme' : 'Dark theme'"
+        [attr.title]="dark() ? 'Light theme' : 'Dark theme'"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          @if (dark()) {
+            <circle cx="12" cy="12" r="4" />
+            <path
+              d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+            />
+          } @else {
+            <path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z" />
+          }
+        </svg>
+      </button>
+      <button
+        #menuButton
+        (click)="toggleMenu()"
+        [attr.aria-expanded]="menu()"
+        aria-controls="workspace-navigation"
+      >
+        Menu
+      </button>
+    </div>
   </header>
   <button
     class="drawer-backdrop"
@@ -90,9 +119,37 @@
       }
     </nav>
     <div class="account">
-      <span>{{ api.identity()?.name }} · {{ api.identity()?.role }}</span
-      ><button (click)="toggleTheme()">{{ dark() ? 'Light theme' : 'Dark theme' }}</button
-      ><button (click)="api.logout()">Sign out</button>
+      <span>{{ api.identity()?.name }} · {{ api.identity()?.role }}</span>
+      <div class="account-actions">
+        <span class="desktop-theme"
+          ><button
+            class="theme-toggle icon-button"
+            (click)="toggleTheme()"
+            [attr.aria-label]="dark() ? 'Light theme' : 'Dark theme'"
+            [attr.title]="dark() ? 'Light theme' : 'Dark theme'"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              @if (dark()) {
+                <circle cx="12" cy="12" r="4" />
+                <path
+                  d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+                />
+              } @else {
+                <path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z" />
+              }
+            </svg></button></span
+        ><button (click)="api.logout()">Sign out</button>
+      </div>
     </div>
   </aside>
   <main id="content" tabindex="-1" class="content" [attr.inert]="menu() ? '' : null">

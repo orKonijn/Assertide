@@ -170,3 +170,27 @@ These focused captures use the same 390px viewport and dark theme.
 Narrow phones keep full labels and touch targets in two rows. Light and dark desktop/mobile screenshots were captured at 320, 390, and 1280px; none had page overflow.
 
 Verification: production build, lint, four browser tests (including the 64-state accessibility matrix and keyboard sorting), and the six viewport/theme checks passed. Changes remain Unreleased; no version increment.
+
+
+## Compact test and report cards
+
+Test cards group the identifier and priority together, with a smaller source line and a concise Edit action. The accessible edit name still includes the test identifier. Report cards keep the execution link and report action together, with status and expiry beneath; links use the workspace colors and the report action has a clear external-link indicator. Routes, report authorization, and retention behavior are unchanged.
+
+The mobile header now places a labeled sun/moon icon beside Menu. Desktop navigation retains an icon theme control next to Sign out. The header fits at 320px and theme changes persist as before.
+
+Actual running application, dark theme at 768px, before and after:
+
+![Test card before compact grouping](changelog/assets/unreleased/compact-explorer-before.png)
+![Test card with grouped priority and concise edit action](changelog/assets/unreleased/compact-explorer-after.png)
+
+![Report card before grouping](changelog/assets/unreleased/compact-reports-before.png)
+![Report card with compact execution and status layout](changelog/assets/unreleased/compact-reports-after.png)
+
+Actual 320px mobile report views show the theme icon, ready report action, and expiry in both themes:
+
+![Compact light mobile header and report cards](changelog/assets/unreleased/compact-phone-light.png)
+![Compact dark mobile header and report cards](changelog/assets/unreleased/compact-phone-dark.png)
+
+Verification: six browser tests pass, including the 64-state accessibility matrix, catalog editing, project selection, and drawer dismissal/animation. Both routes have no document overflow at 320/390/768/1280px in light and dark themes; the icon switches themes correctly at 320px.
+
+`npm run verify:quick` passes (lint, type checks, local API tests, seven web unit tests, and production build). Eight infrastructure tests remain skipped on Windows. The initial run overlapped browser setup and failed catalog initialization in two API tests; a separate full rerun passed. No release version is assigned; this remains an Unreleased development change.
