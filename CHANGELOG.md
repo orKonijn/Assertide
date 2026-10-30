@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Catalog columns now retain their widths when switching pages. Desktop navigation uses tighter spacing in shorter windows to avoid unnecessary scrollbars while retaining scrolling when content truly overflows. Local verification, four browser tests including 64 accessibility states, and sidebar/column geometry checks pass. See [sidebar and pagination evidence](docs/ui-refresh.md#stable-catalog-columns-and-sidebar-fit).
+
 - Configure execution now stays visible while scrolling the desktop test catalog. Tall configurations scroll inside the panel; mobile keeps normal document scrolling. Local verification and browser checks for pinning, short viewports, and mobile overflow pass. See [sticky configuration evidence](docs/ui-refresh.md#sticky-execution-configuration).
 
 - Redesigned the explorer header and toolbar with a compact launch action, secondary revision text, a wider search field, aligned filters, and grouped selection/pagination controls. The launch button no longer stretches across tablet/mobile layouts. Four browser tests including 64 accessibility states, local verification, and light/dark layout checks at 320/390/768/1280px pass. See [explorer redesign screenshots](docs/ui-refresh.md#explorer-toolbar-redesign).

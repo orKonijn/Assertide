@@ -323,3 +323,18 @@ Actual desktop view after scrolling the catalog:
 ![Pinned configuration panel in light mode](changelog/assets/unreleased/execution-config-sticky-light.png)
 
 Verification: browser checks confirm the pinned position in both themes, reachability of the launch action at 500px viewport height, and normal mobile flow without overflow at 320/390/768px. Local lint, formatting, type checks, API/web unit tests, and production build pass. Eight infrastructure tests remain skipped on Windows. This remains Unreleased, with no version change.
+
+## Stable catalog columns and sidebar fit
+
+The desktop catalog now uses a fixed table layout with consistent selection, feature, and priority widths. Page contents no longer resize the columns. Navigation spacing becomes more compact in desktop viewports at most 800px tall, removing avoidable overflow while preserving automatic scrolling on genuinely short windows.
+
+Actual running captures at 1280px:
+
+![Sidebar fitting a 740px-tall dark viewport](changelog/assets/unreleased/sidebar-fit-dark.png)
+![Sidebar fitting a 740px-tall light viewport](changelog/assets/unreleased/sidebar-fit-light.png)
+![First page catalog row with fixed columns](changelog/assets/unreleased/catalog-stable-page-1.png)
+![Second page catalog row with the same column widths](changelog/assets/unreleased/catalog-stable-page-2.png)
+
+Browser geometry checks confirm identical column positions and widths across all three pages at 1024/1280/1440px in both themes. The sidebar has no overflow at 740px height and remains scrollable at 500px. This is an Unreleased layout fix with no version change.
+
+Local verification passed (lint, formatting, type checks, API/web unit tests, and production build; eight infrastructure checks skipped on Windows). Four browser tests passed, including the 64-state accessibility matrix, catalog metadata, and pagination/selection behavior.

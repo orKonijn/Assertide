@@ -2220,6 +2220,49 @@ th[aria-sort='descending'] .sort-indicator::before {
     scrollbar-gutter: stable;
   }
 }
+
+/* Keep catalog columns anchored when different page content is rendered. */
+@media (min-width: 851px) {
+  .catalog-cards {
+    table-layout: fixed;
+  }
+  .catalog-cards th:first-child {
+    width: 64px;
+  }
+  .catalog-cards th:nth-child(3) {
+    width: 23%;
+  }
+  .catalog-cards th:last-child {
+    width: 80px;
+  }
+  .catalog-cards td {
+    overflow-wrap: anywhere;
+  }
+}
+/* Fit the navigation comfortably before introducing necessary scrolling. */
+@media (min-width: 851px) and (max-height: 800px) {
+  aside {
+    padding-block: 20px;
+  }
+  aside .workspace {
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+  aside nav {
+    gap: 3px;
+  }
+  aside nav a {
+    min-height: 44px;
+    padding-block: 9px;
+  }
+  aside .account {
+    padding-top: 12px;
+  }
+  aside .account > span {
+    padding-block: 4px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
