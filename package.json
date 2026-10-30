@@ -1,0 +1,16 @@
+{
+  "name": "assertide",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "start": "node scripts/dev.mjs",
+    "verify:quick": "node scripts/verify.mjs",
+    "test:e2e": "node scripts/e2e.mjs"
+  }
+}
