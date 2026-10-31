@@ -1,5 +1,6 @@
 export const NavigationSelectors = {
   activeProject: 'Active project',
+  selectedProject: 'strong',
   menu: 'Menu',
   close: 'Close menu',
   backdrop: 'Dismiss navigation',

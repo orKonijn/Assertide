@@ -1,5 +1,6 @@
 export const AnalyticsSelectors = {
   heading: 'Overview',
+  details: 'Explore detailed analytics',
   window: 'History window',
   browser: 'Execution project',
   apply: 'Apply filters',

@@ -53,7 +53,11 @@ export class ApiWorkspacePage {
   }
   public inspectPointer(pointer: string): Promise<void> {
     return workflow('Inspect JSON pointer', async () => {
-      await this.page.getByLabel(S.pointer, { exact: true }).fill(pointer);
+      const input = this.page.getByLabel(S.pointer, { exact: true });
+      if (!(await input.isVisible())) {
+        await this.page.getByText(S.pointerDetails, { exact: true }).click();
+      }
+      await input.fill(pointer);
       await this.page.getByRole('button', { name: S.inspect, exact: true }).click();
     });
   }

@@ -18,7 +18,7 @@ export class NavigationComponent {
   public readonly heading;
   public constructor(private readonly page: Page) {
     this.activeProject = page.getByLabel(S.activeProject);
-    this.selectedProject = this.activeProject.locator('span').first();
+    this.selectedProject = this.activeProject.locator(S.selectedProject);
     this.menu = page.getByRole('button', { name: S.menu, exact: true });
     this.backdrop = page.getByRole('button', { name: S.backdrop, exact: true });
     this.dialog = page.getByRole('dialog', { name: S.dialog });

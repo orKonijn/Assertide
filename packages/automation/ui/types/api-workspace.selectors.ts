@@ -7,6 +7,7 @@ export const ApiWorkspaceSelectors = {
   evidence: 'Recorded request and response',
   download: 'Download redacted JSON',
   pointer: 'JSON pointer',
+  pointerDetails: 'Find a JSON value',
   inspect: 'Inspect pointer',
   value: 'Selected JSON value',
   executable: (count: number) => `${count} executable API cases`,

@@ -41,6 +41,11 @@ export class AnalyticsPage {
       await this.page.getByRole('button', { name: S.apply, exact: true }).click();
     });
   }
+  public openDetails(): Promise<void> {
+    return workflow('Explore detailed analytics', () =>
+      this.page.getByText(S.details, { exact: true }).click(),
+    );
+  }
   public showData(): Promise<void> {
     return this.page.getByText(S.table, { exact: true }).click();
   }

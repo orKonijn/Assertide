@@ -34,7 +34,7 @@ test.describe('Disabled selection policies', () => {
     await suites.setMember(D.lifecycle, false);
     await expect(suites.membership(D.lifecycle)).toBeDisabled();
     await suites.save();
-    await expect(suites.card(name)).toContainText(/1 tests .* revision 2/);
+    await expect(suites.card(name)).toContainText(/1 tests\s*Revision 2/);
     await suites.run(name);
     await expect(page).toHaveURL(/\/runs\/[^/]+$/);
     expect((await api.waitForCompletion(execution.id())).selection.testIds).toEqual([
