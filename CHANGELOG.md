@@ -6,8 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Added
 
-- Added a [single-node pilot setup](docs/free-pilot-setup.md) with staged Kubernetes manifests for the application, private PostgreSQL/Redis/Vault, production Keycloak login, owner bootstrap, and the `www` redirect. Credential generation refuses overwrites and keeps secrets out of console output. Local contract checks and the real B2 private/versioned storage contract pass; application deployment, public certificates, and live acceptance remain pending. This does not publish the platform.
-- Added native ARM image builds alongside amd64 for the free-hosting pilot. Published image tags now include the architecture (`<commit>-arm64` or `<commit>-amd64`); use verified digests for deployment. Native Linux build and isolation verification remain required.
+- Added a [single-node pilot setup](docs/free-pilot-setup.md) with staged Kubernetes manifests for the application, private PostgreSQL/Redis/Vault, production Keycloak login, owner bootstrap, and the `www` redirect. Credential generation refuses overwrites and keeps secrets out of console output. The actual application now runs at assertide.com with trusted HTTPS, production OIDC login, isolated API/browser execution, private reports and versioned database backups. A separate database restore passed. See [verified checks and pilot limitations](docs/pilot-verification.md); full disaster recovery and availability acceptance remain incomplete. No product release version is assigned.
+- Added native ARM image builds alongside amd64 for the free-hosting pilot. Published image tags now include the architecture (`<commit>-arm64` or `<commit>-amd64`); use verified digests for deployment. Native ARM builds passed image scans and signed provenance verification; controlled Kubernetes execution passed on the pilot.
 - Added an [assertide.com deployment checklist](docs/assertide-domain-deployment.md) covering production URLs, preservation of email DNS records, deployment acceptance, and rollback.
 
 ### Fixed

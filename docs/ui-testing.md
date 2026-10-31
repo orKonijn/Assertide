@@ -51,3 +51,5 @@ Milestone screenshots are attached sparingly through the central helper; automat
 ![Generated Allure report with 26 passing app journeys grouped by feature and recorded runtime metadata](changelog/assets/unreleased/ui-acceptance-allure.png)
 
 Captured from the local acceptance run on this branch. The commit metadata records the base commit used before the changes were committed; CI reports record their tested commit.
+
+When reusing a local application started from another checkout, set `ASSERTIDE_TEST_RUN_ROOT` to that checkout’s absolute `.local/runs` directory. Raw-report metadata and recovery checks then use the same evidence directory as the running service. The default remains this checkout’s `.local/runs`. This override is only for owned local test runs; never point acceptance tests at production or unrelated evidence.

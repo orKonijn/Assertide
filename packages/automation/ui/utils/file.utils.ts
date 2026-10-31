@@ -13,7 +13,11 @@ export async function downloadText(download: Download): Promise<string> {
 export async function reportMetadata(
   id: string,
 ): Promise<{ environment: string; result: { labels: { name: string; value: string }[] } }> {
-  const directory = path.resolve('../../.local/runs', z.uuid().parse(id), 'allure-results');
+  const directory = path.resolve(
+    process.env['ASSERTIDE_TEST_RUN_ROOT'] ?? '../../.local/runs',
+    z.uuid().parse(id),
+    'allure-results',
+  );
   const file = (await readdir(directory)).find((name) => name.endsWith('-result.json'));
   if (!file) {
     throw new Error('No Allure result');
@@ -26,7 +30,10 @@ export async function reportMetadata(
   };
 }
 export async function removeLocalRawCopy(id: string): Promise<void> {
-  const runDirectory = path.resolve('../../.local/runs', z.uuid().parse(id));
+  const runDirectory = path.resolve(
+    process.env['ASSERTIDE_TEST_RUN_ROOT'] ?? '../../.local/runs',
+    z.uuid().parse(id),
+  );
   const directory = path.resolve(runDirectory, 'allure-results');
   if (path.dirname(directory) !== runDirectory) {
     throw new Error('Unsafe evidence cleanup');

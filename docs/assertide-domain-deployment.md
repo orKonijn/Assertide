@@ -1,6 +1,6 @@
 # Assertide domain deployment
 
-Status: the Always Free pilot VM has been created; application deployment and DNS cutover are not complete. The owner confirmed **assertide.com** on 2026-10-31. Do not configure or purchase assertide.net.
+Status on 2026-10-31: the actual application is reachable at **https://assertide.com** on the approved free pilot. DNS, trusted HTTPS, production OIDC login, isolated API/browser execution and private reports have been exercised. This is a single-node pilot, not completed production availability/recovery acceptance. See the [deployment verification record](pilot-verification.md) for successful checks and remaining limitations. Do not configure or purchase assertide.net.
 
 Use the actual application containers and [production deployment procedure](production-deployment.md), never `deliverables/` previews. No product release version is assigned by this preparation.
 
@@ -49,7 +49,7 @@ The installed Sites hosting contract supports Cloudflare Workers with 128 MB per
 
 Sites could serve the frontend after a separate integration, but would still require external backend and execution infrastructure. Moving records to D1 and files to R2 alone would not provide a browser execution runtime, and the current artifact storage contract requires versioned objects. Therefore Niva's hosting is not a complete free deployment target for the current Assertide implementation. No Assertide Site was created, no Niva configuration was changed, and no domain cutover was performed during this review.
 
-## Free pilot candidate: Oracle VM and Backblaze B2
+## Original free pilot design: Oracle VM and Backblaze B2
 
 Research date: 2026-10-31. This is a deployment design, not an implemented or load-tested environment. A free pilot cannot promise the availability of the managed multi-node production topology.
 
@@ -63,7 +63,7 @@ Oracle's object storage is an alternative, but its S3 support table does not exp
 
 Use ingress directly on the VM for HTTP/HTTPS, with certificates and explicit apex/report/auth routes plus the `www` redirect. Avoid provisioning a paid managed Kubernetes service, NAT gateway, or paid load balancer. Preserve Porkbun nameservers and email records. The database, Redis, Vault, source volume, and worker control endpoints remain inaccessible from the public internet.
 
-### Verification and outstanding work
+### Historical preparation checks (superseded by the deployment record)
 
 - Latest pilot verification: lint, formatting, type checks and nine deployment/credential tests passed. The full quick run exhausted local memory during concurrent API tests. Re-running the API suite serially passed 33 tests with eight infrastructure skips; all ten frontend tests and the production build passed separately. Logs remain private under `.local/verification/`. Native Linux/container and live-domain checks are still unavailable.
 

@@ -1,6 +1,6 @@
 # Single-node pilot setup
 
-This is an operator procedure for the actual application, not a published deployment or a capacity guarantee. See [domain acceptance](assertide-domain-deployment.md) and [production operations](production-deployment.md). The pilot adds a single-node renderer; the general multi-node renderer remains unchanged. Do not apply this overlay to an existing multi-node installation or recovered local database.
+This is the operator procedure for the actual application. The [pilot verification record](pilot-verification.md) describes the current deployment; this procedure alone is not evidence of capacity or recovery acceptance. See [domain acceptance](assertide-domain-deployment.md) and [production operations](production-deployment.md). The pilot adds a single-node renderer; the general multi-node renderer remains unchanged. Do not apply this overlay to an existing multi-node installation or recovered local database.
 
 ## Prerequisites and cost boundary
 
