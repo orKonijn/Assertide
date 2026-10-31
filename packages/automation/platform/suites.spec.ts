@@ -1,3 +1,4 @@
+import { NavigationComponent } from '../ui/components/navigation.component';
 import { NotificationsComponent } from '../ui/components/notifications.component';
 import { SuitesPage } from '../ui/pages/suites.page';
 import { TestData as D } from '../ui/types/test-data';
@@ -6,9 +7,11 @@ import { expect, test } from './fixtures';
 test.describe('Saved suites', () => {
   let suites: SuitesPage;
   let notifications: NotificationsComponent;
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, isolatedProject }) => {
     suites = new SuitesPage(page);
     notifications = new NotificationsComponent(page);
+    await suites.goto();
+    await new NavigationComponent(page).selectProject(isolatedProject.name);
     await suites.goto();
   });
   test('metadata and membership survive editing and reload', async ({ page }) => {

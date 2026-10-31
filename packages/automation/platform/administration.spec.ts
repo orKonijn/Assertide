@@ -14,6 +14,7 @@ test.describe('Project administration', () => {
   test('project edits and active selection survive reload', async ({ page }) => {
     const name = uniqueName('Payments');
     await projects.create(name, 'Payment contract verification');
+    await projects.search(name);
     await expect(projects.heading(name)).toBeVisible();
     await projects.edit(name);
     await projects.updateDescription('Payment and refund contract verification');

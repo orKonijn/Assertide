@@ -27,6 +27,9 @@ export class ProjectsPage {
       await this.page.getByRole('button', { name: S.create, exact: true }).click();
     });
   }
+  public search(name: string): Promise<void> {
+    return this.page.getByRole('searchbox', { name: S.search, exact: true }).fill(name);
+  }
   public edit(name: string): Promise<void> {
     return workflow('Edit project', () =>
       this.page.getByRole('button', { name: S.edit(name), exact: true }).click(),

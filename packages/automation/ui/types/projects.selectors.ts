@@ -1,5 +1,6 @@
 export const ProjectsSelectors = {
   name: 'Project name',
+  search: 'Search projects',
   description: 'Description',
   create: 'Create project',
   save: 'Save project',
