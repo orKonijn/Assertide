@@ -127,6 +127,11 @@ test('login admin routes stay private and TLS covers all public origins', () => 
     .containers[0];
   assert.ok(keycloak.args.includes('--optimized'));
   assert.ok(!keycloak.args.includes('start-dev'));
+  const vaultPod = find(items, 'StatefulSet', 'assertide-vault').spec.template.spec;
+  assert.equal(
+    vaultPod.volumes.find((volume) => volume.name === 'ca').configMap.name,
+    'assertide-vault-ca',
+  );
   for (const role of ['api', 'execution']) {
     const pod = find(items, 'Deployment', `assertide-${role}`).spec.template.spec;
     const ca = pod.volumes.find((v) => v.name === 'vault-ca');

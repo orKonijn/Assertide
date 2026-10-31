@@ -63,7 +63,7 @@ jobs:
         working-directory: apps/web
       - run: npm audit --audit-level=high
         working-directory: apps/web
-      - run: node --test deploy/render.test.mjs
+      - run: node --test deploy/render.test.mjs deploy/pilot.test.mjs deploy/pilot-secrets.test.mjs
       - run: node --test scripts/local-object-store-health.test.mjs scripts/managed-object-store.test.mjs
       - run: node --test packages/domain/execution.test.ts
       - run: node apps/web/node_modules/typescript/bin/tsc -p packages/domain/tsconfig.json

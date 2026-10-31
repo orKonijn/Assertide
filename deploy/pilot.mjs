@@ -229,11 +229,13 @@ listener "tcp" {
       { name: 'data', persistentVolumeClaim: { claimName: 'assertide-vault' } },
       { name: 'config', configMap: { name: 'assertide-vault-config' } },
       { name: 'tls', secret: { secretName: 'assertide-vault-tls', defaultMode: 288 } },
+      { name: 'ca', configMap: { name: 'assertide-vault-ca' } },
     ],
     [
       { name: 'data', mountPath: '/vault/data' },
       { name: 'config', mountPath: '/vault/config', readOnly: true },
       { name: 'tls', mountPath: '/vault/tls', readOnly: true },
+      { name: 'ca', mountPath: '/vault/ca', readOnly: true },
     ],
   );
   // Avoid the image entrypoint's optional chown/setcap operations under restricted policy.
