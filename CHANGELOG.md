@@ -4,8 +4,15 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Added
+
+- Added a [single-node pilot setup](docs/free-pilot-setup.md) with staged Kubernetes manifests for the application, private PostgreSQL/Redis/Vault, production Keycloak login, owner bootstrap, and the `www` redirect. Credential generation refuses overwrites and keeps secrets out of console output. Local contract checks and the real B2 private/versioned storage contract pass; application deployment, public certificates, and live acceptance remain pending. This does not publish the platform.
+- Added native ARM image builds alongside amd64 for the free-hosting pilot. Published image tags now include the architecture (`<commit>-arm64` or `<commit>-amd64`); use verified digests for deployment. Native Linux build and isolation verification remain required.
+- Added an [assertide.com deployment checklist](docs/assertide-domain-deployment.md) covering production URLs, preservation of email DNS records, deployment acceptance, and rollback.
+
 ### Fixed
 
+- The private-storage acceptance test recognizes both HTTP 401 and 403 as anonymous access denial, allowing the same versioning, integrity and retention checks to run against B2 and MinIO.
 - Replaced browser-native date popups in Overview and Executions with a site-themed calendar, including month navigation, selected/today indicators, Clear/Today actions, and Escape/outside dismissal. Dates retain their ISO filter values. Build, lint, and fixture-based selection, focus, leap-day, filtering, and responsive checks pass. See [calendar screenshots](docs/ui-refresh.md#site-themed-date-picker).
 
 - Redesigned Overview with a unified summary strip, reliability chart, attention panel, grouped activity, and expandable detailed analytics. History filters now span the panel in an aligned grid with actions in a separate footer and a rounded keyboard-focus indicator. Build, lint, and responsive fixture-based layout/navigation checks pass. See [Overview dashboard and filter screenshots](docs/ui-refresh.md#overview-dashboard-and-filter-layout).

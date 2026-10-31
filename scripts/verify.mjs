@@ -1,7 +1,14 @@
 import { command, completed, npm, root } from './commands.mjs';
 await completed(npm(['run', 'lint']));
 await completed(npm(['run', 'format:check']));
-await completed(command(process.execPath, ['--test', 'deploy/render.test.mjs']));
+await completed(
+  command(process.execPath, [
+    '--test',
+    'deploy/render.test.mjs',
+    'deploy/pilot.test.mjs',
+    'deploy/pilot-secrets.test.mjs',
+  ]),
+);
 await completed(
   command(process.execPath, [
     '--test',

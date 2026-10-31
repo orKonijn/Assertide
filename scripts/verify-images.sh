@@ -29,9 +29,15 @@ if [[ -n "${DATABASE_URL:-}" ]]; then
   docker exec assertide-execution-smoke node --import /app/apps/api/node_modules/tsx/dist/loader.mjs --input-type=module -e 'const s=await import("/app/apps/api/src/source.ts"); await s.verifySource(s.catalogRevision); console.log("Fresh execution source verified");'
 fi
 mkdir -p .local/verification/images "$RUNNER_TEMP/trivy"
-curl -fsSL https://github.com/aquasecurity/trivy/releases/download/v0.76.1/trivy_0.76.1_Linux-64bit.tar.gz -o "$RUNNER_TEMP/trivy/trivy.tar.gz"
+case "$(uname -m)" in
+  x86_64) TRIVY_PLATFORM=64bit ;;
+  aarch64|arm64) TRIVY_PLATFORM=ARM64 ;;
+  *) echo 'Unsupported image scan architecture' >&2; exit 1 ;;
+esac
+TRIVY_ARCHIVE="trivy_0.76.1_Linux-${TRIVY_PLATFORM}.tar.gz"
+curl -fsSL "https://github.com/aquasecurity/trivy/releases/download/v0.76.1/$TRIVY_ARCHIVE" -o "$RUNNER_TEMP/trivy/trivy.tar.gz"
 curl -fsSL https://github.com/aquasecurity/trivy/releases/download/v0.76.1/trivy_0.76.1_checksums.txt -o "$RUNNER_TEMP/trivy/checksums.txt"
-(cd "$RUNNER_TEMP/trivy" && grep 'trivy_0.76.1_Linux-64bit.tar.gz$' checksums.txt | sed 's/trivy_0.76.1_Linux-64bit.tar.gz/trivy.tar.gz/' | sha256sum --check && tar -xzf trivy.tar.gz trivy)
+(cd "$RUNNER_TEMP/trivy" && grep -F " $TRIVY_ARCHIVE" checksums.txt | sed "s/$TRIVY_ARCHIVE/trivy.tar.gz/" | sha256sum --check && tar -xzf trivy.tar.gz trivy)
 for image in service web worker; do
   "$RUNNER_TEMP/trivy/trivy" image --scanners vuln --format spdx-json --output ".local/verification/images/$image.spdx.json" "assertide-$image:ci"
   "$RUNNER_TEMP/trivy/trivy" image --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1 "assertide-$image:ci"

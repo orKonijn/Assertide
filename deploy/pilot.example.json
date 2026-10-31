@@ -1,0 +1,22 @@
+{
+  "namespace": "assertide",
+  "stage": "infrastructure",
+  "nodeName": "REPLACE_WITH_VERIFIED_NODE_NAME",
+  "storageClass": "assertide-retain",
+  "sourceClaim": "assertide-sources",
+  "serviceImage": "REGISTRY/assertide-service@sha256:REPLACE_WITH_VERIFIED_ARM_DIGEST",
+  "webImage": "REGISTRY/assertide-web@sha256:REPLACE_WITH_VERIFIED_ARM_DIGEST",
+  "workerImage": "REGISTRY/assertide-worker@sha256:REPLACE_WITH_VERIFIED_ARM_DIGEST",
+  "postgresImage": "docker.io/library/postgres@sha256:REPLACE_WITH_VERIFIED_POSTGRES_17_BOOKWORM_ARM_DIGEST",
+  "redisImage": "docker.io/library/redis@sha256:REPLACE_WITH_VERIFIED_DEBIAN_ARM_DIGEST",
+  "vaultImage": "docker.io/hashicorp/vault@sha256:REPLACE_WITH_VERIFIED_ARM_DIGEST",
+  "keycloakImage": "REGISTRY/assertide-keycloak@sha256:REPLACE_WITH_VERIFIED_OPTIMIZED_ARM_DIGEST",
+  "appOrigin": "https://assertide.com",
+  "reportOrigin": "https://reports.assertide.com",
+  "authOrigin": "https://auth.assertide.com",
+  "vaultAddress": "https://assertide-vault.assertide.svc.cluster.local:8200",
+  "vaultRole": "assertide",
+  "ingressClass": "traefik",
+  "ingressNamespace": "kube-system",
+  "tlsSecret": "assertide-tls"
+}

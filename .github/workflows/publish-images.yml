@@ -1,6 +1,16 @@
 name: Publish reviewed container images
 on:
   workflow_dispatch:
+    inputs:
+      architecture:
+        description: Native build architecture
+        type: choice
+        options: [amd64, arm64]
+        default: amd64
+      pilot_dependencies:
+        description: Build and attest the single-node PostgreSQL, Keycloak and Vault images
+        type: boolean
+        default: false
 permissions:
   contents: read
   packages: write
@@ -8,7 +18,7 @@ permissions:
   attestations: write
 jobs:
   images:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,14 +26,20 @@ jobs:
       - run: node scripts/setup-sandbox.mjs
       - run: docker build -f workers/Dockerfile -t assertide-worker:ci .
       - run: bash scripts/verify-images.sh
+      - if: inputs.pilot_dependencies
+        run: bash scripts/verify-pilot-images.sh
       - name: Publish commit-addressed images
         env:
           GH_TOKEN: ${{ github.token }}
+          IMAGE_ARCH: ${{ inputs.architecture }}
+          PILOT_DEPENDENCIES: ${{ inputs.pilot_dependencies }}
         run: |
           echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           prefix="ghcr.io/${GITHUB_REPOSITORY,,}"
-          for image in service web worker; do
-            target="$prefix-$image:$GITHUB_SHA"
+          images="service web worker"
+          if [[ "$PILOT_DEPENDENCIES" == true ]]; then images="$images postgres keycloak vault"; fi
+          for image in $images; do
+            target="$prefix-$image:$GITHUB_SHA-$IMAGE_ARCH"
             docker tag "assertide-$image:ci" "$target"
             docker push "$target"
             digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$target" | cut -d@ -f2)
@@ -45,6 +61,24 @@ jobs:
         with:
           subject-name: ${{ env.worker_name }}
           subject-digest: ${{ env.worker_digest }}
+          push-to-registry: true
+      - uses: actions/attest@v4
+        if: inputs.pilot_dependencies
+        with:
+          subject-name: ${{ env.postgres_name }}
+          subject-digest: ${{ env.postgres_digest }}
+          push-to-registry: true
+      - uses: actions/attest@v4
+        if: inputs.pilot_dependencies
+        with:
+          subject-name: ${{ env.keycloak_name }}
+          subject-digest: ${{ env.keycloak_digest }}
+          push-to-registry: true
+      - uses: actions/attest@v4
+        if: inputs.pilot_dependencies
+        with:
+          subject-name: ${{ env.vault_name }}
+          subject-digest: ${{ env.vault_digest }}
           push-to-registry: true
       - uses: actions/upload-artifact@v4
         with:

@@ -35,7 +35,11 @@ await test(
       const publicResponse = await fetch(
         `${process.env['S3_ENDPOINT']}/${store.bucket}/${first.key}`,
       );
-      assert.equal(publicResponse.status, 403);
+      // B2 returns 401 for an unsigned private read; MinIO returns 403.
+      assert.ok(
+        [401, 403].includes(publicResponse.status),
+        'Anonymous evidence read must be denied',
+      );
       await store.client.send(new DeleteObjectCommand({ Bucket: store.bucket, Key: first.key }));
       await store.client.send(
         new CreateMultipartUploadCommand({
