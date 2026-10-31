@@ -419,7 +419,10 @@ export function bootstrapJob(config) {
               image: config.serviceImage,
               args: ['/app/apps/api/scripts/bootstrap.ts', '/private/bootstrap.json'],
               envFrom: [{ secretRef: { name: 'assertide-api-config' } }],
-              env: [{ name: 'APP_ORIGIN', value: config.appOrigin }],
+              env: [
+                { name: 'APP_ORIGIN', value: config.appOrigin },
+                { name: 'SOURCE_ROOT', value: '/var/lib/assertide/sources' },
+              ],
               securityContext: {
                 allowPrivilegeEscalation: false,
                 readOnlyRootFilesystem: true,
@@ -432,12 +435,17 @@ export function bootstrapJob(config) {
               volumeMounts: [
                 { name: 'input', mountPath: '/private', readOnly: true },
                 { name: 'tmp', mountPath: '/tmp' },
+                { name: 'sources', mountPath: '/var/lib/assertide/sources' },
               ],
             },
           ],
           volumes: [
             { name: 'input', secret: { secretName: 'assertide-bootstrap' } },
             { name: 'tmp', emptyDir: { sizeLimit: '64Mi' } },
+            {
+              name: 'sources',
+              persistentVolumeClaim: { claimName: config.sourceClaim ?? 'assertide-sources' },
+            },
           ],
         },
       },

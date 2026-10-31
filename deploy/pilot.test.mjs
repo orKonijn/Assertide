@@ -33,6 +33,16 @@ test('bootstrap has no retries or account token and consumes private input', () 
     '/private/bootstrap.json',
   ]);
   assert.equal(job.spec.template.spec.volumes[0].secret.secretName, 'assertide-bootstrap');
+  assert.ok(
+    job.spec.template.spec.containers[0].env.some(
+      (entry) => entry.name === 'SOURCE_ROOT' && entry.value === '/var/lib/assertide/sources',
+    ),
+  );
+  assert.equal(
+    job.spec.template.spec.volumes.find((volume) => volume.name === 'sources').persistentVolumeClaim
+      .claimName,
+    'assertide-sources',
+  );
   for (const item of pilot(config).items.filter((i) => i.kind === 'StatefulSet')) {
     const resources = item.spec.template.spec.containers[0].resources;
     const mib = (v) => parseInt(v) * (v.endsWith('Gi') ? 1024 : 1);

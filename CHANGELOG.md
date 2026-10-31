@@ -12,6 +12,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Fixed first-run owner provisioning against PostgreSQL by explicitly typing the shared project ID. The pilot bootstrap now writes its source catalog to the retained source volume; duplicate-owner failures roll back the new project transaction.
 - The private-storage acceptance test recognizes both HTTP 401 and 403 as anonymous access denial, allowing the same versioning, integrity and retention checks to run against B2 and MinIO.
 - Replaced browser-native date popups in Overview and Executions with a site-themed calendar, including month navigation, selected/today indicators, Clear/Today actions, and Escape/outside dismissal. Dates retain their ISO filter values. Build, lint, and fixture-based selection, focus, leap-day, filtering, and responsive checks pass. See [calendar screenshots](docs/ui-refresh.md#site-themed-date-picker).
 
