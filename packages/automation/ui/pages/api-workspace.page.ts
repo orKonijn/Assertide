@@ -53,8 +53,15 @@ export class ApiWorkspacePage {
   }
   public inspectPointer(pointer: string): Promise<void> {
     return workflow('Inspect JSON pointer', async () => {
+      const disclosure = this.page.locator(S.pointerDisclosure);
+      if (!(await disclosure.evaluate((element) => element.hasAttribute('open')))) {
+        await disclosure.locator('summary').click();
+      }
       await this.page.getByLabel(S.pointer, { exact: true }).fill(pointer);
       await this.page.getByRole('button', { name: S.inspect, exact: true }).click();
     });
+  }
+  public showCompleteExchange(): Promise<void> {
+    return this.page.getByRole('button', { name: S.overview, exact: true }).click();
   }
 }

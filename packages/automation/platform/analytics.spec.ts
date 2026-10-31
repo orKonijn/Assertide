@@ -15,6 +15,7 @@ test.describe('Quality analytics', () => {
     await expect(analytics.heading).toBeVisible();
     await analytics.filter(30, 'api');
     await expect(page).toHaveURL(/days=30&browser=api/);
+    await analytics.showDetails();
     await expect(analytics.period(30)).toBeVisible();
     await analytics.showData();
     await expect(analytics.dateColumn).toBeVisible();
@@ -23,6 +24,7 @@ test.describe('Quality analytics', () => {
     await expect(analytics.browser).toHaveValue('all');
     await analytics.restoreFilters();
     await expect(analytics.browser).toHaveValue('api');
+    await analytics.showDetails();
     await expect(analytics.comparison).toBeVisible();
     const exported = JSON.parse(await downloadText(await analytics.export()));
     expect(exported.filters.browser).toBe('api');
@@ -32,6 +34,7 @@ test.describe('Quality analytics', () => {
     await viewport(page, 'mobile');
     expect(await fitsViewport(page)).toBe(true);
     await page.reload();
+    await analytics.showFilters();
     await expect(analytics.browser).toHaveValue('api');
   });
 });

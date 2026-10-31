@@ -313,6 +313,7 @@ interface Analytics {
             <h2>Live activity</h2>
             <span class="badge">{{ live().length }} active</span>
           </div>
+          <p class="muted">Current activity across all dates, independent of history filters.</p>
           @for (run of live().slice(0, 5); track run.id) {
             <div class="overview-run-row">
               <a class="run-reference" [routerLink]="['/runs', run.id]"
@@ -333,9 +334,10 @@ interface Analytics {
         </section>
         <section class="card overview-activity">
           <div class="section-heading">
-            <h2>Recent completed executions</h2>
+            <h2>Latest completed executions · all dates</h2>
             <a class="overview-more" routerLink="/runs">View history →</a>
           </div>
+          <p class="muted">Latest executions in this project, independent of history filters.</p>
           @for (run of completed().slice(0, 5); track run.id) {
             <div class="overview-run-row">
               <a class="run-reference" [routerLink]="['/runs', run.id]"

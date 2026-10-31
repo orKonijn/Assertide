@@ -27,6 +27,47 @@ test.describe('Catalog metadata', () => {
     await catalog.editMetadata(D.latency);
     await expect(catalog.quarantined).toBeChecked();
   });
+  test('selection survives refresh, remains project scoped and can be cleared', async ({
+    page,
+    api,
+    isolatedProject,
+  }) => {
+    await catalog.selection(D.lifecycle).check();
+    await expect(catalog.selectedCount).toHaveText('1 tests selected');
+    await page.reload();
+    await expect(catalog.restoredSelection).toBeVisible();
+    await expect(catalog.selection(D.lifecycle)).toBeChecked();
+    const other = await api.createProject('Draft isolation ' + crypto.randomUUID());
+    await page.reload();
+    const navigation = new NavigationComponent(page);
+    await navigation.selectProject(other.name);
+    await catalog.goto();
+    await expect(catalog.selectedCount).toHaveText('0 tests selected');
+    await navigation.selectProject(isolatedProject.name);
+    await catalog.goto();
+    await expect(catalog.selection(D.lifecycle)).toBeChecked();
+    await catalog.clearSelection.click();
+    await page.reload();
+    await expect(catalog.selectedCount).toHaveText('0 tests selected');
+    await expect(catalog.selection(D.lifecycle)).not.toBeChecked();
+  });
+  test('sort remains readable at narrow and intermediate widths in both themes', async ({
+    page,
+  }) => {
+    const navigation = new NavigationComponent(page);
+    for (const theme of ['light', 'dark'] as const) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await navigation.setTheme(theme);
+      for (const width of [320, 360, 390, 430, 768, 875]) {
+        await page.setViewportSize({ width, height: 900 });
+        await catalog.sortBy('id-asc');
+        const box = await catalog.sortControl.boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.width).toBeGreaterThan(170);
+        expect(box!.height).toBeLessThanOrEqual(64);
+      }
+    }
+  });
   test('sorting applies before pagination and preserves selection', async ({
     api,
     isolatedProject,

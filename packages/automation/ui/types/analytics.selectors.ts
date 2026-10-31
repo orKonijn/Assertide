@@ -1,5 +1,7 @@
 export const AnalyticsSelectors = {
-  heading: 'Quality at a glance',
+  details: 'details.overview-details',
+  latest: 'Latest completed executions · all dates',
+  heading: 'Overview',
   window: 'History window',
   browser: 'Execution project',
   apply: 'Apply filters',

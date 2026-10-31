@@ -1,4 +1,5 @@
 export const SuitesSelectors = {
+  options: 'details.suite-options',
   name: 'Name',
   description: 'Description',
   owner: 'Owner',

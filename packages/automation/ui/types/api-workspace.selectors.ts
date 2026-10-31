@@ -1,4 +1,6 @@
 export const ApiWorkspaceSelectors = {
+  pointerDisclosure: 'details.evidence-pointer',
+  overview: 'Overview',
   exchanges: '.exchange-item',
   page: (number: number) => `Exchange page ${number}`,
   heading: 'API workspace',

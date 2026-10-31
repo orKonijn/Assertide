@@ -103,6 +103,7 @@ test.describe('Execution and evidence', () => {
     expect(JSON.parse(downloaded).request.method).toBe('POST');
     await workspace.inspectPointer('/response/body/quantity');
     await expect(workspace.selectedValue).toHaveText('2');
+    await workspace.showCompleteExchange();
     await workspace.goToExchangePage(2);
     await expect(workspace.exchanges).toHaveCount(
       Math.min(10, run.artifacts.filter((item) => item.name.startsWith('api-')).length - 10),

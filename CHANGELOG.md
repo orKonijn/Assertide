@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Fixed the narrow mobile test-sort field and accessible names on project/date controls. Explorer selections now survive refresh within the same tab and sign-in session, remain project scoped, and offer Clear selection; changed catalog revisions discard stale drafts. Overview explicitly labels activity outside the history-filter scope. Local browser checks cover selection restoration, project isolation, clearing and responsive sorting in both themes; see [behavior and actual before/after captures](docs/shared-interactions.md#local-review-corrections). These changes are unreleased; no product version or deployment is assigned.
+
 - Replaced browser-native date popups in Overview and Executions with a site-themed calendar, including month navigation, selected/today indicators, Clear/Today actions, and Escape/outside dismissal. Dates retain their ISO filter values. Build, lint, and fixture-based selection, focus, leap-day, filtering, and responsive checks pass. See [calendar screenshots](docs/ui-refresh.md#site-themed-date-picker).
 
 - Redesigned Overview with a unified summary strip, reliability chart, attention panel, grouped activity, and expandable detailed analytics. History filters now span the panel in an aligned grid with actions in a separate footer and a rounded keyboard-focus indicator. Build, lint, and responsive fixture-based layout/navigation checks pass. See [Overview dashboard and filter screenshots](docs/ui-refresh.md#overview-dashboard-and-filter-layout).

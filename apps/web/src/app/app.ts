@@ -8,6 +8,7 @@ import { Api } from './core/api';
 import { errorMessage } from './core/api';
 import { NotificationLog, Notifications } from './core/notifications';
 import { ProjectPicker } from './core/project-picker';
+import { clearSelectionDrafts } from './core/selection-draft';
 
 @Component({
   imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationLog, ProjectPicker],
@@ -38,11 +39,17 @@ export class App {
     ['/settings', 'Settings', 'M4 7h16 M4 17h16 M8 4v6 M16 14v6'],
   ];
   private validating = false;
+  private hadIdentity = false;
   public constructor() {
     const notices = inject(Notifications);
     effect(() => {
       if (!this.api.identity()) {
         notices.clear();
+        if (this.hadIdentity) {
+          clearSelectionDrafts();
+        }
+      } else {
+        this.hadIdentity = true;
       }
     });
     this.applyTheme();
