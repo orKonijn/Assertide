@@ -61,3 +61,15 @@ Application source: `89060e9e17720d32edcd226a024abbe7b207cb1f`, published by [th
 The certificate expires 2027-01-29; cert-manager schedules renewal for 2026-12-30. These are observed status values, not a guarantee of future renewal.
 
 Current Linux checks are visible on [deployment PR #5](https://github.com/orKonijn/Assertide/pull/5). Earlier failures exposed stale UI contracts and were corrected; a running check is not a pass. The full local browser rerun uses the original local app's private run directory through the documented test override. No production credentials or raw evidence are included in CI.
+
+## Storage quota incident correction (2026-10-31)
+
+Source commit `655be7b17252eb906a2f3fd78111a7f3e11fbef8` was published by [image workflow 41233625352](https://github.com/orKonijn/Assertide/actions/runs/41233625352). Image smoke/vulnerability checks and signed source provenance verification passed. Deployed application digests supersede the initial-launch digests above:
+
+- Service: `ghcr.io/orkonijn/assertide-service@sha256:27374872cff4e0d07f31574e2a68ed3a17b9c2836fc2487e16999d69bd36add5`
+- Web: `ghcr.io/orkonijn/assertide-web@sha256:327a1558af3777a35b749aebf2c04f50d2cc752d82a681c33d4aa0e70b23e084`
+- Isolated execution image configured for new runs: `ghcr.io/orkonijn/assertide-worker@sha256:4bfc8e7ce3ec11ab2a51f9b64ced5cc68c9d33156fdae054cd4b81b15b9f2c59`
+
+All three service containers run the corrected module with `STORAGE_HEALTH_INTERVAL_MS=900000`; an in-container controlled check confirmed 50 concurrent callers share one probe. Their liveness endpoints return 200, and storage-dependent readiness correctly remains 503. The public frontend returns 200, API returns 502 and reports return 503 while the B2 cap remains active. Authentication and a new execution/report round trip cannot be verified during this outage. No new controlled production run is claimed for these digests.
+
+Full local `verify:quick` passed, including deterministic one-day request-budget and failure/recovery tests. Linux CI for this commit was still running at this verification. The private local application was restarted with its existing database; frontend/backend health and the local SSO entry page respond normally. No database reset, DNS change, cap increase or paid purchase was performed.
