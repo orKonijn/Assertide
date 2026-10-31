@@ -327,6 +327,16 @@ listener "tcp" {
     labels: { app: 'assertide-backup' },
   };
   const ingress = items.find((item) => item.kind === 'Ingress');
+  add(
+    'Middleware',
+    'https-redirect',
+    { spec: { redirectScheme: { scheme: 'https', permanent: true } } },
+    'traefik.io/v1alpha1',
+  );
+  ingress.metadata.annotations = {
+    ...ingress.metadata.annotations,
+    'traefik.ingress.kubernetes.io/router.middlewares': 'assertide-https-redirect@kubernetescrd',
+  };
   ingress.spec.tls[0].hosts.push(auth.hostname, `www.${app.hostname}`);
   ingress.spec.rules.push({
     host: auth.hostname,

@@ -101,6 +101,14 @@ test('pilot retains private dependency networking and restricted identities', ()
 test('login admin routes stay private and TLS covers all public origins', () => {
   const { items } = pilot(config);
   const ingress = find(items, 'Ingress', 'assertide');
+  assert.equal(
+    ingress.metadata.annotations['traefik.ingress.kubernetes.io/router.middlewares'],
+    'assertide-https-redirect@kubernetescrd',
+  );
+  assert.deepEqual(find(items, 'Middleware', 'https-redirect').spec.redirectScheme, {
+    scheme: 'https',
+    permanent: true,
+  });
   assert.deepEqual(ingress.spec.tls[0].hosts, [
     'assertide.com',
     'reports.assertide.com',

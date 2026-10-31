@@ -12,6 +12,8 @@ Create a `assertide-retain` StorageClass using the installed local-path provisio
 
 Create namespace `assertide` with Pod Security enforcement set to `restricted` before creating its Secrets or certificates. Configure Traefik for HTTP-to-HTTPS redirection. Obtain a trusted certificate for `assertide.com`, `www.assertide.com`, `auth.assertide.com` and `reports.assertide.com` using a free ACME issuer and automated renewal. DNS-01 permits certificate issuance before moving the apex; any DNS API key must be restricted and stored privately. Create the configured `assertide-tls` Secret in namespace `assertide`. Do not send production traffic to a self-signed certificate.
 
+The pilot renderer attaches an HTTPS redirect middleware only to application routes, leaving separate HTTP-01 challenge routes usable. After installing cert-manager and verifying public DNS/ports, copy `deploy/pilot-https.example.yaml` to private configuration, replace the example email and hostnames, and apply it. Its solver policy admits only Traefik traffic to the challenge pod. Wait for the Certificate to become Ready and verify automatic renewal ownership before disabling any manual certificate bootstrap timer. A manually issued initial certificate alone does not establish renewal.
+
 ## Images and configuration
 
 The image publication workflow now accepts `architecture=arm64` and uses a native ARM runner. Published tags are `<commit>-arm64` or `<commit>-amd64`; consumers of the old plain commit tag must use the new architecture tag or, preferably, its verified digest. It still scans images and produces provenance. Run the Linux isolation checks on the selected architecture before launch. Check the account's free Actions allowance before dispatching builds.

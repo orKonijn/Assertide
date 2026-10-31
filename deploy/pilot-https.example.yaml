@@ -1,0 +1,59 @@
+# Apply after public DNS and ports 80/443 reach the healthy ingress.
+# Requires cert-manager and the pilot's Traefik ingress.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt
+  namespace: assertide
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: owner@example.test
+    privateKeySecretRef:
+      name: letsencrypt-account
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: certificate-validation
+  namespace: assertide
+spec:
+  podSelector:
+    matchLabels:
+      acme.cert-manager.io/http01-solver: 'true'
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 8089
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: assertide
+  namespace: assertide
+spec:
+  secretName: assertide-tls
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  dnsNames:
+    - assertide.com
+    - www.assertide.com
+    - auth.assertide.com
+    - reports.assertide.com
+  issuerRef:
+    name: letsencrypt
+    kind: Issuer

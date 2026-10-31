@@ -12,3 +12,5 @@ for image in postgres keycloak vault; do
   "$RUNNER_TEMP/trivy/trivy" image --scanners vuln --format spdx-json --output ".local/verification/images/$image.spdx.json" "assertide-$image:ci"
   "$RUNNER_TEMP/trivy/trivy" image --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1 "assertide-$image:ci"
 done
+# Fail if the main module disappeared or its real release version was lost.
+jq -e '.packages | any(.name == "github.com/hashicorp/vault" and (.versionInfo | startswith("v2.2.1") or startswith("2.2.1")))' .local/verification/images/vault.spdx.json >/dev/null
