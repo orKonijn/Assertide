@@ -12,6 +12,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Fixed free-pilot health checks exhausting the storage provider’s daily transaction allowance. Concurrent checks share one request, healthy storage results are cached for 15 minutes on the pilot, and failures remain unhealthy with a one-minute retry interval. Database, queue and Vault checks retain their frequent cadence; paid caps and private-storage access rules are unchanged.
+
 - Fixed Kubernetes worker administration when request timeouts are set by mounting an explicit cluster configuration that references the rotating service-account token. Pilot disk requests now allow a worker and backup to be scheduled without reserving every container's full limit.
 - Added an explicit versioned-backup upload mode for B2's S3 compatibility API. Every backup uses a unique object namespace and records its verified version ID; encryption, versioning, and checksum checks remain required. Existing backups remain compatible.
 - Fixed first-run owner provisioning against PostgreSQL by explicitly typing the shared project ID. The pilot bootstrap now writes its source catalog to the retained source volume; duplicate-owner failures roll back the new project transaction.

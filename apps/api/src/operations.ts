@@ -6,7 +6,16 @@ import type { SqlConnection } from './database.ts';
 import type { IdentityService } from './identity.ts';
 import { objectStore } from './object-store.ts';
 import { executionLimits } from './scheduler.ts';
+import { cachedStorageProbe } from './storage-readiness.ts';
 import { vaultHealth } from './vault.ts';
+
+const checkStorage = cachedStorageProbe(
+  () =>
+    objectStore!.client.send(new HeadBucketCommand({ Bucket: objectStore!.bucket }), {
+      abortSignal: AbortSignal.timeout(2000),
+    }),
+  Number(process.env['STORAGE_HEALTH_INTERVAL_MS'] ?? 5000),
+);
 
 export async function readiness(
   db: SqlConnection,
@@ -19,10 +28,7 @@ export async function readiness(
   }
   const store = objectStore;
   if (store) {
-    checks['storage'] = () =>
-      store.client.send(new HeadBucketCommand({ Bucket: store.bucket }), {
-        abortSignal: AbortSignal.timeout(2000),
-      });
+    checks['storage'] = checkStorage;
   }
   if (process.env['REDIS_URL']) {
     checks['queue'] = async () => {

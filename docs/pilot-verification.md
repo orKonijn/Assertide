@@ -1,6 +1,6 @@
 # Free pilot deployment verification
 
-Verified on 2026-10-31. The actual application is reachable at [assertide.com](https://assertide.com). This is a single-node pilot with the limitations below, not a product release or a high-availability production acceptance claim.
+Initial verification on 2026-10-31. **Subsequent incident:** B2 exhausted the free daily transaction allowance and denied reads, causing HTTP 502/503. Storage health polling was excessive; the correction and quota-reset constraint are documented in [pilot operations](free-pilot-setup.md#free-tier-storage-health-budget). The successful launch checks below are historical evidence, not a current uptime guarantee. The deployment address is [assertide.com](https://assertide.com); API access is currently blocked by the storage quota incident. This is a single-node pilot with the limitations below, not a product release or a high-availability production acceptance claim.
 
 ## Deployment and DNS
 

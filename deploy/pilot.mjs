@@ -67,6 +67,12 @@ export function pilot(config) {
       // Explicit requests avoid Kubernetes reserving each container's full disk limit.
       item.spec.template.spec.containers[0].resources.requests['ephemeral-storage'] =
         item.metadata.name === 'assertide-web' ? '128Mi' : '512Mi';
+      if (item.metadata.name !== 'assertide-web') {
+        item.spec.template.spec.containers[0].env.push({
+          name: 'STORAGE_HEALTH_INTERVAL_MS',
+          value: '900000',
+        });
+      }
       if (['assertide-api', 'assertide-execution'].includes(item.metadata.name)) {
         const pod = item.spec.template.spec;
         pod.volumes.push({ name: 'vault-ca', configMap: { name: 'assertide-vault-ca' } });

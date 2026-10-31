@@ -175,3 +175,17 @@ test('unsafe and incomplete pilot inputs are rejected', () => {
   ])
     assert.throws(() => pilot({ ...config, ...change }));
 });
+
+test('pilot storage probes fit the free daily transaction allowance without relaxing core probes', () => {
+  const { items } = pilot({ ...config, stage: 'application' });
+  for (const role of ['api', 'execution', 'report']) {
+    const container = find(items, 'Deployment', `assertide-${role}`).spec.template.spec
+      .containers[0];
+    assert.equal(
+      container.env.find((entry) => entry.name === 'STORAGE_HEALTH_INTERVAL_MS').value,
+      '900000',
+    );
+    assert.equal(container.readinessProbe.periodSeconds, 10);
+    assert.equal(container.readinessProbe.httpGet.path, '/ready');
+  }
+});

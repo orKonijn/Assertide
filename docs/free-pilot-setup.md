@@ -99,3 +99,11 @@ Run the domain guide's complete acceptance checks, including login/password chan
 Configure operator alerts for disk/object-storage headroom, backup age, Vault seal/certificate expiry, worker failure and pod restarts. The renderer does not configure a billing cap, an alert delivery service, public certificates, VM allocation, or a storage account. Those remain mandatory provider/operator steps.
 
 Preserve retained volumes, Vault shares, source revisions, database dumps, identity database, image digests, and the private cluster restore configuration. Never delete/recreate claims to fix a startup problem. Restore dependencies and sources before application workers. Use the [database recovery drill](database-recovery.md); do not claim recovery targets until a separate restore succeeds. Roll back DNS using the saved records while preserving MX/SPF, and roll back images only when migrations are compatible.
+
+## Free-tier storage health budget
+
+The pilot sets `STORAGE_HEALTH_INTERVAL_MS=900000` on API, execution and report services. Storage probes share concurrent requests and cache success for 15 minutes: three continuously running processes make at most 288 scheduled healthy storage checks per day, excluding restarts. Failure results remain unhealthy and are retried after one minute. Other dependency checks retain the normal ten-second Kubernetes cadence. Operational storage status can therefore lag a new provider failure by up to 15 minutes; actual reads/writes still enforce provider responses immediately.
+
+The previous ten-second uncached probes exhausted B2's free transaction allowance and caused HTTP 502/503 on 2026-10-31. Keep the $0 provider caps; do not raise them or add a payment method to recover. Existing exhausted daily counters reset at 00:00 UTC (02:00 Israel time on 2026-11-01). Until the provider permits reads, storage-dependent readiness stays unhealthy. A deployment restart does not reset the provider's quota. Other application transactions still count toward free limits.
+
+`STORAGE_HEALTH_INTERVAL_MS` defaults to 5000 outside the pilot and accepts 1000 through 900000 milliseconds. Rollback to an older service image must also remove this configuration and be evaluated against the provider request budget; do not restore the old polling rate on the capped pilot.
