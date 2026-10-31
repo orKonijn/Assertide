@@ -78,6 +78,42 @@ export function deployment(config) {
     readOnlyRootFilesystem: true,
     capabilities: { drop: ['ALL'] },
   };
+  add('ConfigMap', 'assertide-kubernetes-client', {
+    data: {
+      config: JSON.stringify({
+        apiVersion: 'v1',
+        kind: 'Config',
+        clusters: [
+          {
+            name: 'cluster',
+            cluster: {
+              server: 'https://kubernetes.default.svc:443',
+              'certificate-authority': '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt',
+            },
+          },
+        ],
+        users: [
+          {
+            name: 'workload',
+            user: {
+              tokenFile: '/var/run/secrets/kubernetes.io/serviceaccount/token',
+            },
+          },
+        ],
+        contexts: [
+          {
+            name: 'worker',
+            context: {
+              cluster: 'cluster',
+              user: 'workload',
+              namespace: 'assertide-workers',
+            },
+          },
+        ],
+        'current-context': 'worker',
+      }),
+    },
+  });
   for (const role of ['api', 'execution', 'report', 'web']) {
     const name = `assertide-${role}`;
     add('ServiceAccount', name, { automountServiceAccountToken: false });
@@ -85,6 +121,17 @@ export function deployment(config) {
     const port = web ? 8080 : role === 'api' ? 4010 : 4020;
     const volumeMounts = [{ name: 'tmp', mountPath: '/tmp' }];
     const volumes = [{ name: 'tmp', emptyDir: { sizeLimit: '512Mi' } }];
+    if (role === 'execution') {
+      volumes.push({
+        name: 'kubernetes-client',
+        configMap: { name: 'assertide-kubernetes-client' },
+      });
+      volumeMounts.push({
+        name: 'kubernetes-client',
+        mountPath: '/etc/assertide-kubernetes',
+        readOnly: true,
+      });
+    }
     if (!web) {
       volumeMounts.push({ name: 'local', mountPath: '/app/.local' });
       volumes.push({ name: 'local', emptyDir: { sizeLimit: '8Gi' } });
@@ -130,7 +177,15 @@ export function deployment(config) {
               { configMapRef: { name: 'assertide' } },
               { secretRef: { name: `assertide-${role}-config` } },
             ],
-            env: role === 'api' ? [] : [{ name: 'WORKER_ROLE', value: role }],
+            env:
+              role === 'api'
+                ? []
+                : [
+                    { name: 'WORKER_ROLE', value: role },
+                    ...(role === 'execution'
+                      ? [{ name: 'KUBECONFIG', value: '/etc/assertide-kubernetes/config' }]
+                      : []),
+                  ],
           }),
       ports: [
         { name: 'http', containerPort: port },

@@ -173,7 +173,9 @@ jobs:
           retention-days: 14
       - name: Verify encrypted scheduled backups
         if: ${{ !cancelled() }}
-        run: npx tsx checks/scheduled-backup.ts
+        run: |
+          npx tsx checks/scheduled-backup.ts
+          BACKUP_WRITE_MODE=unique-versioned npx tsx checks/scheduled-backup.ts
         working-directory: apps/api
         env:
           TEST_DATABASE_URL: postgres://assertide_test:local_ci_only@127.0.0.1:5432/assertide_test

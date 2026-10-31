@@ -64,6 +64,9 @@ export function pilot(config) {
       item.spec.replicas = enabled ? 1 : 0;
       item.spec.strategy = { type: 'Recreate' };
       item.spec.template.spec.nodeSelector = { 'kubernetes.io/hostname': config.nodeName };
+      // Explicit requests avoid Kubernetes reserving each container's full disk limit.
+      item.spec.template.spec.containers[0].resources.requests['ephemeral-storage'] =
+        item.metadata.name === 'assertide-web' ? '128Mi' : '512Mi';
       if (['assertide-api', 'assertide-execution'].includes(item.metadata.name)) {
         const pod = item.spec.template.spec;
         pod.volumes.push({ name: 'vault-ca', configMap: { name: 'assertide-vault-ca' } });
@@ -81,6 +84,9 @@ export function pilot(config) {
       item.spec.jobTemplate.spec.template.spec.nodeSelector = {
         'kubernetes.io/hostname': config.nodeName,
       };
+      item.spec.jobTemplate.spec.template.spec.containers[0].resources.requests[
+        'ephemeral-storage'
+      ] = '1Gi';
     }
   }
   // The source isolation manifest supplies deny-all policy and scoped worker RBAC.

@@ -59,6 +59,7 @@ test('pilot stages keep the app stopped until dependencies are configured', () =
     for (const d of app) {
       assert.equal(d.spec.replicas, active ? 1 : 0);
       assert.equal(d.spec.strategy.type, 'Recreate');
+      assert.ok(d.spec.template.spec.containers[0].resources.requests['ephemeral-storage']);
       assert.deepEqual(d.spec.template.spec.nodeSelector, {
         'kubernetes.io/hostname': 'pilot-node',
       });
@@ -68,6 +69,11 @@ test('pilot stages keep the app stopped until dependencies are configured', () =
       );
     }
     assert.equal(find(items, 'CronJob', 'assertide-backup').spec.suspend, !active);
+    assert.equal(
+      find(items, 'CronJob', 'assertide-backup').spec.jobTemplate.spec.template.spec.containers[0]
+        .resources.requests['ephemeral-storage'],
+      '1Gi',
+    );
     assert.equal(
       items.some((i) => i.kind === 'Secret'),
       false,

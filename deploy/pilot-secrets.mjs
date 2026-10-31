@@ -35,6 +35,9 @@ export function prepareSecrets(input) {
   )
     throw new Error('Storage region and distinct evidence/backup buckets required');
   const endpoint = origin(s3.endpoint);
+  const backupWriteMode = s3.backupWriteMode ?? 'conditional';
+  if (!['conditional', 'unique-versioned'].includes(backupWriteMode))
+    throw new Error('Unsupported backup write mode');
   const secrets = [];
   const secret = (name, data) =>
     secrets.push({
@@ -80,8 +83,10 @@ export function prepareSecrets(input) {
       AWS_ACCESS_KEY_ID: credential.accessKeyId,
       AWS_SECRET_ACCESS_KEY: credential.secretAccessKey,
     };
-    if (role === 'backup') data.BACKUP_S3_BUCKET = s3.backupBucket;
-    else data.S3_BUCKET = s3.bucket;
+    if (role === 'backup') {
+      data.BACKUP_S3_BUCKET = s3.backupBucket;
+      data.BACKUP_WRITE_MODE = backupWriteMode;
+    } else data.S3_BUCKET = s3.bucket;
     if (role === 'api' || role === 'execution')
       data.REDIS_URL = `redis://:${redisPassword}@assertide-redis:6379`;
     if (role === 'api')

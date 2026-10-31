@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -9,6 +10,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { z } from 'zod';
 
 import { backupDatabase } from '../src/database-backup.ts';
 import { validateStorageTransport } from '../src/production-config.ts';
@@ -19,6 +21,10 @@ if (!bucket || !database) {
   throw new Error('Private backup bucket and database required');
 }
 validateStorageTransport();
+const writeMode = z
+  .enum(['conditional', 'unique-versioned'])
+  .parse(process.env['BACKUP_WRITE_MODE'] ?? 'conditional');
+const condition = writeMode === 'conditional' ? { IfNoneMatch: '*' } : {};
 const client = new S3Client({
   ...(process.env['S3_ENDPOINT']
     ? { endpoint: process.env['S3_ENDPOINT'], forcePathStyle: true }
@@ -35,7 +41,8 @@ try {
   const file = path.join(directory, 'database.dump');
   stage = 'database dump';
   const metadata = await backupDatabase(database, file);
-  const key = `postgres/${metadata.createdAt.replaceAll(':', '-')}/${metadata.sha256}.dump`;
+  // A fresh namespace per upload prevents independent backups sharing an object key.
+  const key = `postgres/${metadata.createdAt.replaceAll(':', '-')}/${randomUUID()}/${metadata.sha256}.dump`;
   stage = 'encrypted upload';
   const saved = await client.send(
     new PutObjectCommand({
@@ -45,7 +52,7 @@ try {
       ContentLength: metadata.bytes,
       ServerSideEncryption: 'AES256',
       Metadata: { sha256: metadata.sha256 },
-      IfNoneMatch: '*',
+      ...condition,
     }),
   );
   if (!saved.VersionId) {
@@ -67,9 +74,13 @@ try {
     new PutObjectCommand({
       Bucket: bucket,
       Key: `${key}.json`,
-      Body: await readFile(`${file}.json`),
+      Body: JSON.stringify({
+        ...metadata,
+        objectKey: key,
+        objectVersionId: saved.VersionId,
+      }),
       ServerSideEncryption: 'AES256',
-      IfNoneMatch: '*',
+      ...condition,
       ContentType: 'application/json',
     }),
   );

@@ -40,6 +40,19 @@ test('production identity bootstrap matches the realm user and exact callback', 
   assert.notEqual(prepareSecrets(input).bootstrap.subject, prepared.bootstrap.subject);
   const backup = get('assertide-backup-config');
   assert.equal(backup.BACKUP_S3_BUCKET, input.storage.backupBucket);
+  assert.equal(backup.BACKUP_WRITE_MODE, 'conditional');
+  const compatible = prepareSecrets({
+    ...input,
+    storage: { ...input.storage, backupWriteMode: 'unique-versioned' },
+  });
+  assert.equal(
+    compatible.manifest.items.find((item) => item.metadata.name === 'assertide-backup-config')
+      .stringData.BACKUP_WRITE_MODE,
+    'unique-versioned',
+  );
+  assert.throws(() =>
+    prepareSecrets({ ...input, storage: { ...input.storage, backupWriteMode: 'unchecked' } }),
+  );
   assert.equal(backup.OIDC_CLIENT_SECRET, undefined);
   assert.equal(backup.REDIS_URL, undefined);
   assert.equal(get('assertide-report-config').AWS_ACCESS_KEY_ID, 'fixture-report');

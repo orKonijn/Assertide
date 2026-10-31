@@ -74,6 +74,13 @@ assert.equal(createHash('sha256').update(bytes).digest('hex'), head.Metadata?.['
 const sidecar = await client.send(
   new GetObjectCommand({ Bucket: bucket, Key: `${dump.Key}.json` }),
 );
-assert.equal(JSON.parse(await sidecar.Body!.transformToString()).sha256, head.Metadata?.['sha256']);
+const sidecarMetadata = JSON.parse(await sidecar.Body!.transformToString()) as {
+  sha256: string;
+  objectKey: string;
+  objectVersionId: string;
+};
+assert.equal(sidecarMetadata.sha256, head.Metadata?.['sha256']);
+assert.equal(sidecarMetadata.objectKey, dump.Key);
+assert.equal(sidecarMetadata.objectVersionId, head.VersionId);
 console.log('Scheduled PostgreSQL backup verified in encrypted versioned object storage');
 client.destroy();

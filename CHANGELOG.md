@@ -12,6 +12,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Fixed
 
+- Fixed Kubernetes worker administration when request timeouts are set by mounting an explicit cluster configuration that references the rotating service-account token. Pilot disk requests now allow a worker and backup to be scheduled without reserving every container's full limit.
+- Added an explicit versioned-backup upload mode for B2's S3 compatibility API. Every backup uses a unique object namespace and records its verified version ID; encryption, versioning, and checksum checks remain required. Existing backups remain compatible.
 - Fixed first-run owner provisioning against PostgreSQL by explicitly typing the shared project ID. The pilot bootstrap now writes its source catalog to the retained source volume; duplicate-owner failures roll back the new project transaction.
 - The private-storage acceptance test recognizes both HTTP 401 and 403 as anonymous access denial, allowing the same versioning, integrity and retention checks to run against B2 and MinIO.
 - Replaced browser-native date popups in Overview and Executions with a site-themed calendar, including month navigation, selected/today indicators, Clear/Today actions, and Escape/outside dismissal. Dates retain their ISO filter values. Build, lint, and fixture-based selection, focus, leap-day, filtering, and responsive checks pass. See [calendar screenshots](docs/ui-refresh.md#site-themed-date-picker).

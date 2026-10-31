@@ -26,9 +26,22 @@ test('deployment renders separate origins, scoped identity, probes and immutable
       assert.equal(source.persistentVolumeClaim.claimName, 'assertide-sources');
     else assert.equal(source, undefined);
     assert.ok(pod.containers[0].readinessProbe);
+    assert.equal(
+      pod.volumes.some((volume) => volume.name === 'kubernetes-client'),
+      item.metadata.name === 'assertide-execution',
+    );
     assert.match(pod.containers[0].image, /@sha256:/);
   }
   const binding = result.items.find((item) => item.kind === 'RoleBinding');
+  const client = JSON.parse(
+    result.items.find((item) => item.metadata.name === 'assertide-kubernetes-client').data.config,
+  );
+  assert.equal(
+    client.users[0].user.tokenFile,
+    '/var/run/secrets/kubernetes.io/serviceaccount/token',
+  );
+  assert.equal(client.users[0].user.token, undefined);
+  assert.equal(client.clusters[0].cluster.server, 'https://kubernetes.default.svc:443');
   assert.equal(binding.metadata.namespace, 'assertide-workers');
   assert.equal(binding.subjects[0].name, 'assertide-execution');
   assert.equal(result.items.find((item) => item.kind === 'Ingress').spec.rules.length, 2);

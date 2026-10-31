@@ -26,7 +26,9 @@ Copy `deploy/pilot.example.json` into ignored `.local/pilot.json`, replace every
 
 Create two private, versioned B2 buckets, one for evidence and one for backups. Set free-tier caps and alerts before writing data. Provide four distinct scoped application keys: API/execution/report limited to the evidence operations they need, backup limited to its bucket. Verify version-list/read/delete compatibility and anonymous denial using the real application adapter before accepting B2. Do not assume a cap can be inferred from the renderer or that a bucket name makes storage private.
 
-The B2 dashboard's Read and Write preset includes bucket-management permissions. Use the Native API to restrict service keys to `listBuckets`, `listFiles`, `readFiles` and `writeFiles`, plus `deleteFiles` for evidence retention. The backup uploader does not need deletion. Scope every key to exactly one bucket and set an expiry; the pilot keys expire after one year and require rotation before expiry. Invalidate any temporary administrative setup key immediately afterward. Anonymous denial may be HTTP 401 (B2) or 403 (MinIO); both are tested as access denial.
+The B2 dashboard's Read and Write preset includes bucket-management permissions. Use the Native API to restrict service keys to `listBuckets`, `listFiles`, `readFiles` and `writeFiles`, plus `deleteFiles` for evidence retention. The backup uploader also needs `readBuckets` to inspect versioning, but needs neither deletion nor bucket mutation. Scope every key to exactly one bucket and set an expiry; the pilot keys expire after one year and require rotation before expiry. Invalidate any temporary administrative setup key immediately afterward. Anonymous denial may be HTTP 401 (B2) or 403 (MinIO); both are tested as access denial.
+
+Set `BACKUP_WRITE_MODE=unique-versioned` in the private backup Secret for B2, which rejects conditional PUT headers. The uploader still requires versioning, generates a new UUID namespace for every backup, verifies its checksum and size using the returned object version, and records that exact version in its sidecar. Other providers default to conditional writes. No existing backup is rewritten or migrated.
 
 In an access-restricted operator checkout, prepare `.local/pilot-input.json` with this structure (replace placeholders privately):
 
@@ -41,6 +43,7 @@ In an access-restricted operator checkout, prepare `.local/pilot-input.json` wit
     "endpoint": "https://verified-provider-endpoint.example",
     "bucket": "private-evidence",
     "backupBucket": "private-backups",
+    "backupWriteMode": "unique-versioned",
     "credentials": {
       "api": { "accessKeyId": "replace", "secretAccessKey": "replace" },
       "execution": { "accessKeyId": "replace", "secretAccessKey": "replace" },
