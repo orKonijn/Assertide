@@ -32,22 +32,26 @@ export class AnalyticsPage {
   }
   public filter(days: number, browser: string): Promise<void> {
     return workflow('Apply analytics filters', async () => {
-      const panel = this.page.locator('details.history-filters');
-      if (!(await panel.evaluate((element) => element.hasAttribute('open')))) {
-        await panel.locator('summary').click();
-      }
+      await this.showFilters();
       await this.page.getByLabel(S.window, { exact: true }).selectOption({ label: `${days} days` });
       await this.browser.selectOption(browser);
       await this.page.getByRole('button', { name: S.apply, exact: true }).click();
     });
   }
-  public openDetails(): Promise<void> {
-    return workflow('Explore detailed analytics', () =>
-      this.page.getByText(S.details, { exact: true }).click(),
-    );
+  public async showFilters(): Promise<void> {
+    const panel = this.page.locator('details.history-filters');
+    if (!(await panel.evaluate((element) => element.hasAttribute('open')))) {
+      await panel.locator('summary').click();
+    }
   }
   public showData(): Promise<void> {
     return this.page.getByText(S.table, { exact: true }).click();
+  }
+  public async showDetails(): Promise<void> {
+    const panel = this.page.locator(S.details);
+    if (!(await panel.evaluate((element) => element.hasAttribute('open')))) {
+      await panel.locator('summary').click();
+    }
   }
   public saveFilters(): Promise<void> {
     return workflow('Save personal analytics filters', () =>

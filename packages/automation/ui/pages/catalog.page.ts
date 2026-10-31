@@ -9,6 +9,9 @@ export class CatalogPage {
   public readonly heading;
   public readonly cases;
   public readonly quarantined;
+  public readonly sortControl;
+  public readonly restoredSelection;
+  public readonly clearSelection;
   public constructor(public readonly page: Page) {
     this.selectedCount = page.getByText(/^[0-9]+ tests selected$/);
     this.startButtons = page.getByRole('button', {
@@ -18,6 +21,9 @@ export class CatalogPage {
     this.heading = page.getByRole('heading', { name: S.heading, exact: true });
     this.cases = page.locator(S.cases);
     this.quarantined = page.getByLabel(S.quarantined);
+    this.sortControl = page.getByLabel(S.sort, { exact: true });
+    this.restoredSelection = page.getByText(S.restored, { exact: true });
+    this.clearSelection = page.getByRole('button', { name: S.clear, exact: true });
   }
   public sortBy(value: string): Promise<string[]> {
     return this.page.getByLabel(S.sort, { exact: true }).selectOption(value);

@@ -1,4 +1,6 @@
 export const ApiWorkspaceSelectors = {
+  pointerDisclosure: 'details.evidence-pointer',
+  overview: 'Overview',
   exchanges: '.exchange-item',
   page: (number: number) => `Exchange page ${number}`,
   heading: 'API workspace',
@@ -7,7 +9,6 @@ export const ApiWorkspaceSelectors = {
   evidence: 'Recorded request and response',
   download: 'Download redacted JSON',
   pointer: 'JSON pointer',
-  pointerDetails: 'Find a JSON value',
   inspect: 'Inspect pointer',
   value: 'Selected JSON value',
   executable: (count: number) => `${count} executable API cases`,

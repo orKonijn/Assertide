@@ -10,7 +10,7 @@ import { Api } from './api';
   template: `
     <button
       class="project-trigger"
-      aria-label="Active project"
+      [attr.aria-label]="'Active project ' + currentName()"
       aria-haspopup="dialog"
       (click)="open()"
     >

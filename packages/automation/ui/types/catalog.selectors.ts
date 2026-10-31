@@ -1,4 +1,6 @@
 export const CatalogSelectors = {
+  restored: 'Selection restored for this tab. Review execution settings before starting.',
+  clear: 'Clear selection',
   page: (number: number) => `Test page ${number}`,
   selectAll: 'Select all',
   deselectAll: 'Deselect all',

@@ -2950,11 +2950,15 @@ aside .account {
   }
   .catalog-sort {
     margin-left: 0;
-    flex: 1;
+    flex: 1 0 100%;
+    min-width: 0;
   }
   .catalog-sort select {
     flex: 1;
-    width: auto;
+    min-width: 0;
+    width: 100%;
+    white-space: nowrap;
+    height: 44px;
   }
   .catalog-cards td:first-child {
     padding-top: 16px;

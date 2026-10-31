@@ -3,6 +3,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { catchError, firstValueFrom, throwError } from 'rxjs';
 
 import { Notifications } from './notifications';
+import { clearSelectionDrafts } from './selection-draft';
 
 export interface Identity {
   subject: string;
@@ -225,6 +226,7 @@ export class Api {
   }
   public async logout(): Promise<void> {
     await firstValueFrom(this.http.post('/auth/logout', {}));
+    clearSelectionDrafts();
     this.identity.set(null);
     location.assign('/');
   }

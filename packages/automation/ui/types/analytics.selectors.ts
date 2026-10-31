@@ -1,6 +1,7 @@
 export const AnalyticsSelectors = {
+  details: 'details.overview-details',
+  latest: 'Latest completed executions · all dates',
   heading: 'Overview',
-  details: 'Explore detailed analytics',
   window: 'History window',
   browser: 'Execution project',
   apply: 'Apply filters',

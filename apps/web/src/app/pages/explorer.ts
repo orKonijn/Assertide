@@ -1,10 +1,11 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import type { Environment, TestCase } from '../core/api';
 import { Api, errorMessage } from '../core/api';
 import { LoadingState } from '../core/loading-state';
+import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft';
 @Component({
   imports: [FormsModule, LoadingState],
   template: `
@@ -28,6 +29,12 @@ import { LoadingState } from '../core/loading-state';
         </button>
       </div>
     </header>
+    @if (draftMessage()) {
+      <p role="status" class="muted">{{ draftMessage() }}</p>
+    }
+    @if (selected().length) {
+      <button type="button" (click)="clearSelection()">Clear selection</button>
+    }
     @if (error()) {
       <p class="error" role="alert">{{ error() }} <button (click)="load()">Retry</button></p>
     }
@@ -304,6 +311,8 @@ export class Explorer {
     });
   });
   public readonly selected = signal<string[]>([]);
+  public readonly draftMessage = signal('');
+  private loadedProject = '';
   public readonly loading = signal(true);
   public readonly starting = signal(false);
   public readonly error = signal('');
@@ -351,7 +360,30 @@ export class Explorer {
     return Array.from({ length: Math.min(5, this.pageCount()) }, (_, index) => start + index);
   });
   public constructor() {
+    effect(() => {
+      const identity = this.api.identity();
+      if (this.loading() || !identity || this.loadedProject !== this.api.projectId()) {
+        return;
+      }
+      if (
+        !writeSelectionDraft(this.loadedProject, {
+          scope: JSON.stringify([identity.subject, identity.sessionExpiresAt]),
+          revision: this.revision(),
+          ids: this.selected(),
+        })
+      ) {
+        this.draftMessage.set(
+          'Selection cannot be saved in this browser. Keep this page open until you start the run.',
+        );
+      }
+    });
     void this.load();
+  }
+  public clearSelection(): void {
+    this.selected.set([]);
+    writeSelectionDraft(this.api.projectId(), { scope: '', revision: '', ids: [] });
+    this.draftMessage.set('Selection cleared.');
+    this.key = crypto.randomUUID();
   }
   public canEdit(): boolean {
     return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');
@@ -407,6 +439,7 @@ export class Explorer {
   }
   public async load(): Promise<void> {
     this.loading.set(true);
+    const project = this.api.projectId();
     try {
       const catalog = await this.api.get<{
         items: TestCase[];
@@ -414,9 +447,39 @@ export class Explorer {
         discoveryError?: string;
       }>(`/projects/${this.api.projectId()}/catalog`);
       this.tests.set(catalog.items);
+      if (!this.loadedProject) {
+        const identity = this.api.identity();
+        const draft = readSelectionDraft(
+          project,
+          JSON.stringify([identity?.subject, identity?.sessionExpiresAt]),
+        );
+        if (draft && identity) {
+          if (draft.revision === catalog.revision) {
+            this.selected.set(draft.ids);
+            this.draftMessage.set(
+              'Selection restored for this tab. Review execution settings before starting.',
+            );
+          } else {
+            this.draftMessage.set(
+              'The catalog revision changed. Select tests again for the current revision.',
+            );
+          }
+        }
+      } else if (this.revision() && this.revision() !== catalog.revision) {
+        this.selected.set([]);
+        this.draftMessage.set(
+          'The catalog revision changed. Select tests again for the current revision.',
+        );
+      }
+      const count = this.selected().length;
       this.selected.update((ids) =>
         ids.filter((id) => catalog.items.some((item) => item.id === id && item.enabled)),
       );
+      if (count !== this.selected().length) {
+        this.draftMessage.set(
+          'Unavailable or disabled tests were removed from your selection. Review the remaining tests before starting.',
+        );
+      }
       const environments = await this.api.get<{
         items: Environment[];
         capabilities?: { headed: boolean };
@@ -424,6 +487,7 @@ export class Explorer {
       this.environments.set(environments.items);
       this.headedAvailable.set(environments.capabilities?.headed ?? false);
       this.revision.set(catalog.revision);
+      this.loadedProject = project;
       this.error.set(catalog.discoveryError ?? '');
     } catch (error) {
       this.error.set(errorMessage(error));
@@ -483,6 +547,7 @@ export class Explorer {
         this.environmentId,
         this.hasUi() && this.canHeaded() && this.headed,
       );
+      this.clearSelection();
       await this.router.navigate(['/runs', run.id]);
     } catch (error) {
       this.error.set(errorMessage(error));

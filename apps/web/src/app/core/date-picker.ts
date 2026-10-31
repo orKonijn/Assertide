@@ -22,7 +22,7 @@ import {
       [id]="label() === 'From date' ? 'from-date' : 'through-date'"
       type="button"
       class="date-trigger"
-      [attr.aria-label]="label()"
+      [attr.aria-label]="label() + ': ' + (value() || 'Choose date')"
       [attr.aria-expanded]="opened()"
       aria-haspopup="dialog"
       (click)="toggle()"

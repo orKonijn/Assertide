@@ -35,8 +35,9 @@ export class SuitesPage {
     return workflow('Enter suite details', async () => {
       await this.page.getByLabel(S.name, { exact: true }).fill(input.name);
       await this.page.getByLabel(S.description, { exact: true }).fill(input.description);
-      if (!(await this.owner.isVisible())) {
-        await this.page.getByText(S.metadata, { exact: true }).click();
+      const options = this.page.locator(S.options);
+      if (!(await options.evaluate((element) => element.hasAttribute('open')))) {
+        await options.locator('summary').click();
       }
       await this.owner.fill(input.owner);
       await this.page.getByLabel(S.tags).fill(input.tags);

@@ -26,7 +26,8 @@ test.describe('Saved suites', () => {
     await suites.updateDescription('Updated contract checks');
     await suites.setMember(D.unauthorized, true);
     await suites.save();
-    await expect(suites.card(name)).toContainText(/2 tests\s*Revision 2/);
+    await expect(suites.card(name)).toContainText('2 tests');
+    await expect(suites.card(name)).toContainText('Revision 2');
     await expect(notifications.badge).toHaveText('2');
     await expect(notifications.history).not.toBeVisible();
     await notifications.openHistory();
