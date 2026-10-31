@@ -2,6 +2,7 @@ import type { BrowserContext } from '@playwright/test';
 
 import { NavigationComponent } from '../components/navigation.component';
 import { LoginPage } from '../pages/login.page';
+import { AnalyticsSelectors } from '../types/analytics.selectors';
 import type { Project } from '../types/platform';
 import { TestData } from '../types/test-data';
 import { localPassword } from '../utils/credentials.utils';
@@ -22,7 +23,7 @@ export const test = base.extend<
       try {
         const page = await context.newPage();
         await new LoginPage(page).login(await localPassword());
-        await expect(new NavigationComponent(page).heading).toHaveText('Quality at a glance');
+        await expect(new NavigationComponent(page).heading).toHaveText(AnalyticsSelectors.heading);
         await use(await context.storageState());
       } finally {
         await context.close();
