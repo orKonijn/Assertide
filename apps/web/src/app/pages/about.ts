@@ -61,6 +61,18 @@ import { ArchitectureMap } from './architecture-map';
         <h3>My contribution</h3>
         <p>{{ profile.contribution }}</p>
       </div>
+      <section class="creator-experience" aria-labelledby="freelance-title">
+        <p class="eyebrow">FREELANCE EXPERIENCE · {{ profile.freelance.period }}</p>
+        <h3 id="freelance-title">Companies I’ve supported</h3>
+        <p class="muted">
+          Alongside building website-testing tools, my freelance work has included supporting:
+        </p>
+        <ul>
+          @for (company of profile.freelance.companies; track company) {
+            <li>{{ company }}</li>
+          }
+        </ul>
+      </section>
     </section>
     <section id="inside" aria-labelledby="inside-title">
       <div class="about-section-heading">

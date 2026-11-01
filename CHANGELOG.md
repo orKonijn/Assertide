@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Public project introduction
 
+- Added July–November 2026 freelance experience to About the Creator, listing Elevation Aquaculture, Global Expansion Solutions and Merkazim.info as companies Or Konijn has supported. The list does not claim company endorsement or use of Assertide. Desktop/mobile layouts and both themes passed focused browser and accessibility checks. [Desktop capture](docs/changelog/assets/unreleased/creator-freelance-1440.png) · [Mobile capture](docs/changelog/assets/unreleased/creator-freelance-390.png).
+
 - Made the creator and architecture page accessible without signing in, including during an identity-service error. Added Or Konijn’s approved name, a project-source link, and entry points from the welcome screen and guest demo. Visiting the page preserves an active guest session.
 - Hide signup actions when registration is unavailable and emphasize the guest demo instead. Account-access messages now explain the available options without deployment configuration details. Fixed the guest theme control’s accessible name and the demo banner’s landmark.
 - Added a three-minute README tour and explicit guidance distinguishing synthetic examples, local verification, full CI and image publication. Deployed to the existing pilot on 2026-11-01; no product release version is assigned. Nine focused browser checks, a controlled drawer-interaction check, architecture/reporting checks and local quick verification passed; Linux infrastructure checks remain separate. See [deployment and live verification](docs/guest-pilot-deployment.md#public-creator-and-demo-access--2026-11-01).

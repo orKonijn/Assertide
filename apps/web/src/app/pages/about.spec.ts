@@ -16,6 +16,14 @@ describe('About Assertide', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Independent freelancer');
     expect(element.textContent).toContain('Or Konijn');
+    expect(element.textContent).toContain('July–November 2026');
+    expect(element.querySelector('.creator-experience')?.textContent).toContain(
+      'Elevation Aquaculture',
+    );
+    expect(element.querySelector('.creator-experience')?.textContent).toContain(
+      'Global Expansion Solutions',
+    );
+    expect(element.querySelector('.creator-experience')?.textContent).toContain('Merkazim.info');
     expect(element.textContent).toContain('website-testing tools for companies');
     expect(element.querySelector('.creator-photo')).toBeNull();
     expect(creator.links).toEqual([]);

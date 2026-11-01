@@ -5,6 +5,7 @@ export interface CreatorProfile {
   readonly motivation: string;
   readonly contribution: string;
   readonly focus: readonly string[];
+  readonly freelance: { readonly period: string; readonly companies: readonly string[] };
   readonly links: readonly { readonly label: string; readonly href: string }[];
   readonly portrait?: { readonly src: string; readonly alt: string };
 }
@@ -19,6 +20,10 @@ export const creator: CreatorProfile = {
   contribution:
     'Assertide is my demonstration project for company-focused testing tools. It shows the product workflow alongside the automation and engineering behind it.',
   focus: ['Website testing tools', 'Company testing workflows', 'Test automation'],
+  freelance: {
+    period: 'July–November 2026',
+    companies: ['Elevation Aquaculture', 'Global Expansion Solutions', 'Merkazim.info'],
+  },
   links: [],
 };
 
