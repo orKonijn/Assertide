@@ -2,6 +2,22 @@
 
 The guest workspace is deployed to the existing free pilot at assertide.com; see the [deployment record](guest-pilot-deployment.md). No product release version is assigned. Public account registration remains disabled pending verified production email/provider setup. The guest walkthrough is intended to let recruiters and other visitors understand the platform without creating an account. It demonstrates project organization, test discovery, a deterministic simulated run, failure investigation, API exchanges and sample reporting. Synthetic results are never presented as real executions.
 
+## Welcome screen redesign
+
+The entry screen now separates account access from the interactive demo in a two-column desktop layout and a stacked mobile layout. Sign in and Create account share one mobile row. The header contains an accessible theme icon, and a single connection panel groups the existing retry actions. Authentication, registration eligibility, and guest isolation are unchanged; this redesign does not repair an unavailable backend.
+
+The guest workspace and chart code load on entry to the demo, keeping them out of the initial welcome bundle. Loading and failed-download states have accessible messages; retry recovery and entering the deferred guest chart are covered by the focused browser checks.
+
+Browser checks use controlled anonymous/502 responses to exercise both availability states, recovery, and keyboard interaction. Automated accessibility checks pass at 390px and 1440px in light and dark themes. These screenshots show the running local application with those controlled responses, not production uptime:
+
+![Desktop welcome screen in dark mode](changelog/assets/unreleased/welcome-ready-1440-dark.png)
+
+Account actions and the demo preview have separate areas with a shared header.
+
+![Mobile connection recovery in light mode](changelog/assets/unreleased/welcome-unavailable-390-light.png)
+
+Connection and registration retries share a compact panel; account actions remain visible and guest entry stays disabled until recovery.
+
 ## Access rules
 
 - **Sign in** uses the existing OIDC provider, authorization-code flow, state, nonce and PKCE. Sessions rotate on successful authentication, last one hour and use HttpOnly/SameSite cookies, with Secure required on HTTPS. Return destinations are limited to application routes; run destinations are checked against the authenticated organization and assigned projects.

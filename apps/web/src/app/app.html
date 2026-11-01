@@ -4,7 +4,15 @@
     <p role="status">Connecting to your workspace…</p>
   </main>
 } @else if (!api.identity() && guest.active() && !identityError()) {
-  <app-guest-demo />
+  @defer (on immediate) {
+    <app-guest-demo />
+  } @loading {
+    <main class="login"><p role="status">Opening the guest workspace…</p></main>
+  } @error {
+    <main class="login">
+      <p role="alert">The demo could not load. Refresh the page to try again.</p>
+    </main>
+  }
 } @else if (!api.identity()) {
   <app-access-entry
     [error]="identityError() || guest.error()"

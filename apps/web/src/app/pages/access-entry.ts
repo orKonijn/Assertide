@@ -22,115 +22,134 @@ const messages: Record<string, string> = {
 @Component({
   selector: 'app-access-entry',
   template: `
-    <main class="login">
-      <div class="brand-logo"><img src="/brand/assertide-logo.png" alt="Assertide" /></div>
-      <p class="eyebrow">CONFIDENCE, ONE RUN AT A TIME</p>
-      <h1 id="access-title" tabindex="-1">
-        {{ registrationPage ? 'Create your workspace.' : 'Your quality workspace.' }}
-      </h1>
-      <p>Your own persistent workspace. Other workspaces require explicit permission.</p>
-      @if (message) {
-        <p role="alert">{{ message }}</p>
-      }
-      @if (error()) {
-        <p role="alert">{{ error() }}</p>
-        <button (click)="retry.emit()">Retry connection</button>
-      }
-      @if (expired()) {
-        <p role="status">
-          Your guest demo expired. Start a fresh demo or sign in. No demo data was saved to an
-          account.
-        </p>
-      }
-      @if (loading()) {
-        <p role="status">Checking registration availability…</p>
-      } @else if (optionsError()) {
-        <p role="alert">Registration availability could not be checked.</p>
-        <button (click)="loadOptions()">Retry registration check</button>
-      }
-      @if (registrationPage) {
-        <h2>Secure registration</h2>
-        <p>
-          Create your account and verify your email securely with our identity provider. You’ll
-          receive a personal workspace, without joining an existing organization.
-        </p>
-        @if (enabled()) {
-          <a class="button" href="/auth/register">Continue to registration</a>
-        } @else if (!loading()) {
-          <p role="status">
-            Registration is unavailable until the operator enables provider registration and
-            verified email delivery.
+    <main class="access-shell" [class.registration-entry]="registrationPage">
+      <header class="access-header">
+        <div class="brand-logo"><img src="/brand/assertide-logo.png" alt="Assertide" /></div>
+        <button
+          class="theme-button"
+          (click)="theme.emit()"
+          aria-label="Light / dark theme"
+          title="Change theme"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+          >
+            <circle cx="12" cy="12" r="4" />
+            <path
+              d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"
+            />
+          </svg>
+        </button>
+      </header>
+      <div class="access-layout">
+        <section class="access-main" aria-labelledby="access-title">
+          <p class="eyebrow">CONFIDENCE, ONE RUN AT A TIME</p>
+          <h1 id="access-title" tabindex="-1">
+            {{ registrationPage ? 'Create your workspace.' : 'Your quality workspace.' }}
+          </h1>
+          <p class="access-intro">
+            Organize your tests, follow every run, and turn results into answers.
           </p>
-        }
-        <p>Already have an account? <a [href]="loginUrl()">Sign in</a></p>
-        <a href="/">Back to start</a>
-      } @else {
-        <div class="entry-actions">
-          <a class="button" [href]="loginUrl()">Sign in</a
-          ><a class="button secondary" href="/register">Create account</a>
-        </div>
-      }
-      <hr />
-      <h2>See Assertide in action</h2>
-      <p>
-        Tour sample projects, try a simulated run and inspect a failure report. A 30-minute,
-        read-only demo: no real tests, private data or transfer to your account.
-      </p>
-      <button (click)="explore.emit()" [disabled]="!!error()">Explore as guest</button>
-      <button (click)="theme.emit()">Light / dark theme</button>
+          @if (message) {
+            <p class="access-notice" role="alert">{{ message }}</p>
+          }
+          @if (error() || optionsError()) {
+            <div class="connection-notice" role="alert">
+              <strong>We’re having trouble connecting</strong>
+              <p>
+                {{
+                  error()
+                    ? 'Your workspace connection is temporarily unavailable.'
+                    : 'Account registration availability could not be checked.'
+                }}
+                Please try again.
+              </p>
+              <div class="retry-actions">
+                @if (error()) {
+                  <button (click)="retry.emit()">Retry connection</button>
+                }
+                @if (optionsError()) {
+                  <button (click)="loadOptions()">Retry registration check</button>
+                }
+              </div>
+            </div>
+          }
+          @if (expired()) {
+            <p class="access-notice" role="status">
+              Your guest demo expired. Start a fresh demo or sign in. No demo data was saved to an
+              account.
+            </p>
+          }
+          @if (loading()) {
+            <p class="availability" role="status">Checking registration availability…</p>
+          }
+          @if (registrationPage) {
+            <h2 class="registration-heading">Secure registration</h2>
+            <p class="registration-copy">
+              Create your account and verify your email securely with our identity provider. You’ll
+              receive a personal workspace, without joining an existing organization.
+            </p>
+            @if (enabled()) {
+              <a class="button access-primary" href="/auth/register"
+                >Continue to registration <span aria-hidden="true">→</span></a
+              >
+            } @else if (!loading()) {
+              <p class="access-notice" role="status">
+                Registration is unavailable until the operator enables provider registration and
+                verified email delivery.
+              </p>
+            }
+            <div class="registration-links">
+              <a class="button access-secondary" [href]="loginUrl()">Sign in</a
+              ><a class="button access-secondary" href="/">Back to start</a>
+            </div>
+          } @else {
+            <div class="entry-actions">
+              <a class="button access-primary" [href]="loginUrl()"
+                >Sign in <span aria-hidden="true">→</span></a
+              ><a class="button access-secondary" href="/register">Create account</a>
+            </div>
+            <p class="account-note">Your own workspace. Other workspaces require permission.</p>
+          }
+        </section>
+        <section class="access-preview" aria-labelledby="preview-title">
+          <div class="preview-heading">
+            <span class="preview-icon" aria-hidden="true"
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"
+              >
+                <path d="m9 6 9 6-9 6V6Z" />
+                <rect x="2" y="2" width="20" height="20" rx="5" /></svg></span
+            ><span class="preview-badge">Interactive demo</span>
+          </div>
+          <h2 id="preview-title">See Assertide in action</h2>
+          <p>Take a look around before you sign up.</p>
+          <ul class="preview-features">
+            <li><span aria-hidden="true">01</span>Explore sample projects</li>
+            <li><span aria-hidden="true">02</span>Try a simulated test run</li>
+            <li><span aria-hidden="true">03</span>Investigate a failure report</li>
+          </ul>
+          <button class="guest-button" (click)="explore.emit()" [disabled]="!!error()">
+            Explore as guest <span aria-hidden="true">↗</span>
+          </button>
+          <p class="preview-note">
+            30 minutes · No account needed<br />Sample data only. No real tests or private data.
+            Demo content isn’t saved to your account.
+          </p>
+        </section>
+      </div>
     </main>
   `,
-  styles: [
-    `
-      .login {
-        margin: 16px auto;
-        padding: 24px;
-      }
-      .login .brand-logo {
-        width: 174px;
-        overflow: visible;
-        margin-bottom: 16px;
-      }
-      .login h1:not(.brand-logo) {
-        max-width: 100%;
-        font-size: clamp(28px, 5vw, 34px);
-        margin: 12px 0;
-      }
-      .login p {
-        margin: 10px 0;
-        line-height: 1.5;
-      }
-      .login .button {
-        margin: 12px 0;
-        padding-block: 12px;
-      }
-      .entry-actions {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-      .login h1 {
-        max-width: 100%;
-      }
-      .login h2 {
-        font-size: 20px;
-        margin: 16px 0 10px;
-      }
-      .login hr {
-        border: 0;
-        border-top: 1px solid var(--border);
-        margin: 16px 0;
-      }
-      .login button {
-        margin: 8px 8px 8px 0;
-      }
-      .login .secondary {
-        background: var(--surface);
-        color: var(--text);
-        border: 1px solid var(--border);
-      }
-    `,
-  ],
+  styleUrl: './access-entry.css',
 })
 export class AccessEntry {
   private readonly http = inject(HttpClient);

@@ -1,0 +1,273 @@
+:host {
+  display: grid;
+  min-height: 100dvh;
+  align-items: center;
+  padding: 32px 24px;
+}
+.access-shell {
+  width: min(100%, 940px);
+  margin: auto;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  overflow: hidden;
+  box-shadow: 0 20px 70px color-mix(in srgb, var(--text) 6%, transparent);
+}
+.access-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border);
+}
+.brand-logo {
+  width: 174px;
+  margin: 0;
+}
+.theme-button {
+  padding: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: transparent;
+}
+.theme-button svg {
+  width: 20px;
+  height: 20px;
+}
+.access-layout {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+}
+.access-main {
+  padding: 40px 32px;
+  min-width: 0;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  margin: 0 0 16px;
+}
+h1 {
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  margin: 0 0 16px;
+  max-width: 350px;
+}
+h1:focus {
+  outline: none;
+}
+p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
+.access-intro {
+  font-size: 15px;
+  max-width: 38ch;
+}
+.entry-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+}
+.access-primary,
+.access-secondary,
+.guest-button {
+  min-height: 46px;
+  border-radius: 10px;
+  font-size: 14px;
+  margin: 0;
+}
+.access-primary {
+  display: flex;
+  justify-content: space-between;
+  padding-inline: 18px;
+}
+.access-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+.account-note {
+  font-size: 12px;
+  margin-top: 16px;
+}
+.access-preview {
+  padding: 32px;
+  background: color-mix(in srgb, var(--soft) 45%, var(--surface));
+  border-left: 1px solid var(--border);
+  min-width: 0;
+}
+.preview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.preview-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--brand);
+  background: var(--tint);
+}
+.preview-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.preview-badge {
+  color: var(--muted);
+  font-size: 11px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+.access-preview h2 {
+  margin: 0 0 8px;
+  font-size: 21px;
+  letter-spacing: -0.03em;
+}
+.access-preview > p {
+  font-size: 13px;
+}
+.preview-features {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  display: grid;
+  gap: 16px;
+}
+.preview-features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.preview-features li span {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px;
+}
+.guest-button {
+  width: 100%;
+  justify-content: space-between;
+  background: var(--surface);
+}
+.access-preview .preview-note {
+  font-size: 11px;
+  margin-top: 14px;
+  line-height: 1.7;
+}
+.connection-notice,
+.access-notice {
+  margin: 20px 0 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+  background: var(--canvas);
+}
+.connection-notice {
+  border-left: 3px solid var(--brand);
+}
+.connection-notice strong {
+  display: block;
+  color: var(--text);
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+.retry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.retry-actions button {
+  padding: 8px 10px;
+  font-size: 11px;
+  background: transparent;
+}
+.availability {
+  font-size: 12px;
+  margin-top: 14px;
+}
+.registration-heading {
+  font-size: 15px;
+  margin: 22px 0 8px;
+}
+.registration-copy {
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.registration-links {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.registration-links a {
+  flex: 1;
+  font-size: 12px;
+}
+@media (max-width: 680px) {
+  :host {
+    padding: 16px;
+    align-items: start;
+  }
+  .access-shell {
+    border-radius: 18px;
+  }
+  .access-header {
+    padding: 16px 20px;
+  }
+  .brand-logo {
+    width: 174px;
+  }
+  .access-layout {
+    grid-template-columns: 1fr;
+  }
+  .access-main {
+    padding: 24px 20px;
+  }
+  h1 {
+    font-size: 30px;
+  }
+  .access-intro {
+    font-size: 13px;
+  }
+  .entry-actions {
+    grid-template-columns: 1fr 1fr;
+    margin-top: 20px;
+  }
+  .access-preview {
+    padding: 20px;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+  .preview-heading {
+    margin-bottom: 12px;
+  }
+  .preview-features {
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .access-preview h2 {
+    font-size: 19px;
+  }
+  .registration-heading {
+    margin-top: 16px;
+  }
+  .registration-entry .preview-features {
+    display: none;
+  }
+  .registration-entry .guest-button {
+    margin-top: 16px;
+  }
+}
