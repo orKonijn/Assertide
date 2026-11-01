@@ -1,0 +1,76 @@
+# Registration, personal workspaces and the guest walkthrough
+
+This implementation is local and unreleased. Production authentication settings have not been changed. The guest walkthrough is intended to let recruiters and other visitors understand the platform without creating an account. It demonstrates project organization, test discovery, a deterministic simulated run, failure investigation, API exchanges and sample reporting. Synthetic results are never presented as real executions.
+
+## Access rules
+
+- **Sign in** uses the existing OIDC provider, authorization-code flow, state, nonce and PKCE. Sessions rotate on successful authentication, last one hour and use HttpOnly/SameSite cookies, with Secure required on HTTPS. Return destinations are limited to application routes; run destinations are checked against the authenticated organization and assigned projects.
+- **Create account** leads to provider-hosted registration. Assertide never accepts or stores new account passwords. A new self-service identity must have a verified email claim from the trusted provider before it receives application access. Display name is bounded; identity is resolved by the provider subject, never by email/domain. The database binds existing subject identifiers to one issuer and refuses an issuer change without an explicit migration.
+- First authentication atomically creates one personal organization, one empty project and its membership. The owner is an administrator **only of that new organization**: this is the narrowest existing role capable of creating and administering projects. No other organization, project, environment, secret, repository or report is granted. Concurrent callbacks and retries return the same membership; partial failure rolls back the project and membership together.
+- Existing explicitly provisioned memberships retain their roles and projects. No invitation-token flow exists in this implementation; existing subject-based administrator provisioning remains unchanged. Knowing an organization name or sharing an email domain grants nothing. Registering the same email at another issuer never links identities.
+- Onboarding explains the empty project and approved-source/environment prerequisites. It never starts tests or creates external resources. Completion is saved server-side; skipping is reversible through **Getting started**. Interrupted setup can be resumed by signing in again.
+
+## Guest isolation and lifetime
+
+The guest experience uses the application's workspace styling, sidebar navigation, project panel, report-library table and shared `TrendChart` component with a literal, synthetic dataset. The overview includes selectable daily pass-rate history, an accessible values table and a latest-result breakdown. It has no HTTP client, application API adapter, report iframe, object-store URL or worker connection. Example API exchanges use the reserved `example.invalid` domain and are rendered as text. Sample evidence is illustrative HTML, not an actual trace or screenshot. A simulated run updates only component memory and resets on refresh.
+
+**Open Allure sample** opens a genuine Allure 3 report at `/demo-report/index.html` in a separate tab. Its three results, failure message and steps are entirely fictional. This intentionally public static asset is independent of the guest preference/expiry; it contains no protected report data. Real reports still use the existing authenticated `/v1/runs/.../report` routes. Generate the sample with `node scripts/build-guest-report.mjs` after installing the existing automation dependencies. The generator uses only literal synthetic inputs in a fresh temporary directory, runs outside the Git checkout with a minimal environment, and never reads runtime results or credentials. Its single-file output is shipped as a frontend public asset; do not replace it with exported user/test-run evidence. No additional service, storage permission or worker job is required.
+
+There is no server-side guest identity, token or session-creation endpoint. A browser preference records a fixed 30-minute expiry in `assertide-guest-expiry`. It grants no authorization; modifying it cannot unlock protected endpoints. Refresh keeps the original expiry; expiry hides demo content and explains how to restart. Tabs share entry/exit through storage events. Leaving or entering an authenticated workspace clears the preference; theme remains an existing nonsensitive browser preference. There is no automatic guest-data migration.
+
+The entry point rechecks the real session before starting the demo. An existing authenticated session takes priority and is never replaced by a guest principal. API errors fail this entry check closed with a retry action. Protected API reads/mutations, execution, private reports, administration and downloads continue to require the existing server authorization; fabricated guest cookies have no effect. Restricted demo actions explain the limitation and link to registration/sign-in. There is no guest creation API to rate-limit and no guest interaction consumes execution or storage capacity.
+
+## Provider setup before public registration
+
+Registration is **off by default** outside `npm start`. Keep it off until the operator has verified the provider configuration and email delivery. No production changes, mail delivery, legal-policy publication or paid service purchase are performed by this work.
+
+| Setting                      | Required value or behavior                                                                                                                                              |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ACCOUNT_REGISTRATION`       | `true` only after the prerequisites below pass; otherwise `false`                                                                                                       |
+| `OIDC_REGISTRATION_ENDPOINT` | For the existing Keycloak realm: `https://auth.assertide.com/realms/assertide/protocol/openid-connect/registrations` (confirm the actual configured issuer/realm first) |
+| Endpoint trust               | Must share the configured issuer origin, use HTTPS in production and have no credentials, query or fragment                                                             |
+| Client                       | Existing confidential authorization-code client; exact callback `https://assertide.com/auth/callback`; PKCE S256; no wildcard redirect URI                              |
+| Claims                       | `openid profile email`; provider userinfo must return the same stable `sub`, display name, email and Boolean `email_verified`                                           |
+| Logout                       | Existing same-origin `POST /auth/logout` revokes the application session; it does not claim to end every provider SSO session                                           |
+
+For Keycloak, enable **User registration**, **Email as username**, **Verify email**, and appropriate required profile fields in the existing realm. Keep duplicate emails disabled. Configure the realm's SMTP delivery with a verified sending domain and private credentials, and test only with an approved mail sink before launch. Configure password policy and existing identity-provider options in Keycloak; do not add unsupported social providers. Provider-hosted pages own password/confirmation validation, duplicate-account handling, email-verification pending/expiry/reuse/resend states, and resumed registration. Preserve the provider's account-enumeration protections; Assertide adds no account-existence lookup endpoint.
+
+Enable Keycloak brute-force protections and its verification resend cooldown (`spi-required-action--VERIFY_EMAIL--email-resend-cooldown-seconds`, at least 60 seconds; confirm the option for the installed Keycloak version). Apply registration/login abuse limits at the trusted ingress as well. The app limits login/registration starts to 20 per ten-minute source-address bucket in shared PostgreSQL, using a hash and expiring counters. It does not blindly trust forwarded headers: deployments behind a proxy can share this conservative bucket, so configure and verify per-client ingress limits before public rollout. No CAPTCHA, fingerprinting or tracking service was added.
+
+The current pilot has no configured SMTP recovery/delivery; production email delivery, provider password-policy behavior and real verification-email resend are **not verified** by the local fixture. Any required legal notices/policies must be supplied and approved by the owner before public registration; this implementation invents none. See the official [Keycloak administration guide](https://www.keycloak.org/docs/26.8.0/server_admin/) for the installed provider's registration and email settings.
+
+## Private local verification
+
+`npm start` enables registration against the existing loopback-only OIDC fixture at `127.0.0.1:4011`. It is forbidden in production. It accepts a display name and a synthetic email ending in `.test`; the **Local fixture password** is the existing generated development password, not a new user-chosen password. No password system or password hashes were added. Production uses Keycloak's own credential UI instead.
+
+The fixture persists stable synthetic subjects/profiles in the local database. Its private test mailbox is scoped to the current provider interaction cookie and displayed only after validating the local password. Verification tokens are random, stored hashed, expire after ten minutes and are consumed atomically once. Resend has a 60-second cooldown. The loopback-only development provider and local OIDC entry allow 200 starts/submissions per ten minutes to support the complete browser regression suite; the external/production entry remains limited to 20. Both limits are enforced in the database and tested; there is no runtime bypass. No SMTP connection or real email is sent. After a provider restart, sign in again to resume with a fresh interaction; the profile and completed application workspace remain. Raw mail links, cookies and credentials must remain in ignored local storage/evidence.
+
+Run focused acceptance from `packages/automation`:
+
+```sh
+npx playwright test --config platform.config.ts registration.spec.ts guest.spec.ts access-entry.spec.ts security.spec.ts
+npm run test:architecture
+npm run test:reporting
+```
+
+Only an explicit `CAPTURE_ACCESS_EVIDENCE=true` run writes sanitized release screenshots. Routine acceptance never overwrites historical assets. Fresh anonymous browser contexts inherit no authentication. Credential-entry scenarios disable raw traces/video and mask fields; diagnostics redact verification and interaction URL path tokens.
+
+## Migrations, rollback and recovery
+
+`registration-v1` adds `auth_issuer_binding` and expiring `auth_rate_limits`. Personal workspace/onboarding markers are additive membership JSON fields. `local-registration-fixture-v1` adds local-only fixture profile/mail tables. Existing membership and project records are retained. The normal migration ledger locks and transactional rollback apply; never edit an applied statement list or delete the local database to recover.
+
+Disable new provisioning by setting `ACCOUNT_REGISTRATION=false` and restarting the API. Existing users retain access and the guest demo remains read-only. Keep the new authentication code when disabling registration: rolling back to older code would remove issuer-binding and self-service verification checks. Do not delete accounts, personal projects or the issuer binding to resolve an error. A provider/realm migration requires a reviewed stable-subject mapping and session revocation, never email-based automatic linking.
+
+If registration is unavailable, verify the flag, trusted registration endpoint, issuer discovery and email prerequisites. If verification is pending, return to provider sign-in/resend. If workspace setup fails, fix the database/service problem and retry sign-in; provisioning is idempotent. A registration success screen alone is not proof of workspace access: verify `/v1/me`, the assigned project and an authorized dashboard journey.
+
+## Verification evidence (local, unreleased)
+
+The workspace-style guest update passed five focused acceptance tests covering desktop/mobile accessibility in both themes, graph/table interaction, public Allure loading and failure inspection, guest lifecycle, account priority and protected endpoint rejection. The final regenerated Allure artifact also passed all four guest journeys. Page Object architecture and safe-reporting checks passed. Actual updated views: [desktop dashboard](changelog/assets/unreleased/guest-overview-1440-dark.png), [mobile dashboard](changelog/assets/unreleased/guest-overview-390-light.png), [report library](changelog/assets/unreleased/guest-workspace-1440-dark.png) and [Allure sample](changelog/assets/unreleased/guest-allure-1440-light.png).
+
+`npm run verify:quick` passed lint, formatting, type checks, local unit/service checks and the production frontend build. The API suite passed 37 checks and skipped eight environment-dependent infrastructure checks; all 14 frontend unit tests passed. The skipped checks cover PostgreSQL disconnect recovery, Kubernetes and OCI isolation, S3 evidence, Vault authentication, cross-worker restoration, Redis delivery and the private trace viewer. They require their documented infrastructure environments and are not claimed as passing here.
+
+`npm run test:regression` passed all 251 controlled API and Chromium/Firefox/WebKit cases. Page Object architecture checks passed across 23 UI specifications, and reporting checks verified sensitive-page opt-out, masked screenshots and URL-token redaction. Production email delivery, provider password-policy enforcement and production registration remain unverified and disabled pending operator setup.
+
+`npm run test:e2e` passed all 45 browser acceptance tests, including registration, verification reuse and cooldown, isolated provisioning, guest simulation and lifecycle, existing-account priority, protected API/report access and the complete existing application journeys. Older project/suite tests were updated to follow the current project-name markup and to use an isolated test-owned project. Final scoped lint, formatting and automation type checks passed.
+
+Actual running entry/report captures cover desktop (1440px) and mobile (390px), both themes, keyboard focus, reduced motion and accessibility scans. Representative views: [mobile registration, light](changelog/assets/unreleased/registration-390-light.png), [desktop registration, dark](changelog/assets/unreleased/registration-1440-dark.png), [desktop guest report, dark](changelog/assets/unreleased/guest-1440-dark.png), [mobile guest report, light](changelog/assets/unreleased/guest-390-light.png). These are local screenshots of synthetic demo content, not production activity.

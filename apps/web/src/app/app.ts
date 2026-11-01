@@ -6,12 +6,23 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import type { Identity } from './core/api';
 import { Api } from './core/api';
 import { errorMessage } from './core/api';
+import { GuestSession, guestStorageKey } from './core/guest-session';
 import { NotificationLog, Notifications } from './core/notifications';
 import { ProjectPicker } from './core/project-picker';
 import { clearSelectionDrafts } from './core/selection-draft';
+import { AccessEntry } from './pages/access-entry';
+import { GuestDemo } from './pages/guest-demo';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationLog, ProjectPicker],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    NotificationLog,
+    ProjectPicker,
+    AccessEntry,
+    GuestDemo,
+  ],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
@@ -19,10 +30,12 @@ import { clearSelectionDrafts } from './core/selection-draft';
     '(document:keydown)': 'onKeydown($event)',
     '(window:resize)': 'onResize()',
     '(document:visibilitychange)': 'onVisibility()',
+    '(window:storage)': 'onStorage($event)',
   },
 })
 export class App {
   public readonly api = inject(Api);
+  public readonly guest = inject(GuestSession);
   public readonly loading = signal(true);
   public readonly identityError = signal('');
   public readonly dark = signal(localStorage.getItem('assertide-theme') !== 'light');
@@ -45,11 +58,13 @@ export class App {
     effect(() => {
       if (!this.api.identity()) {
         notices.clear();
+        this.api.projects.set([]);
         if (this.hadIdentity) {
           clearSelectionDrafts();
         }
       } else {
         this.hadIdentity = true;
+        this.guest.leave();
       }
     });
     this.applyTheme();
@@ -115,8 +130,17 @@ export class App {
       first?.focus();
     }
   }
+  public onStorage(event: StorageEvent): void {
+    if (event.key === guestStorageKey && !this.api.identity()) {
+      void this.connect();
+    }
+  }
   public onVisibility(): void {
     if (document.visibilityState === 'visible') {
+      if (!this.api.identity()) {
+        void this.connect();
+        return;
+      }
       void this.revalidate();
     }
   }
@@ -136,6 +160,13 @@ export class App {
       /* A 401 clears the protected shell in Api.get; transient outages retain the known expiry. */
     } finally {
       this.validating = false;
+    }
+  }
+  public async enterGuest(): Promise<void> {
+    await this.connect();
+    if (!this.api.identity() && !this.identityError()) {
+      clearSelectionDrafts();
+      this.guest.start();
     }
   }
   public loginUrl(): string {

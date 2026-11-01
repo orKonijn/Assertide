@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { catchError, firstValueFrom, throwError } from 'rxjs';
+import { catchError, firstValueFrom, throwError, timeout } from 'rxjs';
 
 import { Notifications } from './notifications';
 import { clearSelectionDrafts } from './selection-draft';
@@ -11,6 +11,8 @@ export interface Identity {
   role: string;
   projectIds: string[];
   sessionExpiresAt?: string;
+  personalWorkspace?: boolean;
+  onboardingComplete?: boolean;
 }
 export interface Project {
   id: string;
@@ -150,7 +152,7 @@ export class Api {
   public readonly projects = signal<Project[]>([]);
   public readonly projectId = signal('00000000-0000-4000-8000-000000000010');
   public async loadIdentity(): Promise<void> {
-    const identity = await firstValueFrom(this.http.get<Identity>('/v1/me'));
+    const identity = await firstValueFrom(this.http.get<Identity>('/v1/me').pipe(timeout(10000)));
     this.identity.set(identity);
     const selected = localStorage.getItem('assertide-project');
     this.projectId.set(
@@ -158,7 +160,13 @@ export class Api {
         ? selected
         : (identity.projectIds[0] ?? ''),
     );
-    this.projects.set((await this.get<{ items: Project[] }>('/projects')).items);
+    this.projects.set(
+      (
+        await firstValueFrom(
+          this.http.get<{ items: Project[] }>('/v1/projects').pipe(timeout(10000)),
+        )
+      ).items,
+    );
   }
   public selectProject(id: string): void {
     if (!this.identity()?.projectIds.includes(id)) {

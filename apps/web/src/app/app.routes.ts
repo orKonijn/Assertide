@@ -1,6 +1,16 @@
 import type { Routes } from '@angular/router';
 
 export const routes: Routes = [
+  { path: 'register', loadComponent: () => import('./pages/onboarding').then((m) => m.Onboarding) },
+  { path: 'guest', redirectTo: '' },
+  {
+    path: 'access',
+    loadComponent: () => import('./pages/access-notice').then((m) => m.AccessNotice),
+  },
+  {
+    path: 'onboarding',
+    loadComponent: () => import('./pages/onboarding').then((m) => m.Onboarding),
+  },
   { path: '', loadComponent: () => import('./pages/overview').then((m) => m.Overview) },
   { path: 'explorer', loadComponent: () => import('./pages/explorer').then((m) => m.Explorer) },
   { path: 'api', loadComponent: () => import('./pages/api-workspace').then((m) => m.ApiWorkspace) },
@@ -10,5 +20,6 @@ export const routes: Routes = [
   { path: 'suites', loadComponent: () => import('./pages/suites').then((m) => m.Suites) },
   { path: 'reports', loadComponent: () => import('./pages/reports').then((m) => m.Reports) },
   { path: 'settings', loadComponent: () => import('./pages/settings').then((m) => m.Settings) },
+  { path: 'about', loadComponent: () => import('./pages/about').then((m) => m.About) },
   { path: '**', redirectTo: '' },
 ];

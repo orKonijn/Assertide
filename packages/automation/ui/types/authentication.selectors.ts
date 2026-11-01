@@ -1,5 +1,5 @@
 export const AuthenticationSelectors = {
-  sso: 'Continue with SSO',
+  sso: 'Sign in',
   account: 'Account',
   password: 'Password',
   signIn: 'Sign in',

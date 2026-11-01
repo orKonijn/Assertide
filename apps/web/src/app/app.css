@@ -1,0 +1,172 @@
+.about-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+.about-link-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: var(--brand);
+}
+.about-link-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.about-link:hover,
+.about-link.active {
+  background: var(--soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.about-link:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+#workspace-navigation .account {
+  padding: 0;
+  gap: 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+}
+#workspace-navigation .account-profile {
+  padding: 16px 4px 12px;
+  gap: 10px;
+}
+#workspace-navigation .account-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--soft);
+}
+.account-identity {
+  flex: 1;
+  min-width: 0;
+}
+.account-identity strong {
+  overflow-wrap: anywhere;
+}
+.account-profile .desktop-theme {
+  margin-left: auto;
+}
+.account-profile .theme-toggle,
+.account-footer .account-signout {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+}
+.account-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--canvas);
+}
+.account-footer .about-link {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  border-color: transparent;
+  background: transparent;
+  font-size: 11px;
+  gap: 8px;
+  white-space: nowrap;
+}
+.account-footer .about-link-arrow {
+  display: none;
+}
+.account-footer .about-link.active,
+.account-footer .about-link:hover,
+.account-profile .theme-toggle:hover,
+.account-footer .account-signout:hover {
+  background: var(--soft);
+  color: var(--brand);
+}
+.account-footer .account-signout {
+  flex: 0 0 40px;
+  min-width: 40px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+}
+.account-footer .account-signout:hover {
+  background: color-mix(in srgb, var(--brand) 9%, transparent);
+}
+.account-footer .account-signout:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@media (max-width: 850px) {
+  .mobile-header.drawer-open .menu-toggle {
+    opacity: 0;
+    pointer-events: none;
+  }
+  #workspace-navigation {
+    position: fixed;
+    top: 72px;
+    bottom: 0;
+    height: calc(100dvh - 72px);
+    min-height: 0;
+    max-height: calc(100dvh - 72px);
+    padding: 12px 14px max(12px, env(safe-area-inset-bottom));
+    overflow: hidden;
+    flex-direction: column;
+  }
+  #workspace-navigation.open {
+    display: flex;
+  }
+  #workspace-navigation .drawer-heading {
+    flex-shrink: 0;
+    margin: 0 0 8px;
+  }
+  #workspace-navigation app-project-picker {
+    flex-shrink: 0;
+    margin-bottom: 10px;
+  }
+  #workspace-navigation nav {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    grid-template-columns: 1fr;
+    align-content: start;
+    padding-bottom: 8px;
+    gap: 2px;
+  }
+  #workspace-navigation nav a {
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+  #workspace-navigation .nav-section-label {
+    padding: 8px 10px 3px;
+  }
+  #workspace-navigation .account {
+    flex-shrink: 0;
+    margin-top: 8px;
+  }
+  #workspace-navigation .account-profile {
+    padding-block: 10px;
+  }
+}

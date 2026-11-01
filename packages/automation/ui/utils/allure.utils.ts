@@ -39,7 +39,8 @@ export const workflow = <T>(name: string, action: () => Promise<T>): Promise<T> 
 export function safeUrl(value: string): string {
   try {
     const url = new URL(value);
-    return `${url.origin}${url.pathname}`;
+    const path = url.pathname.replace(/\/(interaction|verify)\/[^/]+(?:\/mail)?/, '/$1/[REDACTED]');
+    return `${url.origin}${path}`;
   } catch {
     return '[unavailable]';
   }

@@ -47,6 +47,8 @@ const options = {
     ...storageEnv,
     NODE_ENV: 'development',
     LOCAL_IDENTITY: 'true',
+    ACCOUNT_REGISTRATION: 'true',
+    OIDC_REGISTRATION_ENDPOINT: 'http://127.0.0.1:4011/register',
     LOCAL_RUNNER: separate ? 'false' : 'true',
     LOCAL_SANDBOX: 'true',
     LOCAL_PASSWORD: credentials.password,

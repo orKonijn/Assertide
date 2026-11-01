@@ -7,3 +7,6 @@ export function viewport(page: Page, size: keyof typeof Viewports): Promise<void
 export function fitsViewport(page: Page): Promise<boolean> {
   return page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
 }
+export function fitsViewportHeight(page: Page): Promise<boolean> {
+  return page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight);
+}

@@ -54,7 +54,7 @@ if (process.env['LOCAL_IDENTITY'] === 'true') {
   if (!password || password.length < 12 || !secret || secret.length < 32) {
     throw new Error('Local identity credentials must be generated first');
   }
-  localIdentity = await startLocalIdentity(password, secret, `${appOrigin}/auth/callback`);
+  localIdentity = await startLocalIdentity(password, secret, `${appOrigin}/auth/callback`, db);
   await platform.seedLocal();
   for (const [subject, role] of [
     ['admin', 'administrator'],

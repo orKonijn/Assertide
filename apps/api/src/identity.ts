@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import type { SqlConnection } from './database.ts';
 import { migrate } from './migrations.ts';
+import { allowAuthAttempt, provisionPersonalWorkspace, safeReturnTo } from './registration.ts';
 
 export const principalSchema = z.object({
   subject: z.string(),
@@ -14,6 +15,8 @@ export const principalSchema = z.object({
   role: z.enum(['viewer', 'operator', 'maintainer', 'administrator']),
   projectIds: z.array(z.uuid()),
   machine: z.boolean().optional(),
+  personalWorkspace: z.boolean().optional(),
+  onboardingComplete: z.boolean().optional(),
 });
 export type Principal = z.infer<typeof principalSchema>;
 interface JsonRow extends Record<string, unknown> {
@@ -45,6 +48,10 @@ export class IdentityService {
       'ALTER TABLE memberships ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1',
       'CREATE TABLE IF NOT EXISTS sessions (digest text PRIMARY KEY, subject text NOT NULL REFERENCES memberships(subject), expires_at timestamptz NOT NULL)',
       'CREATE TABLE IF NOT EXISTS login_requests (digest text PRIMARY KEY, body jsonb NOT NULL, expires_at timestamptz NOT NULL)',
+    ]);
+    await migrate(this.db, 'registration-v1', [
+      'CREATE TABLE auth_issuer_binding (id integer PRIMARY KEY CHECK(id=1), issuer text NOT NULL)',
+      'CREATE TABLE auth_rate_limits (bucket text PRIMARY KEY, attempts integer NOT NULL, expires_at timestamptz NOT NULL)',
     ]);
   }
   public async provision(principal: Principal, replace = true): Promise<void> {
@@ -123,6 +130,30 @@ export class IdentityService {
       undefined,
       insecureLocal ? { execute: [oidc.allowInsecureRequests] } : undefined,
     );
+    await this.db.query(
+      'INSERT INTO auth_issuer_binding(id,issuer) VALUES(1,$1) ON CONFLICT(id) DO NOTHING',
+      [issuer],
+    );
+    const binding = (
+      await this.db.query<{ issuer: string }>('SELECT issuer FROM auth_issuer_binding WHERE id=1')
+    ).rows[0];
+    if (binding?.issuer !== issuer) {
+      throw new Error('Issuer migration requires explicit identity mapping');
+    }
+    const registration = process.env['ACCOUNT_REGISTRATION'] === 'true';
+    const endpoint = process.env['OIDC_REGISTRATION_ENDPOINT'];
+    if (
+      registration &&
+      (!endpoint ||
+        new URL(endpoint).origin !== new URL(issuer).origin ||
+        (new URL(endpoint).protocol !== 'https:' && !insecureLocal) ||
+        new URL(endpoint).search ||
+        new URL(endpoint).hash ||
+        new URL(endpoint).username ||
+        new URL(endpoint).password)
+    ) {
+      throw new Error('A trusted provider registration endpoint is required');
+    }
     const callback = `${this.origin}/auth/callback`;
     const cookieOptions = {
       httpOnly: true,
@@ -133,15 +164,41 @@ export class IdentityService {
     const failure = (res: Response, status: number, title: string): void => {
       res.status(status).json({ status, title });
     };
-    app.get('/auth/login', async (req, res) => {
+    app.use('/auth', (_req, res, next) => {
+      res.set('Cache-Control', 'no-store');
+      res.set('Referrer-Policy', 'no-referrer');
+      next();
+    });
+    app.get('/auth/options', (_req, res) => {
+      res.json({ registration, verificationRequired: true });
+    });
+    app.get(['/auth/login', '/auth/register'], async (req, res) => {
       try {
+        if (await this.principal(req)) {
+          res.redirect('/');
+          return;
+        }
+        if (req.path === '/auth/register' && !registration) {
+          res.redirect('/access?reason=registration-unavailable');
+          return;
+        }
+        if (
+          !(await allowAuthAttempt(
+            this.db,
+            req.ip ?? 'unknown',
+            insecureLocal && process.env['LOCAL_IDENTITY'] === 'true' ? 200 : 20,
+          ))
+        ) {
+          res.set('Retry-After', '600');
+          res.redirect('/access?reason=rate-limit');
+          return;
+        }
         const id = randomBytes(32).toString('hex');
         const verifier = oidc.randomPKCECodeVerifier();
         const state = oidc.randomState();
         const nonce = oidc.randomNonce();
         const requested = typeof req.query['returnTo'] === 'string' ? req.query['returnTo'] : '/';
-        const target = new URL(requested, this.origin);
-        const returnTo = target.origin === this.origin ? target.pathname + target.search : '/';
+        const returnTo = safeReturnTo(requested, this.origin);
         await this.db.query(
           "INSERT INTO login_requests(digest,body,expires_at) VALUES($1,$2,now()+interval '10 minutes')",
           [hash(id), JSON.stringify({ verifier, state, nonce, returnTo })],
@@ -150,18 +207,23 @@ export class IdentityService {
           ...cookieOptions,
           maxAge: 600_000,
         });
-        res.redirect(
-          oidc.buildAuthorizationUrl(config, {
-            redirect_uri: callback,
-            scope: 'openid profile',
-            code_challenge: await oidc.calculatePKCECodeChallenge(verifier),
-            code_challenge_method: 'S256',
-            state,
-            nonce,
-          }).href,
-        );
+        const authorization = oidc.buildAuthorizationUrl(config, {
+          redirect_uri: callback,
+          scope: 'openid profile email',
+          code_challenge: await oidc.calculatePKCECodeChallenge(verifier),
+          code_challenge_method: 'S256',
+          state,
+          nonce,
+        });
+        if (req.path === '/auth/register' && endpoint) {
+          const hosted = new URL(endpoint);
+          hosted.search = authorization.search;
+          res.redirect(hosted.href);
+        } else {
+          res.redirect(authorization.href);
+        }
       } catch {
-        failure(res, 503, 'Identity provider unavailable');
+        res.redirect('/access?reason=provider');
       }
     });
     app.get('/auth/callback', async (req, res) => {
@@ -169,7 +231,7 @@ export class IdentityService {
       try {
         const id = cookie(req, 'assertide_login');
         if (!id) {
-          failure(res, 401, 'Login session expired');
+          res.redirect('/access?reason=expired');
           return;
         }
         const row = (
@@ -179,7 +241,7 @@ export class IdentityService {
           )
         ).rows[0];
         if (!row) {
-          failure(res, 401, 'Login session expired');
+          res.redirect('/access?reason=expired');
           return;
         }
         const pending = loginSchema.parse(row.body);
@@ -193,13 +255,45 @@ export class IdentityService {
             idTokenExpected: true,
           },
         );
-        const subject = tokens.claims()?.sub;
-        if (
-          !subject ||
-          !(await this.db.query('SELECT subject FROM memberships WHERE subject=$1', [subject])).rows
-            .length
-        ) {
-          failure(res, 403, 'No organization membership');
+        const claims = tokens.claims();
+        const subject = claims?.sub;
+        if (!subject) {
+          res.redirect('/access?reason=login');
+          return;
+        }
+        let member = (
+          await this.db.query<JsonRow>('SELECT body FROM memberships WHERE subject=$1', [subject])
+        ).rows[0];
+        const profile =
+          (!member && registration) ||
+          (member && principalSchema.parse(member.body).personalWorkspace)
+            ? await oidc.fetchUserInfo(config, tokens.access_token, subject)
+            : claims;
+        if (!member && registration) {
+          if (profile?.email_verified !== true || typeof profile['email'] !== 'string') {
+            res.redirect('/access?reason=verification');
+            return;
+          }
+          try {
+            const principal = await provisionPersonalWorkspace(
+              this.db,
+              subject,
+              typeof profile['name'] === 'string' ? profile['name'] : 'Your account',
+              true,
+            );
+            member = { body: principal };
+          } catch {
+            res.redirect('/access?reason=provisioning');
+            return;
+          }
+        }
+        if (!member) {
+          res.redirect('/access?reason=membership');
+          return;
+        }
+        const principal = principalSchema.parse(member.body);
+        if (principal.personalWorkspace && profile?.email_verified !== true) {
+          res.redirect('/access?reason=verification');
           return;
         }
         const session = randomBytes(32).toString('hex');
@@ -207,13 +301,34 @@ export class IdentityService {
           "INSERT INTO sessions(digest,subject,expires_at) VALUES($1,$2,now()+interval '1 hour')",
           [hash(session), subject],
         );
+        const previous = cookie(req, 'assertide_session');
+        if (previous) {
+          await this.db.query('DELETE FROM sessions WHERE digest=$1', [hash(previous)]);
+        }
         res.cookie('assertide_session', session, {
           ...cookieOptions,
           maxAge: 3_600_000,
         });
-        res.redirect(pending.returnTo);
+        let destination = safeReturnTo(pending.returnTo, this.origin);
+        const runId = /^\/runs\/([^/?]+)/.exec(destination)?.[1];
+        if (runId) {
+          const run = (
+            await this.db.query<{ project_id: string }>(
+              "SELECT project_id FROM platform_documents WHERE id=$1 AND organization_id=$2 AND kind='run'",
+              [runId, principal.organizationId],
+            )
+          ).rows[0];
+          if (!run || !principal.projectIds.includes(run.project_id)) {
+            destination = '/access?reason=destination';
+          }
+        }
+        res.redirect(
+          principal.personalWorkspace && !principal.onboardingComplete
+            ? `/onboarding?returnTo=${encodeURIComponent(destination)}`
+            : destination,
+        );
       } catch {
-        failure(res, 401, 'Unable to complete login');
+        res.redirect('/access?reason=login');
       }
     });
     app.post('/auth/logout', async (req, res) => {
@@ -226,6 +341,28 @@ export class IdentityService {
         await this.db.query('DELETE FROM sessions WHERE digest=$1', [hash(token)]);
       }
       res.clearCookie('assertide_session', cookieOptions).status(204).end();
+    });
+    app.post('/v1/onboarding', async (req, res) => {
+      res.set('Cache-Control', 'no-store');
+      const principal = await this.principal(req);
+      if (!principal) {
+        failure(res, 401, 'Authentication required');
+        return;
+      }
+      if (principal.machine || !principal.personalWorkspace || !this.sameOrigin(req)) {
+        failure(res, 403, 'Access denied');
+        return;
+      }
+      const input = z.object({ complete: z.boolean() }).strict().safeParse(req.body);
+      if (!input.success) {
+        failure(res, 422, 'Choose an onboarding status');
+        return;
+      }
+      await this.db.query(
+        "UPDATE memberships SET body=jsonb_set(body,'{onboardingComplete}',$2::jsonb),version=version+1 WHERE subject=$1",
+        [principal.subject, JSON.stringify(input.data.complete)],
+      );
+      res.status(204).end();
     });
     app.get('/v1/me', async (req, res) => {
       res.set('Cache-Control', 'no-store');

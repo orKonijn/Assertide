@@ -4,6 +4,12 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Guest workspace and registration
+
+- Added a recruiter-friendly guest workspace with application-style navigation, synthetic charts, test catalog, simulation and a genuine public Allure sample generated exclusively from fictional results. Private data, execution and reports retain server authorization.
+- Added provider-hosted registration, verified personal-workspace provisioning and resumable onboarding. Public registration remains disabled until production email delivery and provider abuse controls are configured; existing sign-in remains available. Includes additive issuer-binding/rate-limit tables and documented rollback guidance.
+- Added the About page, compact entry layout and complete logo display. Local build, guest/accessibility and reporting checks passed before deployment preparation. No product version is assigned. See [access rules and screenshots](docs/registration-and-guest.md).
+
 ### Added
 
 - Added a [single-node pilot setup](docs/free-pilot-setup.md) with staged Kubernetes manifests for the application, private PostgreSQL/Redis/Vault, production Keycloak login, owner bootstrap, and the `www` redirect. Credential generation refuses overwrites and keeps secrets out of console output. The actual application now runs at assertide.com with trusted HTTPS, production OIDC login, isolated API/browser execution, private reports and versioned database backups. A separate database restore passed. See [verified checks and pilot limitations](docs/pilot-verification.md); full disaster recovery and availability acceptance remain incomplete. No product release version is assigned.

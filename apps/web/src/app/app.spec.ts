@@ -27,6 +27,12 @@ describe('App', () => {
     TestBed.inject(HttpTestingController)
       .expectOne('/v1/me')
       .flush({}, { status: 401, statusText: 'Unauthorized' });
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.componentInstance.loading()).toBe(false);
+    });
+    fixture.detectChanges();
+    TestBed.inject(HttpTestingController).expectOne('/auth/options').flush({ registration: true });
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Your quality workspace');

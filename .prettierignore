@@ -11,3 +11,6 @@
 **/package-lock.json
 # Archived reference deliverables are not maintained application source.
 deliverables/
+
+# Generated synthetic guest report.
+apps/web/public/demo-report/index.html

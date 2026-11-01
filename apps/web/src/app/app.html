@@ -3,23 +3,19 @@
     <h1 class="brand-logo"><img src="/brand/assertide-logo.png" alt="Assertide" /></h1>
     <p role="status">Connecting to your workspace…</p>
   </main>
+} @else if (!api.identity() && guest.active() && !identityError()) {
+  <app-guest-demo />
 } @else if (!api.identity()) {
-  <main class="login">
-    <div class="brand-logo"><img src="/brand/assertide-logo.png" alt="Assertide" /></div>
-    <p class="eyebrow">CONFIDENCE, ONE RUN AT A TIME</p>
-    <h1>Your quality workspace.</h1>
-    <p>Discover tests, follow executions, and investigate the evidence in one place.</p>
-    @if (identityError()) {
-      <p role="alert">{{ identityError() }}</p>
-      <button (click)="connect()">Retry connection</button>
-    } @else {
-      <a class="button" [href]="loginUrl()">Continue with SSO</a>
-    }
-    <p class="muted">Sign in with your organization account.</p>
-  </main>
+  <app-access-entry
+    [error]="identityError() || guest.error()"
+    [expired]="guest.expired()"
+    (explore)="enterGuest()"
+    (retry)="connect()"
+    (theme)="toggleTheme()"
+  />
 } @else {
   <a class="skip" href="#content" (click)="skipToContent($event)">Skip to content</a>
-  <header class="mobile-header">
+  <header class="mobile-header" [class.drawer-open]="menu()">
     <a class="brand-logo" routerLink="/"><img src="/brand/assertide-logo.png" alt="Assertide" /></a>
     <div class="header-actions">
       <button
@@ -145,12 +141,10 @@
         <span class="account-avatar" aria-hidden="true">{{
           api.identity()?.name?.slice(0, 1)
         }}</span>
-        <div>
+        <div class="account-identity">
           <strong>{{ api.identity()?.name }}</strong
           ><span>{{ api.identity()?.role }}</span>
         </div>
-      </div>
-      <div class="account-actions">
         <span class="desktop-theme"
           ><button
             class="theme-toggle icon-button"
@@ -177,13 +171,73 @@
               } @else {
                 <path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z" />
               }
-            </svg></button></span
-        ><button (click)="api.logout()">Sign out</button>
+            </svg></button
+        ></span>
+      </div>
+      <div class="account-footer">
+        <a
+          class="about-link"
+          routerLink="/about"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          (click)="closeMenu()"
+        >
+          <span class="about-link-icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v6M12 7h.01" />
+            </svg>
+          </span>
+          <span>About Assertide</span>
+          <svg
+            class="about-link-arrow"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m9 6 6 6-6 6" />
+          </svg>
+        </a>
+        <button
+          class="account-signout icon-button"
+          (click)="api.logout()"
+          aria-label="Sign out"
+          title="Sign out"
+        >
+          <svg
+            aria-hidden="true"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M14 8l4 4-4 4M8 12h10" />
+          </svg>
+        </button>
       </div>
     </div>
   </aside>
   <main id="content" tabindex="-1" class="content" [attr.inert]="menu() ? '' : null">
     <app-notifications />
+    <a routerLink="/onboarding">Getting started</a>
     <router-outlet />
   </main>
 }
