@@ -4,6 +4,8 @@ QA automation control plane specified in [the product requirements](deliverables
 
 ## Implementation status
 
+The [free pilot at assertide.com](https://assertide.com) now includes the guest workspace, graphs and synthetic Allure sample. Existing sign-in works; public registration remains disabled pending email/provider configuration. See the [2026-11-01 deployment evidence and limitations](docs/guest-pilot-deployment.md). No versioned product release is assigned.
+
 The runnable application includes automatic local OIDC sign-in, project/member administration, source-backed discovery, editable suites, queued execution, live logs, attempt investigation, Allure 3 history and private viewers, scoped CI credentials, encrypted environment references, and transactional historical analytics. It includes 65 controlled API cases and 62 UI cases across three browsers, with masked screenshots for each named browser workflow step; 14 supplemental public-practice cases are available through an explicitly manual command. Run `npm run test:regression` for all controlled cases; see [coverage and commands](docs/regression-coverage.md). Linux CI exercises PostgreSQL, Redis, MinIO and separate execution/report supervisors with isolated OCI jobs. Windows development runs trusted fixtures locally.
 
 See [implementation, test coverage and remaining production gates](docs/implementation-verification.md). The files in `deliverables` are the original specifications, design previews and illustrative examples. The approved free pilot is available at [assertide.com](https://assertide.com); see its [verification and limitations](docs/pilot-verification.md). No product release version is assigned.

@@ -4,6 +4,10 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Pilot deployment � 2026-11-01
+
+- Deployed the latest guest workspace, charts, synthetic Allure report and interface updates to [assertide.com](https://assertide.com), preserving existing production storage/security fixes. Live sign-in, controlled API/browser execution, authorized private reports and anonymous denial passed. Public registration remains disabled pending email/provider setup. No product version, main merge, DNS change or paid service purchase. See [deployment evidence and CI status](docs/guest-pilot-deployment.md).
+
 ### Guest workspace and registration
 
 - Added a recruiter-friendly guest workspace with application-style navigation, synthetic charts, test catalog, simulation and a genuine public Allure sample generated exclusively from fictional results. Private data, execution and reports retain server authorization.

@@ -1,6 +1,6 @@
 # Registration, personal workspaces and the guest walkthrough
 
-This implementation is local and unreleased. Production authentication settings have not been changed. The guest walkthrough is intended to let recruiters and other visitors understand the platform without creating an account. It demonstrates project organization, test discovery, a deterministic simulated run, failure investigation, API exchanges and sample reporting. Synthetic results are never presented as real executions.
+The guest workspace is deployed to the existing free pilot at assertide.com; see the [deployment record](guest-pilot-deployment.md). No product release version is assigned. Public account registration remains disabled pending verified production email/provider setup. The guest walkthrough is intended to let recruiters and other visitors understand the platform without creating an account. It demonstrates project organization, test discovery, a deterministic simulated run, failure investigation, API exchanges and sample reporting. Synthetic results are never presented as real executions.
 
 ## Access rules
 
