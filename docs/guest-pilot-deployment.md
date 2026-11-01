@@ -4,6 +4,14 @@ The latest application is live at [https://assertide.com](https://assertide.com)
 
 ## Build and rollout
 
+### Public creator and demo access — 2026-11-01
+
+Application source `625c9c8de4e7a6437d0cfce2050393ff38aa7419` is on main and deployed. The [web publication workflow](https://github.com/orKonijn/Assertide/actions/runs/41301976953) passed build, non-root/SPA smoke checks, vulnerability scanning and signed provenance verification for that exact source.
+
+Only the web deployment was updated, to `ghcr.io/orkonijn/assertide-web@sha256:bc92a56db7d4a0c25bbc808e0754a5c613a4cd72264f507a0b4961e0a4db5ca9`. Kubernetes confirmed a successful rollout. The previous image was retained privately for rollback; backend services, data and registration policy were unchanged.
+
+Live browser checks passed at 390px/light and 1440px/dark: welcome creator attribution, hidden signup while registration is disabled, public creator/source links, guest charts, and returning from About without losing the guest session. Anonymous protected-data access returned 401; registration remained disabled with the updated availability message. No product version was assigned. [Full Linux verification](https://github.com/orKonijn/Assertide/actions/runs/41301970250) was still running at deployment time and is not claimed as passed.
+
 ### Welcome redesign update — 2026-11-01
 
 The welcome redesign is now deployed from source commit `4a747b7713c6f6366d26a7df4e125727b68521dc`, which is included on `main` together with the existing guest pilot baseline. [Image build, smoke checks and security scans](https://github.com/orKonijn/Assertide/actions/runs/41299067366) passed. GitHub signed provenance was verified for that exact source and hosted publication workflow.
