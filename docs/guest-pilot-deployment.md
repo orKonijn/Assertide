@@ -4,6 +4,14 @@ The latest application is live at [https://assertide.com](https://assertide.com)
 
 ## Build and rollout
 
+### Creator freelance experience — 2026-11-01
+
+Source `ed2eb1ec3810f772c45ad2f52ee1450993bb5fbe` is on main and deployed. About the Creator now lists July–November 2026 freelance experience and the three owner-provided companies: Elevation Aquaculture, Global Expansion Solutions and Merkazim.info.
+
+The [web publication workflow](https://github.com/orKonijn/Assertide/actions/runs/41306117871) passed build, smoke and security checks. Signed provenance was verified against the exact source before rolling out `ghcr.io/orkonijn/assertide-web@sha256:4c24084be43a6eab1197410d33f7c233e73fd2d290f56a0e13c62dee011063af`. Only the web image changed; rollout succeeded.
+
+Live content, responsive-layout and accessibility checks passed at 390px and 1440px in both light and dark themes. Local quick verification passed. [Broader Linux verification](https://github.com/orKonijn/Assertide/actions/runs/41306117374) was still running at deployment time. No product release version or database change was introduced.
+
 ### Public creator and demo access — 2026-11-01
 
 Application source `625c9c8de4e7a6437d0cfce2050393ff38aa7419` is on main and deployed. The [web publication workflow](https://github.com/orKonijn/Assertide/actions/runs/41301976953) passed build, non-root/SPA smoke checks, vulnerability scanning and signed provenance verification for that exact source.
