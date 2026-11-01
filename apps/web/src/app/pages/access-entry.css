@@ -78,12 +78,23 @@ p {
   min-height: 46px;
   border-radius: 10px;
   font-size: 14px;
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 600;
+  line-height: 1.4;
   margin: 0;
 }
 .access-primary {
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  padding-inline: 18px;
+  justify-content: center;
+  padding-inline: 40px;
+  text-align: center;
+}
+.access-primary > span[aria-hidden] {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 .access-secondary {
   background: transparent;

@@ -1,0 +1,52 @@
+name: Publish reviewed web image
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+jobs:
+  web:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and smoke-test web
+        run: |
+          docker build -f deploy/Dockerfile --target web -t assertide-web:ci .
+          test "$(docker run --rm --entrypoint id assertide-web:ci -u)" != 0
+          docker run -d --name web-smoke --read-only --tmpfs /tmp --add-host assertide-api:127.0.0.1 -p 18080:8080 assertide-web:ci
+          trap 'docker rm -f web-smoke >/dev/null 2>&1 || true' EXIT
+          curl --retry 20 --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:18080/health
+          curl --fail --silent http://127.0.0.1:18080/projects | grep -q '<app-root'
+      - name: Scan and create SBOM
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy" .local/verification/images
+          archive=trivy_0.76.1_Linux-ARM64.tar.gz
+          curl -fsSL "https://github.com/aquasecurity/trivy/releases/download/v0.76.1/$archive" -o "$RUNNER_TEMP/trivy/$archive"
+          curl -fsSL https://github.com/aquasecurity/trivy/releases/download/v0.76.1/trivy_0.76.1_checksums.txt -o "$RUNNER_TEMP/trivy/checksums.txt"
+          (cd "$RUNNER_TEMP/trivy" && grep -F " $archive" checksums.txt | sha256sum --check && tar -xzf "$archive" trivy)
+          "$RUNNER_TEMP/trivy/trivy" image --scanners vuln --format spdx-json --output .local/verification/images/web.spdx.json assertide-web:ci
+          "$RUNNER_TEMP/trivy/trivy" image --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1 assertide-web:ci
+      - name: Publish web image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          name="ghcr.io/${GITHUB_REPOSITORY,,}-web"
+          target="$name:$GITHUB_SHA-arm64"
+          docker tag assertide-web:ci "$target"
+          docker push "$target"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$target" | cut -d@ -f2)
+          echo "web_name=$name" >> "$GITHUB_ENV"
+          echo "web_digest=$digest" >> "$GITHUB_ENV"
+          echo "$name@$digest" > .local/verification/images/digests.txt
+      - uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.web_name }}
+          subject-digest: ${{ env.web_digest }}
+          push-to-registry: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-sbom-and-digest
+          path: .local/verification/images
