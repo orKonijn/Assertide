@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, mkdir, writeFile, copyFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -93,5 +93,6 @@ execFileSync(
 );
 const destination = path.join(root, 'apps/web/public/demo-report');
 await mkdir(destination, { recursive: true });
-await copyFile(path.join(scratch, 'output/index.html'), path.join(destination, 'index.html'));
+const html = await readFile(path.join(scratch, 'output/index.html'), 'utf8');
+await writeFile(path.join(destination, 'index.html'), html.replace(/[ \t]+$/gm, ''));
 console.log('Generated public Allure report from three literal synthetic cases only.');
