@@ -17,7 +17,7 @@ jobs:
           test "$(docker run --rm --entrypoint id assertide-web:ci -u)" != 0
           docker run -d --name web-smoke --read-only --tmpfs /tmp --add-host assertide-api:127.0.0.1 -p 18080:8080 assertide-web:ci
           trap 'docker rm -f web-smoke >/dev/null 2>&1 || true' EXIT
-          curl --retry 20 --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:18080/health
+          curl --retry 20 --retry-all-errors --retry-connrefused --retry-delay 1 --fail --silent http://127.0.0.1:18080/health
           curl --fail --silent http://127.0.0.1:18080/projects | grep -q '<app-root'
       - name: Scan and create SBOM
         run: |
