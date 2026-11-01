@@ -32,7 +32,7 @@ npm run report:platform -- local
 npx allure open ../../.local/platform/local/allure-report
 ```
 
-`test:ui` runs all 12 storefront cases on Chromium, Firefox and WebKit. Platform acceptance covers 26 independent app journeys, including a 64-state automated accessibility matrix. Public practice retains its existing explicit `ASSERTIDE_PUBLIC_PRACTICE=true` opt-in, single worker, no retries, stop-on-first-failure and no-CI policy; run `npx playwright test --config practice.config.ts web.spec.ts` manually.
+`test:ui` runs storefront scenarios on Chromium, Firefox and WebKit. Platform acceptance covers application journeys and an automated accessibility matrix. Use `npx playwright test --config platform.config.ts --list` and the regression configuration to inspect the current inventory; counts do not replace the results of a completed run. Public practice retains its existing explicit `ASSERTIDE_PUBLIC_PRACTICE=true` opt-in, single worker, no retries, stop-on-first-failure and no-CI policy; run `npx playwright test --config practice.config.ts web.spec.ts` manually.
 
 Allure results are grouped by feature/story with owner, severity, tags, stable case identity, scenario description, browser version and shallow domain steps. Automatic low-level API-call reporting is disabled. Environment metadata includes the runtime, OS, Node, package versions, commit and branch. CI executor metadata links to its Actions run. Simple failure categories separate assertions from infrastructure errors.
 

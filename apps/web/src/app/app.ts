@@ -1,7 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import type { ElementRef } from '@angular/core';
 import { Component, DestroyRef, effect, inject, signal, viewChild } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 
 import type { Identity } from './core/api';
 import { Api } from './core/api';
@@ -35,6 +37,14 @@ import { GuestDemo } from './pages/guest-demo';
 })
 export class App {
   public readonly api = inject(Api);
+  public readonly publicAbout = toSignal(
+    inject(Router).events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects.split(/[?#]/)[0] === '/about'),
+      startWith(location.pathname === '/about'),
+    ),
+    { initialValue: false },
+  );
   public readonly guest = inject(GuestSession);
   public readonly loading = signal(true);
   public readonly identityError = signal('');

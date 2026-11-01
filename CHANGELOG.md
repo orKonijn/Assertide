@@ -4,6 +4,18 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Public project introduction
+
+- Made the creator and architecture page accessible without signing in, including during an identity-service error. Added Or Konijn’s approved name, a project-source link, and entry points from the welcome screen and guest demo. Visiting the page preserves an active guest session.
+- Hide signup actions when registration is unavailable and emphasize the guest demo instead. Account-access messages now explain the available options without deployment configuration details. Fixed the guest theme control’s accessible name and the demo banner’s landmark.
+- Added a three-minute README tour and explicit guidance distinguishing synthetic examples, local verification, full CI and image publication. No product version or deployment is assigned; these changes remain unreleased. Nine focused browser checks, a controlled drawer-interaction check, architecture/reporting checks and local quick verification passed; Linux infrastructure checks remain separate.
+
+Welcome screen, with registration disabled: [before](docs/changelog/assets/unreleased/recruiter-welcome-before-1440-dark.png) / [after](docs/changelog/assets/unreleased/recruiter-welcome-1440-dark.png), at 1440px in dark mode. The guest action is emphasized and the creator is visible before signing in.
+
+![Public creator page showing Or Konijn and the project introduction](docs/changelog/assets/unreleased/public-creator-1440-dark.png)
+
+[Mobile creator view](docs/changelog/assets/unreleased/public-creator-390-dark.png) · [Mobile welcome view](docs/changelog/assets/unreleased/recruiter-welcome-390-dark.png). See [review guidance and verification limits](docs/recruiter-review.md).
+
 ### Pilot deployment � 2026-11-01
 
 - Deployed the latest guest workspace, charts, synthetic Allure report and interface updates to [assertide.com](https://assertide.com), preserving existing production storage/security fixes. Live sign-in, controlled API/browser execution, authorized private reports and anonymous denial passed. Public registration remains disabled pending email/provider setup. No product version, main merge, DNS change or paid service purchase. See [deployment evidence and CI status](docs/guest-pilot-deployment.md).

@@ -15,6 +15,7 @@ describe('About Assertide', () => {
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Independent freelancer');
+    expect(element.textContent).toContain('Or Konijn');
     expect(element.textContent).toContain('website-testing tools for companies');
     expect(element.querySelector('.creator-photo')).toBeNull();
     expect(creator.links).toEqual([]);

@@ -60,11 +60,12 @@ export class NavigationComponent {
     return this.page.keyboard.press(key);
   }
   public async dismissFromOutside(): Promise<void> {
+    await this.backdrop.waitFor({ state: 'visible' });
     const box = await this.backdrop.boundingBox();
     if (!box) {
       throw new Error('Navigation backdrop is not visible');
     }
-    await this.page.mouse.click(box.x + box.width - 12, box.y + 24);
+    await this.backdrop.click({ position: { x: box.width - 12, y: 24 } });
   }
   public async closingMotion(): Promise<{ animating: boolean; visible: boolean }> {
     return this.backdrop.evaluate(async (button) => {

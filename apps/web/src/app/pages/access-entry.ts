@@ -89,19 +89,18 @@ const messages: Record<string, string> = {
             <p class="availability" role="status">Checking registration availability…</p>
           }
           @if (registrationPage) {
-            <h2 class="registration-heading">Secure registration</h2>
-            <p class="registration-copy">
-              Create your account and verify your email securely with our identity provider. You’ll
-              receive a personal workspace, without joining an existing organization.
-            </p>
             @if (enabled()) {
+              <h2 class="registration-heading">Secure registration</h2>
+              <p class="registration-copy">
+                Create your account and verify your email to receive a personal workspace.
+              </p>
               <a class="button access-primary" href="/auth/register"
                 >Continue to registration <span aria-hidden="true">→</span></a
               >
-            } @else if (!loading()) {
+            } @else if (!loading() && !optionsError()) {
               <p class="access-notice" role="status">
-                Registration is unavailable until the operator enables provider registration and
-                verified email delivery.
+                New accounts are currently unavailable. Explore the demo without an account, or sign
+                in if you already have access.
               </p>
             }
             <div class="registration-links">
@@ -110,11 +109,23 @@ const messages: Record<string, string> = {
             </div>
           } @else {
             <div class="entry-actions">
-              <a class="button access-primary" [href]="loginUrl()"
+              <a
+                class="button access-primary"
+                [class.access-secondary]="!enabled()"
+                [href]="loginUrl()"
                 >Sign in <span aria-hidden="true">→</span></a
-              ><a class="button access-secondary" href="/register">Create account</a>
+              >
+              @if (enabled()) {
+                <a class="button access-secondary" href="/register">Create account</a>
+              }
             </div>
-            <p class="account-note">Your own workspace. Other workspaces require permission.</p>
+            <p class="account-note">
+              {{
+                enabled()
+                  ? 'Your own workspace. Other workspaces require permission.'
+                  : 'Sign-in is for existing accounts. Explore the demo without an account.'
+              }}
+            </p>
           }
         </section>
         <section class="access-preview" aria-labelledby="preview-title">
@@ -132,13 +143,18 @@ const messages: Record<string, string> = {
             ><span class="preview-badge">Interactive demo</span>
           </div>
           <h2 id="preview-title">See Assertide in action</h2>
-          <p>Take a look around before you sign up.</p>
+          <p>Explore the testing workflow. No account needed.</p>
           <ul class="preview-features">
             <li><span aria-hidden="true">01</span>Explore sample projects</li>
             <li><span aria-hidden="true">02</span>Try a simulated test run</li>
             <li><span aria-hidden="true">03</span>Investigate a failure report</li>
           </ul>
-          <button class="guest-button" (click)="explore.emit()" [disabled]="!!error()">
+          <button
+            class="guest-button"
+            [class.access-primary]="!enabled()"
+            (click)="explore.emit()"
+            [disabled]="!!error()"
+          >
             Explore as guest <span aria-hidden="true">↗</span>
           </button>
           <p class="preview-note">
@@ -147,6 +163,14 @@ const messages: Record<string, string> = {
           </p>
         </section>
       </div>
+      @if (!registrationPage) {
+        <footer class="creator-footer">
+          <span>Built by <strong>Or Konijn</strong> · Independent freelancer</span>
+          <a href="/about"
+            >About the creator &amp; architecture <span aria-hidden="true">↗</span></a
+          >
+        </footer>
+      }
     </main>
   `,
   styleUrl: './access-entry.css',

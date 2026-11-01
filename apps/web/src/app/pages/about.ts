@@ -16,6 +16,9 @@ import { ArchitectureMap } from './architecture-map';
         <p class="eyebrow">THE PEOPLE & THE ENGINEERING</p>
         <h1>About Assertide</h1>
         <p class="muted">A closer look at the work behind your testing workspace.</p>
+        <a class="button" href="https://github.com/orKonijn/Assertide" rel="noopener noreferrer"
+          >View source on GitHub</a
+        >
       </div>
     </header>
     <nav class="about-nav" aria-label="About sections">

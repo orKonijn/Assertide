@@ -76,16 +76,16 @@ const sampleCases = [
         </nav>
         <div class="demo-account">
           <strong>Guest visitor</strong><span class="muted">Read-only access</span
-          ><button (click)="theme()" aria-label="Toggle demo theme">Light / dark</button
+          ><button (click)="theme()" aria-label="Light / dark theme">Light / dark</button
           ><button (click)="session.leave()">Leave guest mode</button>
         </div>
       </aside>
       <div class="demo-content">
-        <div class="demo-banner">
+        <section class="demo-banner" aria-label="Demo access">
           <span class="badge">Guest demo</span
           ><span>Read-only synthetic data · No real tests run · Expires after 30 minutes</span
-          ><a href="/register" (click)="session.leave()">Create account</a>
-        </div>
+          ><a href="/about">About Assertide</a>
+        </section>
         <main id="guest-content" tabindex="-1">
           <header class="page-header">
             <div>
@@ -339,21 +339,22 @@ const sampleCases = [
             <section class="notice" role="status">
               <h2>Account required</h2>
               <p>
-                {{ restricted() }} is unavailable in this read-only demo. Create an account for your
-                own workspace; approved execution setup is required before real tests can run.
+                {{ restricted() }} is unavailable in this read-only demo. Real executions require an
+                account with approved access and execution setup.
               </p>
-              <a href="/register" (click)="session.leave()">Create account</a> ·
+              <a href="/register" (click)="session.leave()">Account access</a> ·
               <a href="/auth/login?returnTo=%2F" (click)="session.leave()">Sign in</a>
             </section>
           }
         </main>
         <footer>
-          <h2>Make a workspace your own</h2>
+          <h2>Meet the creator. Explore the engineering.</h2>
           <p>
-            An account provides a persistent personal workspace with assigned permissions. Demo
-            content and selections are never copied into it.
+            Built by Or Konijn, an independent freelancer creating website-testing tools for
+            companies. Read about the project and the architecture behind it.
           </p>
-          <a class="button" href="/register" (click)="session.leave()">Create account</a
+          <a class="button" href="/about">About Assertide</a>
+          <a class="button secondary" href="/register" (click)="session.leave()">Account access</a
           ><a class="button secondary" href="/auth/login?returnTo=%2F" (click)="session.leave()"
             >Sign in</a
           >

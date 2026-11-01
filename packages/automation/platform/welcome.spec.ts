@@ -26,7 +26,11 @@ test.describe('Welcome screen', () => {
           await navigation.setTheme(theme);
           await expect(welcome.heading).toBeVisible();
           await expect(welcome.signIn).toHaveAttribute('href', '/auth/login?returnTo=%2F');
-          await expect(welcome.create).toHaveAttribute('href', '/register');
+          if (failed) {
+            await expect(welcome.create).toHaveCount(0);
+          } else {
+            await expect(welcome.create).toHaveAttribute('href', '/register');
+          }
           if (failed) {
             await expect(welcome.guest).toBeDisabled();
             await expect(welcome.notice).toBeVisible();

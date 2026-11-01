@@ -254,7 +254,7 @@ p {
     font-size: 13px;
   }
   .entry-actions {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     margin-top: 20px;
   }
   .access-preview {
@@ -281,4 +281,25 @@ p {
   .registration-entry .guest-button {
     margin-top: 16px;
   }
+}
+.creator-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 32px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.creator-footer a {
+  color: var(--brand);
+  text-underline-offset: 4px;
+}
+.guest-button.access-primary {
+  background: var(--brand);
+  color: var(--surface);
+  border-color: var(--brand);
+  justify-content: center;
 }

@@ -170,3 +170,26 @@
     padding-block: 10px;
   }
 }
+.public-about-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  max-width: 1200px;
+  margin: auto;
+  padding: 24px;
+}
+.public-about-header .brand-logo {
+  width: 180px;
+}
+.public-about-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.public-about-content {
+  max-width: 1200px;
+  margin: auto;
+  padding: 16px 24px 48px;
+}

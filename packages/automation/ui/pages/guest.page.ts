@@ -55,7 +55,10 @@ export class GuestPage {
   }
   public createAccount(): Promise<void> {
     return workflow('Move from guest demo to registration', () =>
-      this.page.getByRole('contentinfo').getByRole('link', { name: S.create, exact: true }).click(),
+      this.page
+        .getByRole('contentinfo')
+        .getByRole('link', { name: 'Account access', exact: true })
+        .click(),
     );
   }
   public guestState(): Promise<string | null> {

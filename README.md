@@ -1,6 +1,23 @@
 # Assertide
 
-QA automation control plane specified in [the product requirements](deliverables/01-product-requirements.md).
+Assertide is a testing workspace that connects test selection, execution and failure investigation. Built by **Or Konijn**, an independent freelancer creating website-testing tools for companies, it demonstrates company-focused testing workflows.
+
+[Explore the live demo](https://assertide.com) · [Creator and architecture](https://assertide.com/about) · [Verification workflow](https://github.com/orKonijn/Assertide/actions/workflows/verify.yml)
+
+## A three-minute tour
+
+1. Choose **Explore as guest**. No account is needed; all guest data is synthetic.
+2. Browse **Projects**, **Test suites** and **Test explorer**.
+3. In **Overview**, choose **Try a simulated run**, then inspect the failed checkout result and its API example.
+4. Open **Reports → Open Allure sample → Checkout displays delivery estimate** to inspect the missing field assertion.
+
+The guest tour does not launch workers or prove a real test run passed. For real automation, inspect [API lifecycle tests](packages/automation/tests/lab.spec.ts), [UI scenarios](packages/automation/tests/store.spec.ts), [fixture isolation](packages/automation/ui/fixtures/platform.fixture.ts), and [retry-aware metrics](packages/domain/execution.ts).
+
+## Verification evidence and limits
+
+The [Verify workflow](https://github.com/orKonijn/Assertide/actions/workflows/verify.yml) is the source of current CI results. Select the exact commit being reviewed, inspect failed or skipped steps, and download its evidence artifacts. Image publication and a local build are not substitutes for completed Linux infrastructure checks. No claim of green CI is made by this README; see [how to assess verification evidence](docs/recruiter-review.md).
+
+Public registration on the pilot is currently limited; existing users can sign in. The guest demo remains available without an account. The architecture page describes supported configurations, not a guarantee that every deployment uses them.
 
 ## Implementation status
 
@@ -24,7 +41,7 @@ For the connected development application:
 2. Run `node scripts/setup-sandbox.mjs` to build the pinned local Sauce Labs fixture with telemetry disabled. Its MIT license remains in the ignored checkout.
 3. From the repository root, run `node scripts/dev-api.mjs`. This generates ignored local credentials and starts the API, development OIDC provider, trusted local runner, browser sandbox and report viewer.
 4. In `apps/web`, run `npm start -- --host 127.0.0.1 --proxy-config proxy.conf.json`.
-5. Open `http://127.0.0.1:4200`, choose Continue with SSO, and sign in as `admin`, `operator` or `viewer` using the generated password in `.local/credentials.json`.
+5. Open `http://127.0.0.1:4200`, choose Sign in, and sign in as `admin`, `operator` or `viewer` using the generated password in `.local/credentials.json`.
 6. In `packages/automation`, run `npx playwright test --config platform.config.ts` for the connected browser journeys.
 
 Optional infrastructure: [private object storage](docs/object-storage.md), [isolated Linux workers](docs/isolated-workers.md), [report history](docs/report-history.md), and [environments and credentials](docs/environments.md). Local sign-in is generated automatically; no external identity-provider account is needed for development.

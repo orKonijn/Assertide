@@ -10,6 +10,7 @@ export interface CreatorProfile {
 }
 
 export const creator: CreatorProfile = {
+  name: 'Or Konijn',
   title: 'Independent freelancer',
   introduction:
     'I build website-testing tools for companies. Assertide is an example of the tools I create, bringing test selection, execution, and investigation into one workspace.',
