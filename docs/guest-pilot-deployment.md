@@ -49,3 +49,9 @@ Live browser checks confirmed the redesigned welcome in light/mobile and dark/de
 Public **Create account** remains disabled (`ACCOUNT_REGISTRATION=false`). Production email delivery, provider registration/password/abuse policy and any required legal notices must be configured and verified before enabling it. Existing sign-in and the public guest demo work. The sample Allure file is intentionally public and contains only fictional results; actual customer/execution reports retain authorization.
 
 The existing single-node/free-tier capacity, storage transaction quotas and recovery limitations still apply. This deployment does not claim high availability or unlimited worker capacity. No new paid service was purchased.
+
+### Welcome button correction — 2026-11-01
+
+Source `c0cd6d9d935373c576c8c69817edbf95089980aa` is on main. The new manual web-only publication workflow builds, checks non-root operation and SPA health, scans for fixable high/critical vulnerabilities, generates an SBOM, and signs provenance without rebuilding backend/worker images. Its first attempt caught a startup connection reset; bounded readiness retries were corrected and [the rerun passed](https://github.com/orKonijn/Assertide/actions/runs/41300014156).
+
+Verified web image `ghcr.io/orkonijn/assertide-web@sha256:b43682bd27cc3e56b36db904e7f912864947e2952f76b932bc0e1cc194ba8e7b` rolled out successfully. Live checks confirm centered sign-in labels with the arrow anchored right, both responsive themes, working guest charts/reports, anonymous 401 responses, and registration still disabled. Backend services and data were unchanged. No versioned release was created.
