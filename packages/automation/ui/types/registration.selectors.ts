@@ -7,7 +7,7 @@ export const RegistrationSelectors = {
   mailbox: 'Open local test mailbox',
   verify: 'Verify email address',
   resume: 'Continue to your workspace',
-  welcome: 'Welcome to Assertide',
+  welcome: 'Getting started',
   guest: 'Explore as guest',
   leave: 'Leave guest mode',
   demoNavigation: 'Demo navigation',

@@ -51,6 +51,7 @@ export async function archiveRaw(
   }
   const generation = randomUUID();
   const files: z.infer<typeof rawManifest>['files'] = [];
+  const pending: { name: string; file: string }[] = [];
   async function walk(directory: string, relative = ''): Promise<void> {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       if (entry.isSymbolicLink()) {
@@ -61,9 +62,17 @@ export async function archiveRaw(
       if (entry.isDirectory()) {
         await walk(file, name);
       } else if (entry.isFile()) {
+        pending.push({ name, file });
+      }
+    }
+  }
+  await walk(root);
+  for (let offset = 0; offset < pending.length; offset += 8) {
+    const batch = await Promise.allSettled(
+      pending.slice(offset, offset + 8).map(async ({ name, file }) => {
         const bytes = await readFile(file);
         const shortLived = isShortLivedEvidence(name, bytes);
-        files.push({
+        return {
           name,
           shortLived,
           object: await objectStore!.put(
@@ -71,11 +80,16 @@ export async function archiveRaw(
             bytes,
             'application/octet-stream',
           ),
-        });
+        };
+      }),
+    );
+    for (const result of batch) {
+      if (result.status === 'rejected') {
+        throw result.reason;
       }
+      files.push(result.value);
     }
   }
-  await walk(root);
   return rawManifest.parse({ createdAt: new Date().toISOString(), files });
 }
 export async function restoreRaw(
@@ -98,9 +112,9 @@ export async function restoreRaw(
   if (age >= 14 * 86400000) {
     await removeShortLivedFiles(root);
   }
-  for (const entry of manifest.files) {
+  async function restore(entry: z.infer<typeof rawManifest>['files'][number]): Promise<void> {
     if (entry.shortLived && age >= 14 * 86400000) {
-      continue;
+      return;
     }
     if (!entry.object.key.startsWith(`runs/${id}/raw/${entry.shortLived ? 'short' : 'long'}/`)) {
       throw new Error('Raw evidence belongs to another run');
@@ -122,8 +136,15 @@ export async function restoreRaw(
         }
       }
     }
-    const bytes = await objectStore.get(entry.object);
+    const bytes = await objectStore!.get(entry.object);
     await mkdir(path.dirname(file), { recursive: true });
     await writeFile(file, bytes);
+  }
+  for (let offset = 0; offset < manifest.files.length; offset += 8) {
+    const batch = await Promise.allSettled(manifest.files.slice(offset, offset + 8).map(restore));
+    const failure = batch.find((result) => result.status === 'rejected');
+    if (failure?.status === 'rejected') {
+      throw failure.reason;
+    }
   }
 }

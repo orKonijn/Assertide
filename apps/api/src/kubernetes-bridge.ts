@@ -167,10 +167,10 @@ try {
   process.exitCode = z.number().int().min(0).max(255).parse(code);
 } catch {
   console.error(`Kubernetes ${stage} failed; inspect cluster events with an administrator`);
-  process.exitCode = 1;
+  process.exitCode = 2;
 } finally {
   if (!(await deleteWorkerJob(id))) {
     console.error('Worker Job cleanup failed');
-    process.exitCode = 1;
+    process.exitCode = 2;
   }
 }

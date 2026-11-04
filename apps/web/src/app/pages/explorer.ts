@@ -19,6 +19,9 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
         <p class="muted">Select approved tests from the local Lab catalog.</p>
       </div>
       <div class="explorer-header-actions">
+        @if (selected().length) {
+          <button type="button" (click)="clearSelection()">Clear selection</button>
+        }
         <span class="selection-count" role="status">{{ selected().length }} selected</span>
         <button
           class="primary"
@@ -31,9 +34,6 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
     </header>
     @if (draftMessage()) {
       <p role="status" class="muted">{{ draftMessage() }}</p>
-    }
-    @if (selected().length) {
-      <button type="button" (click)="clearSelection()">Clear selection</button>
     }
     @if (error()) {
       <p class="error" role="alert">{{ error() }} <button (click)="load()">Retry</button></p>

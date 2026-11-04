@@ -5,44 +5,84 @@ import { Api, errorMessage } from '../core/api';
 
 @Component({
   imports: [RouterLink],
+  styleUrl: './onboarding.css',
   template: `<header class="page-header">
       <div>
-        <p class="eyebrow">YOUR PERSONAL WORKSPACE</p>
-        <h1>Welcome to Assertide</h1>
+        <p class="eyebrow">Workspace guide</p>
+        <h1>Getting started</h1>
+        <p class="muted">From your first selection to evidence you can investigate.</p>
       </div>
+      <button class="primary" [disabled]="busy()" (click)="finish()">Go to dashboard</button>
     </header>
-    <section class="card">
-      <h2>A private place to start</h2>
+    <section class="guide-intro" aria-labelledby="guide-title">
+      <div>
+        <span class="guide-label">Your workflow</span>
+        <h2 id="guide-title">Select. Run. Investigate.</h2>
+        <p>
+          Work in the project selected in the sidebar. Keep reusable tests in suites, follow
+          executions, and inspect the evidence behind each result.
+        </p>
+      </div>
+      <div class="guide-prerequisites">
+        <h3>Before your first run</h3>
+        <p>
+          An approved test catalog and an allowed environment must be configured. If either is
+          missing, ask your deployment operator to connect them.
+        </p>
+        <a routerLink="/settings">Review workspace settings</a>
+      </div>
+    </section>
+    <section class="guide-steps" aria-label="Getting started steps">
+      <article class="card">
+        <span class="guide-number" aria-hidden="true">01</span>
+        <h2>Choose your workspace</h2>
+        <p>
+          Open a project you have access to. Its catalog, environments and execution history stay
+          separate from other projects.
+        </p>
+        <a routerLink="/projects">Browse projects <span aria-hidden="true">&rarr;</span></a>
+      </article>
+      <article class="card">
+        <span class="guide-number" aria-hidden="true">02</span>
+        <h2>Build your selection</h2>
+        <p>
+          Search and filter the test catalog, select cases across pages, then choose an environment.
+          Save recurring selections as test suites.
+        </p>
+        <a routerLink="/explorer">Open test explorer <span aria-hidden="true">&rarr;</span></a>
+      </article>
+      <article class="card">
+        <span class="guide-number" aria-hidden="true">03</span>
+        <h2>Follow the execution</h2>
+        <p>
+          Start a run when the configuration is ready. Execution phase tracks the job; individual
+          test results show whether assertions passed.
+        </p>
+        <a routerLink="/runs">View executions <span aria-hidden="true">&rarr;</span></a>
+      </article>
+      <article class="card">
+        <span class="guide-number" aria-hidden="true">04</span>
+        <h2>Read the evidence</h2>
+        <p>
+          Inspect attempts and attachments in run details, API exchanges in the API workspace, and
+          Allure reports once generation finishes.
+        </p>
+        <a routerLink="/reports">Explore reports <span aria-hidden="true">&rarr;</span></a>
+      </article>
+    </section>
+    <footer class="guide-footer">
       <p>
-        Your personal project is empty. You own this workspace; it does not grant access to any
-        other organization. Guest samples are not copied here.
+        Opening this guide never starts tests or connects a repository. Return any time from
+        <strong>Getting started</strong> in the sidebar.
       </p>
-      <h2>Your first steps</h2>
-      <ol>
-        <li>Review your <a routerLink="/projects">personal project</a>.</li>
-        <li>
-          Ask your deployment operator to approve your test source and configure an allowed
-          environment.
-        </li>
-        <li>Choose tests and launch only after those prerequisites are ready.</li>
-      </ol>
-      <p>
-        Signing up never connects a repository, provisions paid resources or starts an execution.
-      </p>
-      <h2>Learn before connecting</h2>
-      <p>
-        The read-only guest demo is available when signed out. You can return to this guide using
-        the Getting started link at any time.
-      </p>
-      @if (error()) {
-        <p role="alert">{{ error() }}</p>
-      }
-      @if (busy()) {
-        <p role="status">Saving your onboarding preference…</p>
-      }
-      <button [disabled]="busy()" (click)="finish()">Go to dashboard</button>
       <button [disabled]="busy()" (click)="skip()">Skip for now</button>
-    </section>`,
+    </footer>
+    @if (error()) {
+      <p class="error" role="alert">{{ error() }}</p>
+    }
+    @if (busy()) {
+      <p role="status">Saving your onboarding preference...</p>
+    } `,
 })
 export class Onboarding {
   public readonly api = inject(Api);

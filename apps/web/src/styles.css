@@ -4710,3 +4710,47 @@ textarea::placeholder {
   color: var(--muted);
   opacity: 1;
 }
+
+/* Evidence lists share one calm surface and an explicit empty state. */
+.api-workspace-layout {
+  align-items: start;
+}
+.api-workspace-layout .exchange-browser,
+.api-workspace-layout .exchange-inspector {
+  padding: 24px;
+}
+.exchange-list-heading {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.exchange-empty-state {
+  padding: 24px 0 8px;
+}
+.exchange-empty-state h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.exchange-empty-state p {
+  color: var(--muted);
+  line-height: 1.65;
+  margin: 0 0 20px;
+}
+.api-context p,
+.api-execution-picker label {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.exchange-inspector .exchange-empty {
+  border: 0;
+  background: transparent;
+  margin-top: 12px;
+  min-height: 220px;
+  align-content: center;
+}
+@media (max-width: 600px) {
+  .api-workspace-layout .exchange-browser,
+  .api-workspace-layout .exchange-inspector {
+    padding: 20px;
+  }
+}

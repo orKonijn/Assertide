@@ -16,6 +16,7 @@ import {
 } from './artifacts.ts';
 import type { SqlConnection } from './database.ts';
 import { defaultEnvironment, environmentSchema, resolveSecret } from './environments.ts';
+import { executionPhase } from './execution-outcome.ts';
 import { cancelWorkerJob, kubernetesCommand } from './kubernetes-worker.ts';
 import { ociCommand, stopContainer } from './oci-worker.ts';
 import { stopProcessTree } from './process-tree.ts';
@@ -611,10 +612,12 @@ export class LocalRunner {
           };
         }),
       );
+      let missingResults = false;
       for (const caseId of run.selection.testIds) {
         for (const project of caseId.startsWith('UI-') ? run.config.browserProjects : ['api']) {
           const id = project === 'api' ? caseId : `${caseId}:${project}`;
           if (!results.some((result) => result.id === id)) {
+            missingResults = true;
             results.push({
               id,
               caseId,
@@ -635,16 +638,15 @@ export class LocalRunner {
           }
         }
       }
-      let finalPhase = 'completed';
-      if (canceled) {
-        finalPhase = 'canceled';
-      } else if (code === -2) {
-        finalPhase = 'timed_out';
-      } else if (code !== 0 && code !== 1) {
-        finalPhase = 'infrastructure_error';
-      }
+      const finalPhase = executionPhase(code, canceled, missingResults);
       await this.update(run.id, {
         phase: finalPhase,
+        ...(missingResults && !canceled
+          ? {
+              diagnostic:
+                'Terminal test evidence is incomplete. Check the worker evidence transfer; missing results are not test failures.',
+            }
+          : {}),
         endedAt: new Date().toISOString(),
         results,
         artifacts,

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -55,6 +56,19 @@ export default class CheckpointReporter implements Reporter {
       return;
     }
     mkdirSync(output, { recursive: true });
+    // Keep binary evidence out of both this checkpoint and later JSON reporters.
+    // Reporter ordering in playwright.config.ts makes every reporter use the same files.
+    for (const attachment of result.attachments) {
+      if (!attachment.body) {
+        continue;
+      }
+      const directory = path.join(output, 'evidence', 'attachments');
+      mkdirSync(directory, { recursive: true });
+      const filename = path.join(directory, randomUUID());
+      writeFileSync(filename, attachment.body, { flag: 'wx', mode: 0o600 });
+      attachment.path = filename;
+      delete attachment.body;
+    }
     let remaining = 2000;
     const steps = (items: TestStep[], depth = 0): unknown[] =>
       depth > 8

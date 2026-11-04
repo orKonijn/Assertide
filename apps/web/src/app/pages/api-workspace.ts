@@ -67,7 +67,7 @@ import { JsonEvidence } from '../core/json-evidence';
           </select></label
         >
         @if (selectedRun(); as current) {
-          <a [routerLink]="['/runs', current.id]">Open execution and Allure</a>
+          <a [routerLink]="['/runs', current.id]">View execution</a>
         }
       </div>
     </section>
@@ -78,34 +78,36 @@ import { JsonEvidence } from '../core/json-evidence';
             <h2>Recorded exchanges</h2>
             <span class="badge">{{ exchanges().length }}</span>
           </div>
-          <nav class="exchange-pagination" aria-label="Exchange pages">
-            <span class="muted">Page {{ currentPage() }} of {{ pageCount() }}</span>
-            <div class="catalog-page-buttons">
-              <button
-                aria-label="Previous exchange page"
-                [disabled]="currentPage() === 1"
-                (click)="page.set(currentPage() - 1)"
-              >
-                ‹
-              </button>
-              @for (number of pageNumbers(); track number) {
+          @if (pageCount() > 1) {
+            <nav class="exchange-pagination" aria-label="Exchange pages">
+              <span class="muted">Page {{ currentPage() }} of {{ pageCount() }}</span>
+              <div class="catalog-page-buttons">
                 <button
-                  [attr.aria-label]="'Exchange page ' + number"
-                  [attr.aria-current]="currentPage() === number ? 'page' : null"
-                  (click)="page.set(number)"
+                  aria-label="Previous exchange page"
+                  [disabled]="currentPage() === 1"
+                  (click)="page.set(currentPage() - 1)"
                 >
-                  {{ number }}
+                  ‹
                 </button>
-              }
-              <button
-                aria-label="Next exchange page"
-                [disabled]="currentPage() === pageCount()"
-                (click)="page.set(currentPage() + 1)"
-              >
-                ›
-              </button>
-            </div>
-          </nav>
+                @for (number of pageNumbers(); track number) {
+                  <button
+                    [attr.aria-label]="'Exchange page ' + number"
+                    [attr.aria-current]="currentPage() === number ? 'page' : null"
+                    (click)="page.set(number)"
+                  >
+                    {{ number }}
+                  </button>
+                }
+                <button
+                  aria-label="Next exchange page"
+                  [disabled]="currentPage() === pageCount()"
+                  (click)="page.set(currentPage() + 1)"
+                >
+                  ›
+                </button>
+              </div>
+            </nav>
+          }
           <div class="exchange-list">
             @for (artifact of pageExchanges(); track artifact.id) {
               <button
@@ -134,7 +136,11 @@ import { JsonEvidence } from '../core/json-evidence';
                 }
               </button>
             } @empty {
-              <p class="empty">No recorded exchanges are available for this execution.</p>
+              <div class="exchange-empty-state" role="status">
+                <h3>No exchanges recorded</h3>
+                <p>{{ emptyMessage() }}</p>
+                <a [routerLink]="['/runs', run.id]">View run details</a>
+              </div>
             }
           </div>
         </section>
@@ -158,8 +164,16 @@ import { JsonEvidence } from '../core/json-evidence';
           } @else {
             <div class="exchange-empty">
               <span aria-hidden="true">↔</span>
-              <h3>Inspect an exchange</h3>
-              <p>Choose a request to view its headers, body, response, and timing.</p>
+              <h3>
+                {{ exchanges().length ? 'Inspect an exchange' : 'No request evidence available' }}
+              </h3>
+              <p>
+                {{
+                  exchanges().length
+                    ? 'Choose a request to view its headers, body, response, and timing.'
+                    : 'Request and response details appear here when evidence has been collected.'
+                }}
+              </p>
             </div>
           }
         </section>
@@ -182,6 +196,19 @@ export class ApiWorkspace {
   public readonly exchanges = computed(() =>
     (this.selectedRun()?.artifacts ?? []).filter((artifact) => artifact.name.startsWith('api-')),
   );
+  public readonly emptyMessage = computed(() => {
+    const run = this.selectedRun();
+    if (!run) {
+      return 'Choose an execution to inspect its evidence.';
+    }
+    if (['queued', 'provisioning', 'running', 'finalizing'].includes(run.phase)) {
+      return 'Evidence is collected after the tests finish. Refresh the execution to check progress.';
+    }
+    if (run.results?.some((result) => result.category === 'infrastructure')) {
+      return 'The execution reported an infrastructure problem. Check the run details for evidence collection errors.';
+    }
+    return 'This execution has no saved API exchanges. Open its details to review the results and report status.';
+  });
   public readonly pageCount = computed(() => Math.max(1, Math.ceil(this.exchanges().length / 10)));
   public readonly currentPage = computed(() => Math.min(this.page(), this.pageCount()));
   public readonly pageExchanges = computed(() =>
