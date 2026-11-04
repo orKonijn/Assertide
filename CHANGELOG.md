@@ -4,7 +4,11 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.2.2 — 2026-11-05
+
 ### Suite builder alignment
+
+- Published to main and deployed to [assertide.com](https://assertide.com). [Image publication 41935994892](https://github.com/orKonijn/Assertide/actions/runs/41935994892) passed builds, scans and signing. Verified signed web digest `sha256:a06f9eb362e2f91af45aa4827e421aa5919aa4a91d05c850899944b1b8b13697` against source `9db8ee34ac27a590aa1e8f2dc4313543459cab6d` before rollout. Live filter geometry and unchanged panel height after expansion passed after waiting for the native opening animation, alongside bulk selection, sign-in, mobile navigation and logout. The temporary verification identity was disabled. Broader Linux CI remains separate; no fully green infrastructure claim is made.
 
 - Aligned search and test-type controls to the same height and baseline. Expanding optional suite metadata no longer stretches the test-membership panel. Replaced the oversized disclosure focus box with a compact, keyboard-visible control.
 - Local quick verification, layout assertions, suite persistence/bulk-selection journeys and reporting/architecture checks passed. Captured actual [desktop](docs/changelog/assets/unreleased/suite-alignment-suite-1440.png), [mobile](docs/changelog/assets/unreleased/suite-alignment-suite-390.png) and [light-theme](docs/changelog/assets/unreleased/suite-alignment-light.png) views.
