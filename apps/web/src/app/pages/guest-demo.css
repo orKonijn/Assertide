@@ -19,14 +19,14 @@ main {
   padding: 28px 0;
 }
 h1 {
-  font-size: 34px;
+  font-size: 28px;
 }
 .notice,
 article,
 footer {
   padding: 20px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-panel);
   background: var(--surface);
   margin: 16px 0;
 }
@@ -63,7 +63,7 @@ pre {
 .sample-evidence {
   padding: 30px;
   border: 2px dashed var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-panel);
 }
 figure {
   margin: 0;
@@ -158,7 +158,7 @@ footer a {
   padding: 12px 16px;
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-panel);
   font-size: 12px;
 }
 .demo-banner a {
@@ -184,7 +184,7 @@ footer a {
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  background: conic-gradient(#0d9488 0 66.67%, var(--danger) 66.67% 100%);
+  background: conic-gradient(var(--success) 0 66.67%, var(--danger) 66.67% 100%);
   display: grid;
   place-items: center;
   margin: 28px auto;
@@ -254,5 +254,36 @@ footer a {
   }
   .demo-charts {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+#guest-content:focus {
+  outline: none;
+}
+.metrics {
+  gap: 0;
+  border-block: 1px solid var(--border);
+  background: var(--surface);
+}
+.metrics article {
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  background: transparent;
+}
+.metrics article + article {
+  border-left: 1px solid var(--border);
+}
+#demo-sidebar nav button.active {
+  box-shadow: inset 2px 0 var(--brand);
+}
+.demo-banner {
+  border-radius: var(--radius-control);
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .metrics article + article {
+    border-left: 0;
+    border-top: 1px solid var(--border);
   }
 }

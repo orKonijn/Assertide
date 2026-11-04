@@ -96,9 +96,9 @@ interface Analytics {
   template: `
     <header class="page-header">
       <div>
-        <p class="eyebrow">WORKSPACE OVERVIEW</p>
+        <p class="eyebrow">Project activity</p>
         <h1>Overview</h1>
-        <p class="muted">Your runs, results, and reliability in one place.</p>
+        <p class="muted">Review reliability, active runs, and results for this project.</p>
       </div>
       <a class="button" routerLink="/explorer">New execution</a>
     </header>

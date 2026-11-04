@@ -8,10 +8,10 @@
   width: min(100%, 940px);
   margin: auto;
   border: 1px solid var(--border);
-  border-radius: 24px;
+  border-radius: var(--radius-panel);
   background: var(--surface);
   overflow: hidden;
-  box-shadow: 0 20px 70px color-mix(in srgb, var(--text) 6%, transparent);
+  box-shadow: none;
 }
 .access-header {
   display: flex;
@@ -44,8 +44,8 @@
   min-width: 0;
 }
 .eyebrow {
-  font-size: 10px;
-  letter-spacing: 0.16em;
+  font-size: 12px;
+  letter-spacing: 0.04em;
   margin: 0 0 16px;
 }
 h1 {
@@ -133,7 +133,7 @@ p {
 }
 .preview-badge {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   padding: 5px 9px;
   border: 1px solid var(--border);
   border-radius: 20px;
@@ -160,7 +160,7 @@ p {
   font-size: 13px;
 }
 .preview-features li span {
-  font-size: 10px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--brand);
   border: 1px solid var(--border);
@@ -173,7 +173,7 @@ p {
   background: var(--surface);
 }
 .access-preview .preview-note {
-  font-size: 11px;
+  font-size: 12px;
   margin-top: 14px;
   line-height: 1.7;
 }
@@ -203,7 +203,7 @@ p {
 }
 .retry-actions button {
   padding: 8px 10px;
-  font-size: 11px;
+  font-size: 12px;
   background: transparent;
 }
 .availability {
@@ -233,7 +233,7 @@ p {
     align-items: start;
   }
   .access-shell {
-    border-radius: 18px;
+    border-radius: var(--radius-panel);
   }
   .access-header {
     padding: 16px 20px;
@@ -299,7 +299,7 @@ p {
 }
 .guest-button.access-primary {
   background: var(--brand);
-  color: var(--surface);
+  color: var(--on-brand);
   border-color: var(--brand);
   justify-content: center;
 }

@@ -9,9 +9,9 @@ import { Api, errorMessage } from '../core/api';
   imports: [RouterLink, FormsModule],
   template: `<header class="page-header">
       <div>
-        <p class="eyebrow">YOUR WORKSPACE</p>
+        <p class="eyebrow">Workspace</p>
         <h1>Projects</h1>
-        <p class="muted">Organize your testing work, suites, and execution history.</p>
+        <p class="muted">Choose a project to manage its tests and execution history.</p>
       </div>
     </header>
     @if (error()) {

@@ -25,7 +25,7 @@ interface ServiceAccount {
   imports: [DatePipe, FormsModule, Members, Environments, Operations],
   template: `<header class="page-header">
       <div>
-        <p class="eyebrow">WORKSPACE SETTINGS</p>
+        <p class="eyebrow">Workspace settings</p>
         <h1>Workspace settings</h1>
         <p class="muted">Manage access, execution policies, and workspace activity.</p>
       </div>

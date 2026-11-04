@@ -9,7 +9,7 @@ import { Api, errorMessage } from '../core/api';
   imports: [FormsModule],
   template: `<header class="page-header">
       <div>
-        <p class="eyebrow">REUSABLE SELECTIONS</p>
+        <p class="eyebrow">Saved selections</p>
         <h1>Test suites</h1>
         <p class="muted">Save named groups of catalog tests.</p>
       </div>

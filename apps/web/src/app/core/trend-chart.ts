@@ -10,11 +10,11 @@ import {
   viewChild,
 } from '@angular/core';
 import { LineChart } from 'echarts/charts';
-import { GridComponent, TooltipComponent } from 'echarts/components';
+import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
 import { type EChartsType, init, use } from 'echarts/core';
 import { SVGRenderer } from 'echarts/renderers';
 
-use([LineChart, GridComponent, TooltipComponent, SVGRenderer]);
+use([LineChart, GridComponent, LegendComponent, TooltipComponent, SVGRenderer]);
 @Component({
   selector: 'app-trend-chart',
   styles: [':host { display: block; min-width: 0; overflow: hidden; }'],
@@ -67,9 +67,19 @@ export class TrendChart {
     const color = styles.getPropertyValue('--text').trim() || '#64748b';
     const surface = styles.getPropertyValue('--surface').trim();
     const border = styles.getPropertyValue('--border').trim();
+    const primary = styles.getPropertyValue('--chart-primary').trim();
+    const comparison = styles.getPropertyValue('--chart-comparison').trim();
     this.chart?.setOption({
       animation: false,
-      grid: { left: 48, right: 20, top: 20, bottom: 35 },
+      grid: { left: 48, right: 20, top: 48, bottom: 35 },
+      legend: {
+        selectedMode: false,
+        top: 0,
+        left: 0,
+        itemWidth: 18,
+        itemHeight: 8,
+        textStyle: { color, fontSize: 12 },
+      },
       tooltip: {
         trigger: 'axis',
         confine: true,
@@ -89,7 +99,7 @@ export class TrendChart {
         min: 0,
         max: 100,
         axisLabel: { formatter: '{value}%', color },
-        splitLine: { lineStyle: { color: '#94a3b833' } },
+        splitLine: { lineStyle: { color: border } },
       },
       series: [
         {
@@ -100,8 +110,8 @@ export class TrendChart {
           ),
           connectNulls: false,
           symbolSize: 8,
-          lineStyle: { color: '#8b7cf8', width: 3 },
-          itemStyle: { color: '#8b7cf8' },
+          lineStyle: { color: primary, width: 3 },
+          itemStyle: { color: primary },
         },
         {
           type: 'line',
@@ -114,8 +124,8 @@ export class TrendChart {
           connectNulls: false,
           symbol: 'diamond',
           symbolSize: 8,
-          lineStyle: { color: '#0d9488', width: 2, type: 'dashed' },
-          itemStyle: { color: '#0d9488' },
+          lineStyle: { color: comparison, width: 2, type: 'dashed' },
+          itemStyle: { color: comparison },
         },
       ],
     });

@@ -53,7 +53,7 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
     </dialog>
     <header class="page-header run-heading">
       <div>
-        <p class="eyebrow">EXECUTION DETAIL</p>
+        <p class="eyebrow">Execution detail</p>
         <h1>Run {{ id.slice(0, 8) }}</h1>
         <a routerLink="/runs">Back to executions</a>
       </div>

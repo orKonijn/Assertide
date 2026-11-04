@@ -4,6 +4,14 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Visual system refinement
+
+- Refined both themes with graphite working surfaces, softer light backgrounds, indigo actions, stronger input boundaries, and shared status/chart colors. Larger supporting labels, calmer panel framing, readable table headers, and consistent focus/selection states make operational screens easier to scan.
+- Added a pass-rate chart legend while retaining distinct line patterns and the exact-value table. Simplified guest metrics into one summary band, removed decorative button movement, and reduced nested settings form framing. Routes, calculations, permissions and demo-data boundaries are unchanged.
+- Verified locally with quick checks and focused browser coverage of accessibility, navigation, catalog sorting/selection/pagination, guest behavior and welcome states. No product release version is assigned; publication and deployment evidence is recorded separately. See the [visual system and verification limits](docs/visual-system.md).
+
+Comparable running-application screenshots: explorer desktop [before](docs/changelog/assets/unreleased/design-explorer-desktop-before.png) / [after](docs/changelog/assets/unreleased/design-explorer-desktop-after.png); explorer mobile [before](docs/changelog/assets/unreleased/design-explorer-mobile-before.png) / [after](docs/changelog/assets/unreleased/design-explorer-mobile-after.png); light guest overview [before](docs/changelog/assets/unreleased/design-demo-light-before.png) / [after](docs/changelog/assets/unreleased/design-demo-light-after.png).
+
 ### Public project introduction
 
 - Added July–November 2026 freelance experience to About the Creator, listing Elevation Aquaculture, Global Expansion Solutions and Merkazim.info as companies Or Konijn has supported. The list does not claim company endorsement or use of Assertide. Desktop/mobile layouts and both themes passed local and live browser/accessibility checks. Published to main and deployed to the pilot on 2026-11-01; no product version was assigned. [Desktop capture](docs/changelog/assets/unreleased/creator-freelance-1440.png) · [Mobile capture](docs/changelog/assets/unreleased/creator-freelance-390.png) · [Deployment evidence](docs/guest-pilot-deployment.md#creator-freelance-experience--2026-11-01).

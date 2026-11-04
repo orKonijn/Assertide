@@ -89,7 +89,7 @@ const sampleCases = [
         <main id="guest-content" tabindex="-1">
           <header class="page-header">
             <div>
-              <p class="eyebrow">MEADOW SHOP · SYNTHETIC SAMPLE</p>
+              <p class="eyebrow">Meadow Shop · Synthetic sample</p>
               <h1>{{ section() }}</h1>
             </div>
           </header>

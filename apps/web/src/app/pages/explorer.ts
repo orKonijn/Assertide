@@ -12,7 +12,7 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
     <header class="page-header explorer-heading">
       <div>
         <p class="eyebrow">
-          TEST CATALOG
+          Test catalog
           <span class="catalog-revision">{{ revision().slice(0, 12) || 'Loading revision' }}</span>
         </p>
         <h1>Test explorer</h1>

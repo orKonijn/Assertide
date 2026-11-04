@@ -23,7 +23,7 @@ import { JsonEvidence } from '../core/json-evidence';
   ],
   template: `<header class="page-header">
       <div>
-        <p class="eyebrow">REQUEST AND RESPONSE EVIDENCE</p>
+        <p class="eyebrow">API evidence</p>
         <h1>API workspace</h1>
         <p class="muted">Investigate recorded contract checks against the controlled Lab.</p>
       </div>

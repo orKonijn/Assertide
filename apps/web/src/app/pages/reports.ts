@@ -9,7 +9,7 @@ import { Api, errorMessage } from '../core/api';
   imports: [RouterLink, DatePipe],
   template: `<header class="page-header">
       <div>
-        <p class="eyebrow">EXECUTION EVIDENCE</p>
+        <p class="eyebrow">Execution evidence</p>
         <h1>Reports</h1>
         <p class="muted">Report generation is independent of test outcomes.</p>
       </div>
