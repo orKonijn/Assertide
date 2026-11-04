@@ -4,6 +4,16 @@ The latest application is live at [https://assertide.com](https://assertide.com)
 
 ## Build and rollout
 
+### Visual system refinement — 2026-11-04
+
+Source `18cdb25fee12b507a8cf4b3b91df350087846b38` is on main and deployed. The visual refinement includes the shared graphite/indigo themes, clearer tables and controls, chart legends, and responsive layout adjustments documented in the [visual system](visual-system.md).
+
+The first publication attempt was blocked by three fixable high-severity libexpat findings in the web base image. The runtime now installs at least libexpat 2.10.0-r0 and returns to user 101. The [replacement publication workflow](https://github.com/orKonijn/Assertide/actions/runs/41844876167) passed build, non-root startup, SPA health and vulnerability checks. Signed provenance was verified against the exact source before deployment.
+
+Deployed web image: `ghcr.io/orkonijn/assertide-web@sha256:ba69aa0646466575b7eba5081a6f61aa989f8b4668b01a5d130d083b45dbedc6`. Kubernetes confirmed rollout success. The previous web image was retained for rollback; backend images, databases and workers were unchanged.
+
+Live checks passed at 390px and 1440px in both themes: welcome, guest overview/chart labels, test explorer, executions, API examples, reports and public About; no horizontal page overflow or automated WCAG violations were reported in these states. Anonymous protected project access still returned 401. Local quick verification and 15 focused browser tests passed before publication. [Broader Linux verification](https://github.com/orKonijn/Assertide/actions/runs/41844874380) was still running at deployment time and is not claimed as passing. No product release version or data migration was introduced.
+
 ### Creator freelance experience — 2026-11-01
 
 Source `ed2eb1ec3810f772c45ad2f52ee1450993bb5fbe` is on main and deployed. About the Creator now lists July–November 2026 freelance experience and the three owner-provided companies: Elevation Aquaculture, Global Expansion Solutions and Merkazim.info.
