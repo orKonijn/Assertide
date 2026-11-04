@@ -4,11 +4,13 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.2.1 — 2026-11-05
+
 ### Editor dialog refinement
 
 - Reorganized test metadata into descriptive fields and execution behavior, with supporting text and one Save/Cancel footer. Suite creation now separates suite details from searchable test membership in two desktop columns, stacking on mobile.
 - Standardized dialog headers and compact close controls. Existing selection, save, Escape dismissal and authorization behavior are preserved.
-- Actual running screenshots: [suite desktop](docs/changelog/assets/unreleased/editor-refresh-suite-1440.png), [suite mobile](docs/changelog/assets/unreleased/editor-refresh-suite-390.png), [metadata editor](docs/changelog/assets/unreleased/editor-refresh-edit.png), [light mode](docs/changelog/assets/unreleased/editor-refresh-light.png). Local quick verification and focused suite/dialog browser checks passed. This refinement is unpublished; its release number will be assigned when publication is requested and verified.
+- Actual running screenshots: [suite desktop](docs/changelog/assets/unreleased/editor-refresh-suite-1440.png), [suite mobile](docs/changelog/assets/unreleased/editor-refresh-suite-390.png), [metadata editor](docs/changelog/assets/unreleased/editor-refresh-edit.png), [light mode](docs/changelog/assets/unreleased/editor-refresh-light.png). Local quick verification and focused suite/dialog browser checks passed. Published to main and deployed to [assertide.com](https://assertide.com) after [image publication 41934538576](https://github.com/orKonijn/Assertide/actions/runs/41934538576) passed builds, scans and signing. Exact source `5d81076b2cb6ddd64330904199d33b2e3906af40`; deployed web digest `sha256:6ec0b4468e15d073c9e6cfec7b79e4b18684271776388e3d52f8146eb75a0675`. Live suite bulk selection, both dialog layouts, sign-in, mobile layout, About navigation and logout passed. The temporary verification identity was disabled afterward. Broader Linux CI remains separate and is not claimed fully green.
 
 ## 0.2.0 — 2026-11-05
 
