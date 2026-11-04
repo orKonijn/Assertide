@@ -24,4 +24,12 @@ Verified on a separate, loopback-only Keycloak 26.8.1 instance matching the prod
 - [Desktop before](changelog/assets/unreleased/login-provider-before-1440.png) / [after](changelog/assets/unreleased/login-provider-after-1440.png)
 - [Mobile before](changelog/assets/unreleased/login-provider-before-390.png) / [after](changelog/assets/unreleased/login-provider-after-390.png)
 
-Only empty forms are retained as public screenshots. Credentials, sessions and local provider data remain in ignored storage. Local quick verification and the realm-bootstrap tests are required; container building/scanning remains the Linux publication gate. This theme has not yet been published or activated on the live realm.
+Only empty forms are retained as public screenshots. Credentials, sessions and local provider data remain in ignored storage. Local quick verification and all three realm-bootstrap tests passed. Container building/scanning passed in the publication workflow below.
+
+## Pilot deployment
+
+Activated at [assertide.com](https://assertide.com) on 2026-11-04. Source commit `5c53f3a3cdd46cf82cbe143511a2a9c71cc034b0` is on main. [Image publication 41848769425](https://github.com/orKonijn/Assertide/actions/runs/41848769425) passed builds, smoke tests, vulnerability scans and signed provenance publication. The deployed identity digest is `sha256:8ef354f880069533dda3f7223a8e9c941d4b3711facaa8041508e1853a98ad96`; signed provenance was checked against that exact source and the hosted publication workflow before rollout.
+
+The identity StatefulSet became ready and the existing realm now uses `assertide`. Previous image and theme settings remain in private rollback storage. No user credentials, memberships or authentication policies changed. Fresh live sign-in pages passed theme, overflow, keyboard-focus and automated WCAG A/AA checks at 390px and 1440px. Actual authenticated sign-in was verified locally as described above; the production owner's account was not used to sign in or reset during deployment.
+
+The broader [Verify run 41848744011](https://github.com/orKonijn/Assertide/actions/runs/41848744011) was **not green**: the application browser suite failed two About-page assertions (old creator heading and anonymous access expectations) and an onboarding-completion assertion. Its Kubernetes stage repeated the two About failures. Those files are unchanged by this theme commit. This deployment does not claim a fully passing application/infrastructure suite.

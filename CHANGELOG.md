@@ -6,7 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Assertide sign-in styling
 
-- Added an Assertide theme for the separate production sign-in provider: the existing logo, dark graphite surfaces, indigo sign-in button, accessible focus and responsive form layout replace its default polygon background. Authentication remains provider-managed. The theme is packaged in the identity image and selected for new pilot realms; existing realms require the [documented activation step](docs/login-theme.md). Not yet published or activated on the pilot.
+- Added an Assertide theme for the separate production sign-in provider: the existing logo, dark graphite surfaces, indigo sign-in button, accessible focus and responsive form layout replace its default polygon background. Authentication remains provider-managed. The theme is packaged in the identity image and selected for new pilot realms; existing realms require the [documented activation step](docs/login-theme.md). Published to main and activated on the pilot on 2026-11-04 after scanned, signed image verification; see the [deployment evidence and CI limitations](docs/login-theme.md#pilot-deployment).
 - Verified the actual provider form locally at mobile, tablet and desktop widths, including invalid and valid sign-in, password visibility, keyboard focus and initial-form automated accessibility checks. [Desktop before/after and mobile evidence](docs/login-theme.md#local-evidence).
 
 ### Visual system refinement
