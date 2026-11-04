@@ -38,6 +38,10 @@ COPY apps/web ./
 RUN npm run build
 
 FROM ghcr.io/nginx/nginx-unprivileged:1.30.6-alpine AS web
+USER root
+# Apply the available XML parser security fixes until the base image includes them.
+RUN apk add --no-cache 'libexpat>=2.10.0-r0'
+USER 101
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=web-build /build/dist/assertide-web/browser /usr/share/nginx/html
 EXPOSE 8080

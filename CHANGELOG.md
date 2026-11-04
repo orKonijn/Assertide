@@ -6,6 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Visual system refinement
 
+- Updated the web container's libexpat runtime to at least 2.10.0-r0 after publication scanning identified three fixable high-severity findings in the base image. The container continues to run as a non-root user; no data migration is required.
 - Refined both themes with graphite working surfaces, softer light backgrounds, indigo actions, stronger input boundaries, and shared status/chart colors. Larger supporting labels, calmer panel framing, readable table headers, and consistent focus/selection states make operational screens easier to scan.
 - Added a pass-rate chart legend while retaining distinct line patterns and the exact-value table. Simplified guest metrics into one summary band, removed decorative button movement, and reduced nested settings form framing. Routes, calculations, permissions and demo-data boundaries are unchanged.
 - Verified locally with quick checks and focused browser coverage of accessibility, navigation, catalog sorting/selection/pagination, guest behavior and welcome states. No product release version is assigned; publication and deployment evidence is recorded separately. See the [visual system and verification limits](docs/visual-system.md).
