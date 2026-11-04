@@ -4,8 +4,11 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.2.0 — 2026-11-05
+
 ### Workspace dialogs and navigation
 
+- Published to main and deployed to [assertide.com](https://assertide.com). [Image publication and signed builds](https://github.com/orKonijn/Assertide/actions/runs/41932893642) passed. Live suite bulk selection, metadata dialogs, About navigation, sign-in, mobile layout and logout passed. The storage-provider cap remains an external limitation for loading saved API evidence; the new contextual error state does not remove that cap. Broader Linux CI is separate from these checks.
 - Added suite-builder dialogs with search, type filters and selection across matching tests. Test metadata editing now opens in a dialog with keyboard and outside-click dismissal.
 - Fixed About section controls and added a contextual retry state when API exchange evidence cannot load. Softened the light palette.
 - Verified local quick checks, suite membership persistence, bulk selection, keyboard dismissal and About section focus. Actual running captures: [suite desktop](docs/changelog/assets/unreleased/workspace-dialog-suite-1440.png), [suite mobile](docs/changelog/assets/unreleased/workspace-dialog-suite-390.png), [test editor](docs/changelog/assets/unreleased/workspace-dialog-edit.png), [softened light mode](docs/changelog/assets/unreleased/workspace-dialog-light.png).
