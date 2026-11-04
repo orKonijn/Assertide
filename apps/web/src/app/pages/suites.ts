@@ -125,7 +125,7 @@ import { Modal } from '../core/modal';
           (click)="editorOpen.set(false)"
           aria-label="Close suite builder"
         >
-          �
+          &times;
         </button>
         <form class="suite-editor" (ngSubmit)="save()">
           <div class="suite-editor-heading">

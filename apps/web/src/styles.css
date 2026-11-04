@@ -4796,7 +4796,7 @@ textarea::placeholder {
   }
 }
 
-.workspace-modal .suite-test-kind {
+.workspace-modal .selection-list > .suite-test-kind {
   display: grid;
   gap: 8px;
 }
