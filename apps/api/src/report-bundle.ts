@@ -59,8 +59,10 @@ export async function buildReportBundles(
           : 'Trace and video evidence are excluded from this archive; download them separately while retained.',
       }),
     );
+    // Stored ZIP entries avoid one compression worker per large attachment.
+    // Screenshots, traces and videos are already compressed; preserve their bytes.
     const bytes = await new Promise<Uint8Array>((resolve, reject) =>
-      zip(entries, { level: 1 }, (error, data) => (error ? reject(error) : resolve(data))),
+      zip(entries, { level: 0 }, (error, data) => (error ? reject(error) : resolve(data))),
     );
     const filename = path.join(root, name);
     await writeFile(filename, bytes);

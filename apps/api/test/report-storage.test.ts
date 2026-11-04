@@ -58,7 +58,9 @@ await test('immutable report builds publish complete manifests and expire withou
     }
     const bundle = async (name: string): Promise<Buffer<ArrayBuffer>> =>
       objectStore ? objectStore.get(manifest.files![name]!) : readFile(path.join(target, name));
-    const full = unzipSync(await bundle(mediaBundleName));
+    const archive = await bundle(mediaBundleName);
+    assert.equal(archive.readUInt16LE(8), 0, 'ZIP entries use storage without compression workers');
+    const full = unzipSync(archive);
     const reduced = unzipSync(await bundle(reportBundleName));
     assert.ok(full['trace.zip']);
     assert.ok(full['video.webm']);

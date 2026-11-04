@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Evidence collection and workspace guide
 
+- Store ZIP export entries without per-attachment compression workers to prevent large evidence collections from starving report-worker health checks. Archive contents and retention are unchanged; text-heavy downloads may be larger.
+
 - Raised the report worker memory ceiling from 2 GiB to 4 GiB after a retained-evidence report exhausted its previous limit. Check node capacity before applying the deployment manifest.
 
 - Keep binary test attachments in files instead of embedding them in checkpoint and JSON summaries, preventing large suites from exceeding the worker transfer limit. Missing terminal evidence and transfer failures now produce an infrastructure error rather than a completed run with synthetic test failures. Raw report evidence uploads and restores use bounded batches of eight files while retaining integrity and retention checks.

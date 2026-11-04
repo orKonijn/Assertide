@@ -10,6 +10,8 @@ On 2026-11-05, a guarded one-run recovery verified all 127 result IDs and all re
 
 The recovered report subsequently exhausted its 2 GiB worker limit during Allure generation (the pod recorded `OOMKilled`). The report deployment now allows 4 GiB; API and execution limits remain unchanged. Operators must reserve sufficient node capacity before applying this setting. The pilot had more than 8 GiB available before rollout.
 
+The first rebuilt report exposed a second packaging problem: parallel ZIP compression started a worker per large attachment and starved health/lease processing. ZIP exports now use standard stored entries instead of recompressing screenshots and traces. Exports remain ordinary ZIP files with unchanged contents and retention rules, but may be larger for text-heavy reports. The existing 256 MiB input cap remains.
+
 ## Implementation and rollout
 
 - Binary attachments become private files before checkpoint and JSON reporting.
