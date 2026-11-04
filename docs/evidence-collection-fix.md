@@ -8,6 +8,8 @@ The checkpoint reporter embedded binary attachments in both checkpoint and JSON 
 
 On 2026-11-05, a guarded one-run recovery verified all 127 result IDs and all referenced attachments, backed up the original run privately, and restored the recorded outcomes. Analytics now contain 127 eligible, final-passed and first-attempt-passed results. Recovery also restored 1,392 attachments including 556 API exchanges. No tests were rerun and no outcomes were inferred solely from console text. Raw evidence archiving completed; report generation is tracked separately from these recovered test outcomes.
 
+The recovered report subsequently exhausted its 2 GiB worker limit during Allure generation (the pod recorded `OOMKilled`). The report deployment now allows 4 GiB; API and execution limits remain unchanged. Operators must reserve sufficient node capacity before applying this setting. The pilot had more than 8 GiB available before rollout.
+
 ## Implementation and rollout
 
 - Binary attachments become private files before checkpoint and JSON reporting.

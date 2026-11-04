@@ -31,6 +31,9 @@ test('deployment renders separate origins, scoped identity, probes and immutable
       item.metadata.name === 'assertide-execution',
     );
     assert.match(pod.containers[0].image, /@sha256:/);
+    if (item.metadata.name === 'assertide-report') {
+      assert.equal(pod.containers[0].resources.limits.memory, '4Gi');
+    }
   }
   const binding = result.items.find((item) => item.kind === 'RoleBinding');
   const client = JSON.parse(

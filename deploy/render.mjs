@@ -196,7 +196,7 @@ export function deployment(config) {
         requests: { cpu: '100m', memory: web ? '64Mi' : '512Mi' },
         limits: {
           cpu: '2',
-          memory: web ? '256Mi' : '2Gi',
+          memory: web ? '256Mi' : role === 'report' ? '4Gi' : '2Gi',
           'ephemeral-storage': '10Gi',
         },
       },

@@ -6,6 +6,8 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ### Evidence collection and workspace guide
 
+- Raised the report worker memory ceiling from 2 GiB to 4 GiB after a retained-evidence report exhausted its previous limit. Check node capacity before applying the deployment manifest.
+
 - Keep binary test attachments in files instead of embedding them in checkpoint and JSON summaries, preventing large suites from exceeding the worker transfer limit. Missing terminal evidence and transfer failures now produce an infrastructure error rather than a completed run with synthetic test failures. Raw report evidence uploads and restores use bounded batches of eight files while retaining integrity and retention checks.
 - Moved Getting started into the sidebar and replaced the empty-workspace introduction with four actionable workflow steps. Fixed Clear selection placement in Test explorer and clarified API workspace empty states, with pagination hidden when unnecessary.
 - Local quick verification, focused browser journeys, reporting and architecture checks passed. These code changes are not yet published; service and immutable worker images must be updated together. No product version or database migration is introduced. See [verification, recovery and screenshots](docs/evidence-collection-fix.md).
