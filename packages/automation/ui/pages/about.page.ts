@@ -29,7 +29,7 @@ export class AboutPage {
     await this.link.click();
   }
   public async openInside(): Promise<void> {
-    await this.page.getByRole('link', { name: S.inside, exact: true }).click();
+    await this.page.getByRole('button', { name: S.inside, exact: true }).click();
   }
   public async expandArchitecture(): Promise<void> {
     await this.page.getByText(S.architecture, { exact: true }).click();

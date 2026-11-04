@@ -5,9 +5,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import type { Environment, TestCase } from '../core/api';
 import { Api, errorMessage } from '../core/api';
 import { LoadingState } from '../core/loading-state';
+import { Modal } from '../core/modal';
 import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft';
 @Component({
-  imports: [FormsModule, LoadingState],
+  imports: [FormsModule, LoadingState, Modal],
   template: `
     <header class="page-header explorer-heading">
       <div>
@@ -39,7 +40,12 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
       <p class="error" role="alert">{{ error() }} <button (click)="load()">Retry</button></p>
     }
     @if (editing(); as test) {
-      <section class="card">
+      <dialog
+        appModal
+        class="workspace-modal"
+        aria-label="Edit test metadata"
+        (dismissed)="editing.set(null)"
+      >
         <h2>Edit {{ test.id }} metadata</h2>
         <form (ngSubmit)="saveMetadata()" class="toolbar">
           <label
@@ -66,7 +72,7 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
           <button [disabled]="saving()">Save test metadata</button
           ><button type="button" (click)="editing.set(null)">Cancel metadata edit</button>
         </form>
-      </section>
+      </dialog>
     }
     <div class="split">
       <section class="card explorer-catalog">

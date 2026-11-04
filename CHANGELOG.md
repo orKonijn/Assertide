@@ -4,6 +4,15 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Workspace dialogs and navigation
+
+- Added suite-builder dialogs with search, type filters and selection across matching tests. Test metadata editing now opens in a dialog with keyboard and outside-click dismissal.
+- Fixed About section controls and added a contextual retry state when API exchange evidence cannot load. Softened the light palette.
+- Verified local quick checks, suite membership persistence, bulk selection, keyboard dismissal and About section focus. Actual running captures: [suite desktop](docs/changelog/assets/unreleased/workspace-dialog-suite-1440.png), [suite mobile](docs/changelog/assets/unreleased/workspace-dialog-suite-390.png), [test editor](docs/changelog/assets/unreleased/workspace-dialog-edit.png), [softened light mode](docs/changelog/assets/unreleased/workspace-dialog-light.png).
+- Established [pre-1.0 product numbering](docs/versioning.md), with retrospective identifiers for verified recent publications and preserved earlier historical records.
+
+## 0.1.2 — 2026-11-05
+
 ### Evidence collection and workspace guide
 
 - Store ZIP export entries without per-attachment compression workers to prevent large evidence collections from starving report-worker health checks. Archive contents and retention are unchanged; text-heavy downloads may be larger.
@@ -14,10 +23,14 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - Moved Getting started into the sidebar and replaced the empty-workspace introduction with four actionable workflow steps. Fixed Clear selection placement in Test explorer and clarified API workspace empty states, with pagination hidden when unnecessary.
 - Local quick verification, focused browser journeys, reporting and architecture checks passed. Published to main and deployed to the pilot on 2026-11-05 with matching service, web and worker images. Live sign-in, mobile guide and controlled API/browser execution passed; report verification remains blocked by the storage provider download/transaction cap. No product version or database migration is introduced. See [verification, recovery and screenshots](docs/evidence-collection-fix.md).
 
+## 0.1.1 — 2026-11-04
+
 ### Assertide sign-in styling
 
 - Added an Assertide theme for the separate production sign-in provider: the existing logo, dark graphite surfaces, indigo sign-in button, accessible focus and responsive form layout replace its default polygon background. Authentication remains provider-managed. The theme is packaged in the identity image and selected for new pilot realms; existing realms require the [documented activation step](docs/login-theme.md). Published to main and activated on the pilot on 2026-11-04 after scanned, signed image verification; see the [deployment evidence and CI limitations](docs/login-theme.md#pilot-deployment).
 - Verified the actual provider form locally at mobile, tablet and desktop widths, including invalid and valid sign-in, password visibility, keyboard focus and initial-form automated accessibility checks. [Desktop before/after and mobile evidence](docs/login-theme.md#local-evidence).
+
+## 0.1.0 — 2026-11-04
 
 ### Visual system refinement
 
@@ -27,6 +40,10 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 - Verified locally with quick checks and focused browser coverage of accessibility, navigation, catalog sorting/selection/pagination, guest behavior and welcome states. Published to main and deployed to the pilot on 2026-11-04. Live mobile/desktop and both-theme checks passed. No product release version is assigned; see [deployment evidence](docs/guest-pilot-deployment.md#visual-system-refinement--2026-11-04). See the [visual system and verification limits](docs/visual-system.md).
 
 Comparable running-application screenshots: explorer desktop [before](docs/changelog/assets/unreleased/design-explorer-desktop-before.png) / [after](docs/changelog/assets/unreleased/design-explorer-desktop-after.png); explorer mobile [before](docs/changelog/assets/unreleased/design-explorer-mobile-before.png) / [after](docs/changelog/assets/unreleased/design-explorer-mobile-after.png); light guest overview [before](docs/changelog/assets/unreleased/design-demo-light-before.png) / [after](docs/changelog/assets/unreleased/design-demo-light-after.png).
+
+## Historical publications and development records
+
+Earlier entries retain their original evidence and dates. They predate the product version policy; no unverified release boundaries are assigned.
 
 ### Public project introduction
 

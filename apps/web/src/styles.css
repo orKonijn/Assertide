@@ -6,9 +6,9 @@
 :root {
   font-family: Inter, 'Segoe UI', system-ui, sans-serif;
   color-scheme: light;
-  --canvas: #e8eae9;
-  --surface: #f5f6f3;
-  --soft: #dfe4e2;
+  --canvas: #d5dad8;
+  --surface: #e3e7e2;
+  --soft: #cbd3cf;
   --text: #202b30;
   --muted: #526169;
   --border: #bdc8c8;
@@ -4753,4 +4753,50 @@ textarea::placeholder {
   .api-workspace-layout .exchange-inspector {
     padding: 20px;
   }
+}
+
+.workspace-modal {
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  padding: 28px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.workspace-modal::backdrop {
+  background: #080e18b3;
+  backdrop-filter: blur(4px);
+}
+.workspace-modal .suite-editor {
+  position: static;
+  width: auto;
+  max-height: none;
+  overflow: visible;
+}
+.workspace-modal .toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.modal-close {
+  float: right;
+  font-size: 24px;
+}
+.suite-layout {
+  display: block;
+}
+@media (max-width: 600px) {
+  .workspace-modal {
+    padding: 20px;
+  }
+  .workspace-modal .toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.workspace-modal .suite-test-kind {
+  display: grid;
+  gap: 8px;
 }

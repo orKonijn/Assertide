@@ -1,13 +1,12 @@
 import { DOCUMENT } from '@angular/common';
 import { afterNextRender, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { RouterLink } from '@angular/router';
 
 import { creator, lifecycle } from './about-content';
 import { ArchitectureMap } from './architecture-map';
 
 @Component({
-  imports: [RouterLink, ArchitectureMap],
+  imports: [ArchitectureMap],
   host: { class: 'about-page' },
   styleUrl: './about.css',
   template: `
@@ -22,8 +21,8 @@ import { ArchitectureMap } from './architecture-map';
       </div>
     </header>
     <nav class="about-nav" aria-label="About sections">
-      <a routerLink="/about" fragment="creator" (click)="jump('creator')">About the Creator</a>
-      <a routerLink="/about" fragment="inside" (click)="jump('inside')">Inside Assertide</a>
+      <button type="button" (click)="jump('creator')">About the Creator</button>
+      <button type="button" (click)="jump('inside')">Inside Assertide</button>
     </nav>
     <section id="creator" class="card creator-card" aria-labelledby="creator-title">
       <div class="creator-intro">

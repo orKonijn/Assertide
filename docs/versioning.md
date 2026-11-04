@@ -1,0 +1,5 @@
+# Product version policy
+
+Assertide uses pre-1.0 semantic product versions beginning with this changelog reconciliation. Minor versions add compatible user workflows; patch versions fix existing behavior. Breaking integration changes before 1.0 require a minor version and explicit migration notes. Assign a version only to a verified publication. Internal npm packages remain private build packages; their existing 0.0.0 versions are not product release identifiers.
+
+The 2026-11-04 and 2026-11-05 publications receive retrospective identifiers 0.1.0 (visual system), 0.1.1 (provider sign-in theme), and 0.1.2 (evidence recovery/workspace guide). These identifiers were assigned retrospectively; original deployment dates and evidence remain authoritative. Earlier implementation entries without a complete release boundary remain historical unversioned records rather than invented releases. Each future publication gets its own version and date; development remains under Unreleased until publication is verified.

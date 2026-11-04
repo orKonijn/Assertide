@@ -14,6 +14,14 @@ test.describe('Saved suites', () => {
     await new NavigationComponent(page).selectProject(isolatedProject.name);
     await suites.goto();
   });
+  test('suite dialog selects matching types across pages and dismisses with Escape', async ({
+    page,
+  }) => {
+    await suites.createWithType('api');
+    await expect(suites.dialog()).toContainText('65 selected');
+    await page.keyboard.press('Escape');
+    await expect(suites.dialog()).not.toBeVisible();
+  });
   test('metadata and membership survive editing and reload', async ({ page }) => {
     const name = uniqueName('Regression');
     await suites.fillDetails({

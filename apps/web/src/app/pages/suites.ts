@@ -4,15 +4,19 @@ import { Router } from '@angular/router';
 
 import type { Suite, TestCase } from '../core/api';
 import { Api, errorMessage } from '../core/api';
+import { Modal } from '../core/modal';
 @Component({
   host: { class: 'suites-page' },
-  imports: [FormsModule],
+  imports: [FormsModule, Modal],
   template: `<header class="page-header">
       <div>
         <p class="eyebrow">Saved selections</p>
         <h1>Test suites</h1>
         <p class="muted">Save named groups of catalog tests.</p>
       </div>
+      @if (canEdit()) {
+        <button class="primary" (click)="reset(); editorOpen.set(true)">Create suite</button>
+      }
     </header>
     @if (error()) {
       <p role="alert" class="error">{{ error() }}</p>
@@ -107,99 +111,132 @@ import { Api, errorMessage } from '../core/api';
           }
         </div>
       </section>
-      <form class="card suite-editor" (ngSubmit)="save()">
-        <div class="suite-editor-heading">
-          <p class="eyebrow">SUITE BUILDER</p>
-          <h2>{{ editing() ? 'Edit suite' : 'Create suite' }}</h2>
-          <p class="muted">Name your suite and choose its tests.</p>
-        </div>
-        @if (editing()) {
-          <button type="button" (click)="reset()">Cancel editing</button>
-        }
-        <label>Name<input name="name" [(ngModel)]="name" required maxlength="120" /></label
-        ><label
-          >Description<textarea
-            name="description"
-            [(ngModel)]="description"
-            maxlength="2000"
-          ></textarea>
-        </label>
-        <details class="suite-options">
-          <summary>Owner, priority & tags</summary>
-          <label>Owner<input name="owner" [(ngModel)]="owner" maxlength="120" /></label>
-          <label
-            >Suite priority<select name="priority" [(ngModel)]="priority">
-              <option>P0</option>
-              <option>P1</option>
-              <option>P2</option>
-            </select></label
-          >
-          <label
-            >Tags (comma separated)<input name="tags" [(ngModel)]="tags" maxlength="1000"
-          /></label>
-        </details>
-        <fieldset class="selection-list">
-          <legend>
-            Tests <span class="muted">{{ selected().length }} selected</span>
-          </legend>
-          <label class="suite-test-search"
-            >Search tests<input
-              type="search"
-              name="testSearch"
-              [ngModel]="testQuery()"
-              (ngModelChange)="testQuery.set($event); testPage.set(1)"
-              placeholder="Case ID or title"
-          /></label>
-          @for (test of pageTests(); track test.id) {
-            <label
-              ><input
-                type="checkbox"
-                [checked]="selected().includes(test.id)"
-                [disabled]="!test.enabled && !selected().includes(test.id)"
-                (change)="toggle(test.id)"
-              />
-              <span
-                ><strong>{{ test.id }}</strong
-                ><span>{{ test.title }}</span></span
-              ></label
-            >
-          }
-          @if (!filteredTests().length) {
-            <p class="muted">No matching tests.</p>
-          }
-          <nav class="suite-test-pages" aria-label="Suite membership pages">
-            <button
-              type="button"
-              aria-label="Previous tests"
-              [disabled]="currentTestPage() === 1"
-              (click)="testPage.set(currentTestPage() - 1)"
-            >
-              ‹
-            </button>
-            <span>{{ currentTestPage() }} / {{ testPageCount() }}</span>
-            <button
-              type="button"
-              aria-label="Next tests"
-              [disabled]="currentTestPage() === testPageCount()"
-              (click)="testPage.set(currentTestPage() + 1)"
-            >
-              ›
-            </button>
-          </nav>
-        </fieldset>
+    </div>
+    @if (editorOpen()) {
+      <dialog
+        appModal
+        class="workspace-modal"
+        aria-label="Suite builder"
+        (dismissed)="editorOpen.set(false)"
+      >
         <button
-          class="primary"
-          type="submit"
-          [disabled]="
-            busy() ||
-            !name.trim() ||
-            !['administrator', 'maintainer'].includes(api.identity()?.role ?? '')
-          "
+          class="modal-close"
+          type="button"
+          (click)="editorOpen.set(false)"
+          aria-label="Close suite builder"
         >
-          Save suite
+          �
         </button>
-      </form>
-    </div>`,
+        <form class="suite-editor" (ngSubmit)="save()">
+          <div class="suite-editor-heading">
+            <p class="eyebrow">SUITE BUILDER</p>
+            <h2>{{ editing() ? 'Edit suite' : 'Create suite' }}</h2>
+            <p class="muted">Name your suite and choose its tests.</p>
+          </div>
+          @if (editing()) {
+            <button type="button" (click)="reset()">Cancel editing</button>
+          }
+          <label>Name<input name="name" [(ngModel)]="name" required maxlength="120" /></label
+          ><label
+            >Description<textarea
+              name="description"
+              [(ngModel)]="description"
+              maxlength="2000"
+            ></textarea>
+          </label>
+          <details class="suite-options">
+            <summary>Owner, priority & tags</summary>
+            <label>Owner<input name="owner" [(ngModel)]="owner" maxlength="120" /></label>
+            <label
+              >Suite priority<select name="priority" [(ngModel)]="priority">
+                <option>P0</option>
+                <option>P1</option>
+                <option>P2</option>
+              </select></label
+            >
+            <label
+              >Tags (comma separated)<input name="tags" [(ngModel)]="tags" maxlength="1000"
+            /></label>
+          </details>
+          <fieldset class="selection-list">
+            <legend>
+              Tests <span class="muted">{{ selected().length }} selected</span>
+            </legend>
+            <label class="suite-test-search"
+              >Search tests<input
+                type="search"
+                name="testSearch"
+                [ngModel]="testQuery()"
+                (ngModelChange)="testQuery.set($event); testPage.set(1)"
+                placeholder="Case ID or title"
+            /></label>
+            <label class="suite-test-kind"
+              >Test type<select
+                aria-label="Test type"
+                name="testKind"
+                [ngModel]="testKind()"
+                (ngModelChange)="testKind.set($event); testPage.set(1)"
+              >
+                <option value="all">All types</option>
+                <option value="api">API</option>
+                <option value="ui">Browser</option>
+              </select></label
+            >
+            <div class="actions">
+              <button type="button" (click)="selectMatching()">Select matching tests</button
+              ><button type="button" (click)="selected.set([])">Clear selection</button>
+            </div>
+            @for (test of pageTests(); track test.id) {
+              <label
+                ><input
+                  type="checkbox"
+                  [checked]="selected().includes(test.id)"
+                  [disabled]="!test.enabled && !selected().includes(test.id)"
+                  (change)="toggle(test.id)"
+                />
+                <span
+                  ><strong>{{ test.id }}</strong
+                  ><span>{{ test.title }}</span></span
+                ></label
+              >
+            }
+            @if (!filteredTests().length) {
+              <p class="muted">No matching tests.</p>
+            }
+            <nav class="suite-test-pages" aria-label="Suite membership pages">
+              <button
+                type="button"
+                aria-label="Previous tests"
+                [disabled]="currentTestPage() === 1"
+                (click)="testPage.set(currentTestPage() - 1)"
+              >
+                ‹
+              </button>
+              <span>{{ currentTestPage() }} / {{ testPageCount() }}</span>
+              <button
+                type="button"
+                aria-label="Next tests"
+                [disabled]="currentTestPage() === testPageCount()"
+                (click)="testPage.set(currentTestPage() + 1)"
+              >
+                ›
+              </button>
+            </nav>
+          </fieldset>
+          <button
+            class="primary"
+            type="submit"
+            [disabled]="
+              busy() ||
+              !name.trim() ||
+              !['administrator', 'maintainer'].includes(api.identity()?.role ?? '')
+            "
+          >
+            Save suite
+          </button>
+        </form>
+      </dialog>
+    }`,
 })
 export class Suites {
   public readonly api = inject(Api);
@@ -217,14 +254,19 @@ export class Suites {
     const start = Math.max(1, Math.min(this.currentPage() - 2, this.pageCount() - 4));
     return Array.from({ length: Math.min(5, this.pageCount()) }, (_, index) => start + index);
   });
+  public readonly editorOpen = signal(false);
+  public readonly testKind = signal('all');
   public readonly tests = signal<TestCase[]>([]);
   public readonly selected = signal<string[]>([]);
   public readonly testQuery = signal('');
   public readonly testPage = signal(1);
   public readonly filteredTests = computed(() => {
     const query = this.testQuery().trim().toLowerCase();
-    return this.tests().filter((test) =>
-      (test.id + ' ' + test.title).toLowerCase().includes(query),
+    return this.tests().filter(
+      (test) =>
+        (test.id + ' ' + test.title).toLowerCase().includes(query) &&
+        (this.testKind() === 'all' ||
+          (this.testKind() === 'ui' ? test.id.startsWith('UI-') : !test.id.startsWith('UI-'))),
     );
   });
   public readonly testPageCount = computed(() =>
@@ -245,10 +287,21 @@ export class Suites {
   public constructor() {
     void this.load();
   }
+  public selectMatching(): void {
+    this.selected.update((ids) => [
+      ...new Set([
+        ...ids,
+        ...this.filteredTests()
+          .filter((test) => test.enabled)
+          .map((test) => test.id),
+      ]),
+    ]);
+  }
   public canEdit(): boolean {
     return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');
   }
   public edit(suite: Suite): void {
+    this.editorOpen.set(true);
     this.testQuery.set('');
     this.testPage.set(1);
     this.editing.set(suite);
@@ -310,6 +363,7 @@ export class Suites {
         await this.api.post(`/projects/${this.api.projectId()}/suites`, body);
       }
       this.reset();
+      this.editorOpen.set(false);
       await this.load();
     } catch (error) {
       this.error.set(errorMessage(error));

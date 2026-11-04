@@ -1,4 +1,8 @@
 export const SuitesSelectors = {
+  dialog: 'Suite builder',
+  create: 'Create suite',
+  kind: 'Test type',
+  matching: 'Select matching tests',
   options: 'details.suite-options',
   name: 'Name',
   description: 'Description',

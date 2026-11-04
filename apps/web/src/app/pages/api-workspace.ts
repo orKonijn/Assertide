@@ -156,6 +156,16 @@ import { JsonEvidence } from '../core/json-evidence';
           </div>
           @if (inspecting()) {
             <p role="status" class="empty">Loading exchange…</p>
+          } @else if (inspectionError()) {
+            <div class="exchange-empty" role="alert">
+              <h3>Exchange unavailable</h3>
+              <p>
+                The evidence could not be loaded. It may have expired, or evidence storage may be
+                temporarily unavailable.
+              </p>
+              <button (click)="inspect(run.id, selectedArtifact())">Retry exchange</button
+              ><a [routerLink]="['/runs', run.id]">View run details</a>
+            </div>
           } @else if (evidence()) {
             <p class="muted evidence-caption">
               Recorded evidence; opening this view does not repeat the request.
@@ -181,6 +191,7 @@ import { JsonEvidence } from '../core/json-evidence';
     }`,
 })
 export class ApiWorkspace {
+  public readonly inspectionError = signal(false);
   public readonly api = inject(Api);
   private readonly router = inject(Router);
   public readonly tests = signal<TestCase[]>([]);
@@ -244,6 +255,7 @@ export class ApiWorkspace {
     }
   }
   public choose(id: string): void {
+    this.inspectionError.set(false);
     this.inspectionVersion++;
     this.page.set(1);
     this.selectedArtifact.set('');
@@ -254,6 +266,7 @@ export class ApiWorkspace {
   }
   public async inspect(runId: string, artifactId: string): Promise<void> {
     const version = ++this.inspectionVersion;
+    this.inspectionError.set(false);
     this.selectedArtifact.set(artifactId);
     this.inspecting.set(true);
     this.evidence.set('');
@@ -263,12 +276,12 @@ export class ApiWorkspace {
       if (version === this.inspectionVersion) {
         this.evidence.set(JSON.stringify(evidence, null, 2));
       }
-    } catch (error) {
+    } catch {
       if (version !== this.inspectionVersion) {
         return;
       }
       this.evidence.set('');
-      this.error.set(errorMessage(error));
+      this.inspectionError.set(true);
     } finally {
       if (version === this.inspectionVersion) {
         this.inspecting.set(false);

@@ -12,6 +12,14 @@ export class SuitesPage {
   public goto(): Promise<Response | null> {
     return workflow('Open test suites', () => this.page.goto(Routes.suites));
   }
+  public async createWithType(kind: string): Promise<void> {
+    await this.page.getByRole('button', { name: S.create, exact: true }).click();
+    await this.page.getByLabel(S.kind, { exact: true }).selectOption(kind);
+    await this.page.getByRole('button', { name: S.matching, exact: true }).click();
+  }
+  public dialog(): Locator {
+    return this.page.getByRole('dialog', { name: S.dialog });
+  }
   public heading(name: string): Locator {
     return this.page.getByRole('heading', { name, exact: true });
   }
@@ -33,6 +41,9 @@ export class SuitesPage {
     tags: string;
   }): Promise<void> {
     return workflow('Enter suite details', async () => {
+      if (!(await this.page.getByRole('dialog', { name: S.dialog }).isVisible())) {
+        await this.page.getByRole('button', { name: S.create, exact: true }).click();
+      }
       await this.page.getByLabel(S.name, { exact: true }).fill(input.name);
       await this.page.getByLabel(S.description, { exact: true }).fill(input.description);
       const options = this.page.locator(S.options);
