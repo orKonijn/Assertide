@@ -4,6 +4,11 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Assertide sign-in styling
+
+- Added an Assertide theme for the separate production sign-in provider: the existing logo, dark graphite surfaces, indigo sign-in button, accessible focus and responsive form layout replace its default polygon background. Authentication remains provider-managed. The theme is packaged in the identity image and selected for new pilot realms; existing realms require the [documented activation step](docs/login-theme.md). Not yet published or activated on the pilot.
+- Verified the actual provider form locally at mobile, tablet and desktop widths, including invalid and valid sign-in, password visibility, keyboard focus and initial-form automated accessibility checks. [Desktop before/after and mobile evidence](docs/login-theme.md#local-evidence).
+
 ### Visual system refinement
 
 - Updated the web container's libexpat runtime to at least 2.10.0-r0 after publication scanning identified three fixable high-severity findings in the base image. The container continues to run as a non-root user; no data migration is required.

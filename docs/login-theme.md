@@ -1,0 +1,27 @@
+# Assertide sign-in theme
+
+The production password form is served by Keycloak, separately from the Angular welcome screen. `deploy/keycloak/themes/assertide/login` gives that form the application's logo, graphite surfaces, indigo action, readable controls and mobile layout. It defaults to Assertide dark styling. The app's saved theme preference is not shared across the separate authentication origin.
+
+The theme inherits Keycloak's `keycloak` login theme and changes only CSS and the English heading. It does not replace form templates, password handling, reset/verification flows, hidden fields, CSRF protection, redirects, or authentication policy. See [Keycloak's theme guidance](https://www.keycloak.org/ui-customization/themes).
+
+`deploy/Keycloak.Dockerfile` packages the theme into the identity image. New pilot realms select `loginTheme: assertide` through `deploy/pilot-secrets.mjs`. The copied logo is the existing `apps/web/public/brand/assertide-logo.png`; keep those assets synchronized when the logo changes.
+
+## Existing installations
+
+Realm import does not update an existing realm. To activate this change:
+
+1. Build and scan the Keycloak image through the existing reviewed image workflow and verify its signed digest. Retain the current image and realm theme value for rollback.
+2. Roll out the new identity image using the existing private operational channel; wait for readiness.
+3. In the private administrator session, set the Assertide realm's Login theme to `assertide` (Realm settings → Themes), or use an already-authenticated `kcadm.sh update realms/assertide -s loginTheme=assertide`. Do not expose the admin console or place credentials in shell history.
+4. Check fresh sign-in, invalid credentials, password visibility, mandatory account actions, keyboard focus and mobile layouts. Confirm the OIDC callback still completes.
+
+To roll back, restore the prior Login theme value before reverting the identity image. No database migration, user recreation or credential reset is needed. Never run the development identity fixture in production.
+
+## Local evidence
+
+Verified on a separate, loopback-only Keycloak 26.8.1 instance matching the production provider version. Fresh fixture realms rendered the inherited baseline and implemented theme; screenshots are actual provider forms, not mockups. A synthetic local user completed the authorization-code redirect. Invalid credentials, show/hide password, keyboard focus and no horizontal overflow passed at 390, 768 and 1440px. Automated WCAG A/AA scans reported no violations in the initial themed form. This is not a complete accessibility audit of every provider flow or a production sign-in test.
+
+- [Desktop before](changelog/assets/unreleased/login-provider-before-1440.png) / [after](changelog/assets/unreleased/login-provider-after-1440.png)
+- [Mobile before](changelog/assets/unreleased/login-provider-before-390.png) / [after](changelog/assets/unreleased/login-provider-after-390.png)
+
+Only empty forms are retained as public screenshots. Credentials, sessions and local provider data remain in ignored storage. Local quick verification and the realm-bootstrap tests are required; container building/scanning remains the Linux publication gate. This theme has not yet been published or activated on the live realm.

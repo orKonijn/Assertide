@@ -36,6 +36,7 @@ test('production identity bootstrap matches the realm user and exact callback', 
   assert.equal(realm.clients[0].secret, get('assertide-api-config').OIDC_CLIENT_SECRET);
   assert.equal(realm.clients[0].directAccessGrantsEnabled, false);
   assert.equal(realm.registrationAllowed, false);
+  assert.equal(realm.loginTheme, 'assertide');
   assert.equal(realm.users[0].credentials[0].temporary, true);
   assert.notEqual(prepareSecrets(input).bootstrap.subject, prepared.bootstrap.subject);
   const backup = get('assertide-backup-config');

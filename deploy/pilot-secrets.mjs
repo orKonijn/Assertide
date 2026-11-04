@@ -137,6 +137,7 @@ export function prepareSecrets(input) {
       realm: 'assertide',
       enabled: true,
       sslRequired: 'external',
+      loginTheme: 'assertide',
       registrationAllowed: false,
       resetPasswordAllowed: false,
       loginWithEmailAllowed: true,
