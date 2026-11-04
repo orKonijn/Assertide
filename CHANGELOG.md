@@ -4,6 +4,12 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Editor dialog refinement
+
+- Reorganized test metadata into descriptive fields and execution behavior, with supporting text and one Save/Cancel footer. Suite creation now separates suite details from searchable test membership in two desktop columns, stacking on mobile.
+- Standardized dialog headers and compact close controls. Existing selection, save, Escape dismissal and authorization behavior are preserved.
+- Actual running screenshots: [suite desktop](docs/changelog/assets/unreleased/editor-refresh-suite-1440.png), [suite mobile](docs/changelog/assets/unreleased/editor-refresh-suite-390.png), [metadata editor](docs/changelog/assets/unreleased/editor-refresh-edit.png), [light mode](docs/changelog/assets/unreleased/editor-refresh-light.png). Local quick verification and focused suite/dialog browser checks passed. This refinement is unpublished; its release number will be assigned when publication is requested and verified.
+
 ## 0.2.0 — 2026-11-05
 
 ### Workspace dialogs and navigation

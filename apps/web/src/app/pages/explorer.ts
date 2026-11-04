@@ -42,35 +42,70 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
     @if (editing(); as test) {
       <dialog
         appModal
-        class="workspace-modal"
+        class="workspace-modal metadata-dialog"
         aria-label="Edit test metadata"
         (dismissed)="editing.set(null)"
       >
-        <h2>Edit {{ test.id }} metadata</h2>
-        <form (ngSubmit)="saveMetadata()" class="toolbar">
-          <label
-            ><input name="quarantined" type="checkbox" [(ngModel)]="quarantined" />Quarantine future
-            results (exclude from headline metrics)</label
+        <header class="editor-heading">
+          <div>
+            <p class="eyebrow">
+              TEST DETAILS <span class="badge">{{ test.id }}</span>
+            </p>
+            <h2>Edit test metadata</h2>
+            <p class="muted">{{ test.title }}</p>
+          </div>
+          <button
+            type="button"
+            class="editor-close"
+            aria-label="Close test editor"
+            (click)="editing.set(null)"
           >
-          <label
-            >Feature<input name="feature" [(ngModel)]="feature" required maxlength="120"
-          /></label>
-          <label>Module<input name="module" [(ngModel)]="module" maxlength="120" /></label>
-          <label>Test owner<input name="owner" [(ngModel)]="owner" maxlength="120" /></label>
-          <label>Test tags<input name="tags" [(ngModel)]="tags" maxlength="1000" /></label>
-          <label
-            >Test priority<select name="priority" [(ngModel)]="editPriority">
-              <option>P0</option>
-              <option>P1</option>
-              <option>P2</option>
-            </select></label
-          >
-          <label
-            ><input name="enabled" type="checkbox" [(ngModel)]="enabled" />Enabled for future
-            selections</label
-          >
-          <button [disabled]="saving()">Save test metadata</button
-          ><button type="button" (click)="editing.set(null)">Cancel metadata edit</button>
+            &times;
+          </button>
+        </header>
+        <form (ngSubmit)="saveMetadata()" class="metadata-editor">
+          <div class="editor-fields">
+            <label
+              >Feature<input name="feature" [(ngModel)]="feature" required maxlength="120"
+            /></label>
+            <label>Module<input name="module" [(ngModel)]="module" maxlength="120" /></label>
+            <label>Test owner<input name="owner" [(ngModel)]="owner" maxlength="120" /></label>
+            <label
+              >Test priority<select name="priority" [(ngModel)]="editPriority">
+                <option>P0</option>
+                <option>P1</option>
+                <option>P2</option>
+              </select></label
+            >
+            <label class="editor-wide"
+              >Test tags<input name="tags" [(ngModel)]="tags" maxlength="1000" /><span
+                class="muted editor-hint"
+                >Separate tags with commas.</span
+              ></label
+            >
+          </div>
+          <section class="editor-behavior" aria-label="Execution behavior">
+            <h3>Execution behavior</h3>
+            <label class="editor-toggle"
+              ><input name="enabled" type="checkbox" [(ngModel)]="enabled" /><span
+                ><strong>Enabled for future selections</strong
+                ><small>Make this test available when building a run.</small></span
+              ></label
+            >
+            <label class="editor-toggle"
+              ><input name="quarantined" type="checkbox" [(ngModel)]="quarantined" /><span
+                ><strong>Quarantine future results</strong
+                ><small>Exclude this test from headline metrics while investigating.</small></span
+              ></label
+            >
+          </section>
+          <footer class="editor-footer">
+            <span class="muted">Changes apply to future runs.</span>
+            <div class="actions">
+              <button type="button" (click)="editing.set(null)">Cancel metadata edit</button
+              ><button class="primary" [disabled]="saving()">Save test metadata</button>
+            </div>
+          </footer>
         </form>
       </dialog>
     }
