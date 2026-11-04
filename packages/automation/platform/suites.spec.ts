@@ -17,7 +17,14 @@ test.describe('Saved suites', () => {
   test('suite dialog selects matching types across pages and dismisses with Escape', async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await suites.createWithType('api');
+    const before = await suites.filterLayout();
+    expect(Math.abs(before.searchTop - before.typeTop)).toBeLessThanOrEqual(1);
+    expect(before.searchHeight).toBe(before.typeHeight);
+    await suites.fillDetails({ name: 'Draft only', description: '', owner: 'Fixture', tags: '' });
+    const after = await suites.filterLayout();
+    expect(Math.abs(before.panelHeight - after.panelHeight)).toBeLessThanOrEqual(1);
     await expect(suites.dialog()).toContainText('65 selected');
     await page.keyboard.press('Escape');
     await expect(suites.dialog()).not.toBeVisible();

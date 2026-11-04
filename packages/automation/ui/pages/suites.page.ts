@@ -20,6 +20,27 @@ export class SuitesPage {
   public dialog(): Locator {
     return this.page.getByRole('dialog', { name: S.dialog });
   }
+  public async filterLayout(): Promise<{
+    searchTop: number;
+    typeTop: number;
+    searchHeight: number;
+    typeHeight: number;
+    panelHeight: number;
+  }> {
+    const search = await this.page.getByLabel(S.search, { exact: true }).boundingBox();
+    const kind = await this.page.getByLabel(S.kind, { exact: true }).boundingBox();
+    const panel = await this.page.locator(S.membership).boundingBox();
+    if (!search || !kind || !panel) {
+      throw new Error('Suite filters are not visible');
+    }
+    return {
+      searchTop: search.y,
+      typeTop: kind.y,
+      searchHeight: search.height,
+      typeHeight: kind.height,
+      panelHeight: panel.height,
+    };
+  }
   public heading(name: string): Locator {
     return this.page.getByRole('heading', { name, exact: true });
   }

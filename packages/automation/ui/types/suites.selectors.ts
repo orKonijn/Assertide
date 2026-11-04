@@ -1,4 +1,6 @@
 export const SuitesSelectors = {
+  search: 'Search tests',
+  membership: 'fieldset.selection-list',
   dialog: 'Suite builder',
   create: 'Create suite',
   kind: 'Test type',

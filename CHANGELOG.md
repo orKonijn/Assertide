@@ -4,6 +4,11 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Suite builder alignment
+
+- Aligned search and test-type controls to the same height and baseline. Expanding optional suite metadata no longer stretches the test-membership panel. Replaced the oversized disclosure focus box with a compact, keyboard-visible control.
+- Local quick verification, layout assertions, suite persistence/bulk-selection journeys and reporting/architecture checks passed. Captured actual [desktop](docs/changelog/assets/unreleased/suite-alignment-suite-1440.png), [mobile](docs/changelog/assets/unreleased/suite-alignment-suite-390.png) and [light-theme](docs/changelog/assets/unreleased/suite-alignment-light.png) views.
+
 ## 0.2.1 — 2026-11-05
 
 ### Editor dialog refinement

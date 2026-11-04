@@ -4951,3 +4951,60 @@ textarea::placeholder {
     font-size: 21px;
   }
 }
+
+/* Keep suite filters on one baseline and optional details independent of membership. */
+.suite-dialog .suite-builder-columns {
+  align-items: start;
+}
+.suite-dialog .suite-editor .suite-member-filters > label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+}
+.suite-dialog .suite-member-filters input,
+.suite-dialog .suite-member-filters select {
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  box-sizing: border-box;
+}
+.suite-dialog .suite-options > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--soft);
+  list-style: none;
+  cursor: pointer;
+}
+.suite-dialog .suite-options > summary::-webkit-details-marker {
+  display: none;
+}
+.suite-dialog .suite-options > summary::before {
+  content: '+';
+  font-size: 16px;
+  width: 12px;
+  text-align: center;
+}
+.suite-dialog .suite-options[open] > summary::before {
+  content: '\2212';
+}
+.suite-dialog .suite-options > summary:focus:not(:focus-visible) {
+  outline: none;
+}
+.suite-dialog .suite-options > summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.suite-dialog .suite-options[open] {
+  padding-bottom: 4px;
+}
