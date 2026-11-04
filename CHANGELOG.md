@@ -12,7 +12,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 - Keep binary test attachments in files instead of embedding them in checkpoint and JSON summaries, preventing large suites from exceeding the worker transfer limit. Missing terminal evidence and transfer failures now produce an infrastructure error rather than a completed run with synthetic test failures. Raw report evidence uploads and restores use bounded batches of eight files while retaining integrity and retention checks.
 - Moved Getting started into the sidebar and replaced the empty-workspace introduction with four actionable workflow steps. Fixed Clear selection placement in Test explorer and clarified API workspace empty states, with pagination hidden when unnecessary.
-- Local quick verification, focused browser journeys, reporting and architecture checks passed. These code changes are not yet published; service and immutable worker images must be updated together. No product version or database migration is introduced. See [verification, recovery and screenshots](docs/evidence-collection-fix.md).
+- Local quick verification, focused browser journeys, reporting and architecture checks passed. Published to main and deployed to the pilot on 2026-11-05 with matching service, web and worker images. Live sign-in, mobile guide and controlled API/browser execution passed; report verification remains blocked by the storage provider download/transaction cap. No product version or database migration is introduced. See [verification, recovery and screenshots](docs/evidence-collection-fix.md).
 
 ### Assertide sign-in styling
 

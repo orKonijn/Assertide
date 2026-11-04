@@ -20,7 +20,7 @@ The first rebuilt report exposed a second packaging problem: parallel ZIP compre
 - Getting started is available in the sidebar on desktop and mobile. Its guide explains workspace selection, execution prerequisites, test selection and evidence inspection without assuming a project is empty.
 - Clear selection sits with execution actions. API workspace explains missing evidence and avoids showing a one-page pager or promising an available Allure report.
 
-The preventive code and UI changes are local and unreleased. Publish compatible API/service and immutable automation worker images together, then update the configured worker image/source revision through the existing deployment procedure. Existing run evidence is not rewritten by deployment. No database migration or authentication change is required. Rollback uses prior image digests; the separately backed-up one-run repair must not be reverted merely by deploying older code.
+The fixes are published on main and deployed to the pilot on 2026-11-05. API/service, web and immutable automation worker images were updated together; the API prepared the new source snapshot through the existing deployment procedure. Existing run evidence is not rewritten by deployment. No database migration or authentication change is required. Rollback uses prior image digests; the separately backed-up one-run repair must not be reverted merely by deploying older code.
 
 ## Verification
 
@@ -33,7 +33,7 @@ The preventive code and UI changes are local and unreleased. Publish compatible 
 - Three fresh-context registration checks passed, including verified workspace provisioning and invalid/reused verification handling.
 - Actual running UI captures: desktop/mobile, dark/light guide accessibility scans and no horizontal page overflow passed. API empty-state screenshots use an explicitly controlled infrastructure-error fixture.
 
-Linux isolation and real object-storage integration checks are not part of local quick verification and were not rerun for this change. No new image or production code deployment is claimed.
+Linux isolation and real object-storage integration checks are not part of local quick verification. See the production checks and remaining CI/storage limitations below.
 
 ## Running UI evidence
 
@@ -44,3 +44,21 @@ Linux isolation and real object-storage integration checks are not part of local
 ![API workspace with explicit missing-evidence guidance](changelog/assets/unreleased/evidence-fix-api-empty.png)
 
 [Mobile API workspace](changelog/assets/unreleased/evidence-fix-api-mobile.png). These are screenshots of the local running implementation, not design mockups.
+
+## Pilot publication — 2026-11-05
+
+Application source `9da7ae3a5b19f0d79c367e1fcc318bc60b905bf3` is on main. [Image publication 41929990210](https://github.com/orKonijn/Assertide/actions/runs/41929990210) passed builds, smoke tests and vulnerability scans. All three image signatures/provenance were verified against that exact commit and the hosted publication workflow before rollout. No product release version is assigned.
+
+- service: `ghcr.io/orkonijn/assertide-service@sha256:861c5d0c332d3c03f783ffe53979528bd5084fc81f3273e6b947b04511b1aafc`
+- web: `ghcr.io/orkonijn/assertide-web@sha256:fa41bb0a2845b06845c6875f99ab1ba316a671faccf736d6379d74411e8c58f3`
+- worker: `ghcr.io/orkonijn/assertide-worker@sha256:e2ce368d695bad510367b28e4b85034cf2dd500b20ca01f05d06c4d357d01162`
+
+API, execution, report and web deployments became ready; scheduled backups use the same service image. Report memory is capped at 4 GiB. Previous images/configuration remain in private rollback storage. No authentication settings, public registration policy, DNS, storage billing cap or user credentials were changed.
+
+Live checks passed for HTTPS entry, production sign-in, frontend/API connectivity, the sidebar guide at desktop/mobile widths, anonymous private-data denial and logout. A controlled `LAB-001`/`UI-001` execution on the newly published evidence worker (`836493d3-0a68-4853-829f-7d3f15cfa925`) completed with both tests passed and ten attachments captured. The final ZIP packaging code also round-tripped 64 controlled files (12.8 MB) on the deployed report worker in 121 ms. This is a bounded fixture measurement, not a general performance guarantee. The temporary verification identity was disabled and its sessions/project access revoked afterward; its local password file was removed.
+
+### Remaining report and CI limitations
+
+The original run retains 127 recovered passes, 1,392 attachments and 556 API exchanges. The large Allure output was generated during verification, but ZIP packaging interrupted publication before the final packaging fix. Subsequent report restoration for the fresh run hit the provider error: “Cannot download file, download bandwidth or transaction (Class B) cap exceeded.” The storage cap was not raised automatically. Report generation/access is therefore **not verified end to end** after the final fix. Once the provider cap resets or is explicitly adjusted by the owner, use **Rebuild report** on the affected completed runs and verify private report access. Retained evidence and outcomes were not deleted.
+
+The broader [initial Verify run](https://github.com/orKonijn/Assertide/actions/runs/41927820545) recorded a failed platform-browser step while infrastructure work continued. The [final-source Verify run](https://github.com/orKonijn/Assertide/actions/runs/41929990806) was still running at handoff. Neither is claimed fully green; local quick checks and the separate image publication succeeded.
