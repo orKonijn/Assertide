@@ -4,10 +4,12 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.3.1 — 2026-11-05
+
 ### Empty suite selection recovery
 
 - Explain why Selected only is empty before any tests are checked, with a Show all tests action that restores the catalog without changing membership. Select matching tests now uses the search/type matches independently of the selected-only review, so it also works from an empty review.
-- Local quick verification, 11 focused browser journeys and architecture/reporting checks passed. Actual [desktop](docs/changelog/assets/unreleased/suite-empty-selection-1440.png) and [mobile](docs/changelog/assets/unreleased/suite-empty-selection-390.png) captures. This fix is not yet published; no release number has been assigned.
+- Local quick verification, 11 focused browser journeys and architecture/reporting checks passed. Actual [desktop](docs/changelog/assets/0.3.1/suite-empty-selection-1440.png) and [mobile](docs/changelog/assets/0.3.1/suite-empty-selection-390.png) captures. Published to main and deployed to [assertide.com](https://assertide.com). [Image publication 42037119217](https://github.com/orKonijn/Assertide/actions/runs/42037119217) passed builds, scans and signing. Verified signed web digest `sha256:99775bbd35cc8c469dab4f7e1606bf1556522a6d32b0942b3c46d34ca3f82e5e` against source `599bdb9437f4b010d7a970da0e3ab4375e779cbd` before rollout. Live empty-review recovery, bulk selection, sign-in, mobile navigation, release identity and logout passed. The temporary verification identity was disabled afterward. Broader Linux CI is separate and is not claimed fully green.
 
 ## 0.3.0 — 2026-11-05
 
