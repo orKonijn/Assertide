@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import {
+  afterRenderEffect,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -65,7 +74,7 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
         </header>
         <form (ngSubmit)="saveMetadata()" class="metadata-editor">
           @if (error()) {
-            <div class="error editor-request-error" role="alert">
+            <div class="error editor-request-error" #saveError tabindex="-1" role="alert">
               <strong>Changes were not saved.</strong>
               <p>{{ error() }}</p>
               <p>
@@ -355,6 +364,7 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
   `,
 })
 export class Explorer {
+  private readonly saveError = viewChild<ElementRef<HTMLElement>>('saveError');
   public readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -428,6 +438,13 @@ export class Explorer {
     return Array.from({ length: Math.min(5, this.pageCount()) }, (_, index) => start + index);
   });
   public constructor() {
+    afterRenderEffect(() => {
+      const region = this.saveError()?.nativeElement;
+      if (region && this.error()) {
+        region.focus({ preventScroll: true });
+        region.scrollIntoView({ block: 'nearest' });
+      }
+    });
     effect(() => {
       const identity = this.api.identity();
       if (this.loading() || !identity || this.loadedProject !== this.api.projectId()) {

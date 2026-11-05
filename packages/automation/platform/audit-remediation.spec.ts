@@ -39,6 +39,20 @@ test.describe('Audit recovery fixes', () => {
       await expect(suites.card('Audit draft')).toBeVisible();
     });
   }
+  test('mobile save failure scrolls and focuses the visible error', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await suites.goto();
+    await suites.fillDetails({ name: 'Mobile draft', description: '', owner: 'QA', tags: '' });
+    await suites.setMember('LAB-001', true);
+    await page.route('**/v1/projects/*/suites', (route) =>
+      route.request().method() === 'POST'
+        ? route.fulfill({ status: 503, json: { title: 'Mobile save failure' } })
+        : route.continue(),
+    );
+    await suites.save();
+    await expect(suites.requestError()).toBeFocused();
+    await expect(suites.requestError()).toBeInViewport();
+  });
   test('selected-only review keeps saved membership across filters and pages', async () => {
     await suites.goto();
     await suites.createWithType('api');

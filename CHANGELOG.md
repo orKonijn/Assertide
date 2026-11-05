@@ -8,9 +8,9 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 - Updated worker system package upgrades after the image gate identified newly fixable high-severity apt/library findings; the security gate remains enforced.
 
-- Made suite and metadata save failures visible inside their dialogs, preserving drafts and explaining retry/conflict recovery.
+- Made suite and metadata save failures visible inside their dialogs, preserving drafts, focusing and scrolling errors into view, and explaining retry/conflict recovery.
 - Restored light-theme text contrast, collapsed mobile execution filters by default with a selected-filter count, and added Selected only plus 4/8/12-row suite review.
-- Reconciled About/README release wording and repaired the stale quarantine acceptance selector. Local quick verification, 13 focused journeys, safe-reporting/architecture checks and a repeated 69-state accessibility scan passed. [Evidence and verification limits](docs/audit-remediation.md).
+- Reconciled About/README release wording and repaired the stale quarantine acceptance selector. Local quick verification, 14 focused journeys, safe-reporting/architecture checks and a repeated 69-state accessibility scan passed. [Evidence and verification limits](docs/audit-remediation.md).
 
 ## 0.2.2 — 2026-11-05
 

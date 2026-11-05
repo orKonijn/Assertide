@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import type { ElementRef } from '@angular/core';
+import { afterRenderEffect, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -136,7 +137,7 @@ import { Modal } from '../core/modal';
         </header>
         <form class="suite-editor" (ngSubmit)="save()">
           @if (error()) {
-            <div role="alert" class="error editor-request-error">
+            <div role="alert" class="error editor-request-error" #saveError tabindex="-1">
               <strong>Suite was not saved.</strong>
               <p>{{ error() }}</p>
               <p>
@@ -284,6 +285,7 @@ import { Modal } from '../core/modal';
     }`,
 })
 export class Suites {
+  private readonly saveError = viewChild<ElementRef<HTMLElement>>('saveError');
   public readonly api = inject(Api);
   private readonly router = inject(Router);
   public readonly suites = signal<Suite[]>([]);
@@ -336,6 +338,13 @@ export class Suites {
   public priority = 'P1';
   public tags = '';
   public constructor() {
+    afterRenderEffect(() => {
+      const region = this.saveError()?.nativeElement;
+      if (region && this.error()) {
+        region.focus({ preventScroll: true });
+        region.scrollIntoView({ block: 'nearest' });
+      }
+    });
     void this.load();
   }
   public selectMatching(): void {
