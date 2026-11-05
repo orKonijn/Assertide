@@ -25,6 +25,12 @@ export class CatalogPage {
     this.restoredSelection = page.getByText(S.restored, { exact: true });
     this.clearSelection = page.getByRole('button', { name: S.clear, exact: true });
   }
+  public requestError(): Locator {
+    return this.page.getByRole('dialog', { name: S.dialog }).getByRole('alert');
+  }
+  public saveMetadata(): Promise<void> {
+    return this.page.getByRole('button', { name: S.save, exact: true }).click();
+  }
   public sortBy(value: string): Promise<string[]> {
     return this.page.getByLabel(S.sort, { exact: true }).selectOption(value);
   }

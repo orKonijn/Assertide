@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { afterNextRender, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { productVersion } from '../core/release';
 import { creator, lifecycle } from './about-content';
 import { ArchitectureMap } from './architecture-map';
 
@@ -217,7 +218,7 @@ import { ArchitectureMap } from './architecture-map';
         </div>
       </section>
       <footer class="about-note">
-        <strong>A working demonstration, still Unreleased.</strong>
+        <strong>Assertide v{{ version }} - demonstration build.</strong>
         <p>
           This page describes implemented components and supported configurations.
           Deployment-specific isolation, storage, and infrastructure checks depend on the
@@ -231,6 +232,7 @@ import { ArchitectureMap } from './architecture-map';
 export class About {
   private readonly document = inject(DOCUMENT);
   private readonly route = inject(ActivatedRoute);
+  public readonly version = productVersion;
   public readonly profile = creator;
   public readonly steps = lifecycle;
   public constructor() {

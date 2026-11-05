@@ -41,6 +41,16 @@ export class SuitesPage {
       panelHeight: panel.height,
     };
   }
+  public removeReviewedMember(id: string): Promise<void> {
+    return this.membership(id).click();
+  }
+  public requestError(): Locator {
+    return this.dialog().getByRole('alert');
+  }
+  public async reviewSelected(): Promise<void> {
+    await this.page.getByLabel(S.selectedOnly, { exact: true }).check();
+    await this.page.getByLabel(S.pageSize, { exact: true }).selectOption('8');
+  }
   public heading(name: string): Locator {
     return this.page.getByRole('heading', { name, exact: true });
   }

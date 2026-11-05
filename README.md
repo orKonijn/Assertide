@@ -25,7 +25,7 @@ The [free pilot at assertide.com](https://assertide.com) now includes the guest 
 
 The runnable application includes automatic local OIDC sign-in, project/member administration, source-backed discovery, editable suites, queued execution, live logs, attempt investigation, Allure 3 history and private viewers, scoped CI credentials, encrypted environment references, and transactional historical analytics. It includes 65 controlled API cases and 62 UI cases across three browsers, with masked screenshots for each named browser workflow step; 14 supplemental public-practice cases are available through an explicitly manual command. Run `npm run test:regression` for all controlled cases; see [coverage and commands](docs/regression-coverage.md). Linux CI exercises PostgreSQL, Redis, MinIO and separate execution/report supervisors with isolated OCI jobs. Windows development runs trusted fixtures locally.
 
-See [implementation, test coverage and remaining production gates](docs/implementation-verification.md). The files in `deliverables` are the original specifications, design previews and illustrative examples. The approved free pilot is available at [assertide.com](https://assertide.com); see its [verification and limitations](docs/pilot-verification.md). No product release version is assigned.
+See [implementation, test coverage and remaining production gates](docs/implementation-verification.md). The files in `deliverables` are the original specifications, design previews and illustrative examples. The approved free pilot is available at [assertide.com](https://assertide.com); see its [verification and limitations](docs/pilot-verification.md). See the product release history in [CHANGELOG.md](CHANGELOG.md).
 
 ## Web development
 
@@ -54,7 +54,7 @@ See [UI automation and Allure reports](docs/ui-testing.md) for Page Object bound
 
 ## Versions
 
-No product release is assigned. The private web package uses `0.0.0` as a tooling placeholder, not a released application version. A documented pre-1.0 compatibility policy must precede the first product release. Completed changes remain under `Unreleased` in the changelog.
+Product releases follow [the pre-1.0 version policy](docs/versioning.md) and are recorded in [CHANGELOG.md](CHANGELOG.md). The About page reads its build version from `apps/web/src/app/core/release.ts`. Private npm package versions remain internal tooling placeholders. Completed changes stay under `Unreleased` until publication is verified.
 
 ## Production deployment
 

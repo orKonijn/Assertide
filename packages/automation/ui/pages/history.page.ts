@@ -1,4 +1,4 @@
-import type { Response } from '@playwright/test';
+import type { Locator, Response } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 import { HistorySelectors as S } from '../types/analytics.selectors';
@@ -26,10 +26,23 @@ export class HistoryPage {
   }
   public filter(phase: string, browser: string): Promise<void> {
     return workflow('Filter execution history', async () => {
+      const filters = this.page.locator(S.filters);
+      if (!(await filters.evaluate((el) => el.hasAttribute('open')))) {
+        await filters.locator('summary').click();
+      }
       await this.page.getByLabel(S.phase, { exact: true }).selectOption(phase);
       await this.page.getByLabel(S.browser, { exact: true }).selectOption(browser);
       await this.apply.click();
     });
+  }
+  public filterPanel(): Locator {
+    return this.page.locator(S.filters);
+  }
+  public noResults(): Locator {
+    return this.page.getByText(S.noResults, { exact: true });
+  }
+  public toggleFilters(): Promise<void> {
+    return this.filterPanel().locator('summary').click();
   }
   public async sortWithKeyboard(): Promise<void> {
     await this.sortButton.focus();

@@ -1,4 +1,6 @@
 export const SuitesSelectors = {
+  selectedOnly: 'Selected only',
+  pageSize: 'Tests per page',
   search: 'Search tests',
   membership: 'fieldset.selection-list',
   dialog: 'Suite builder',

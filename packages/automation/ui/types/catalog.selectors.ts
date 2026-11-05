@@ -1,4 +1,5 @@
 export const CatalogSelectors = {
+  dialog: 'Edit test metadata',
   restored: 'Selection restored for this tab. Review execution settings before starting.',
   clear: 'Clear selection',
   page: (number: number) => `Test page ${number}`,
@@ -11,7 +12,7 @@ export const CatalogSelectors = {
   sort: 'Sort tests',
   module: 'Module',
   owner: 'Test owner',
-  quarantined: 'Quarantine future results (exclude from headline metrics)',
+  quarantined: 'Quarantine future results',
   enabled: 'Enabled for future selections',
   save: 'Save test metadata',
   environment: 'Environment',

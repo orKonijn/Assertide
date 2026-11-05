@@ -22,53 +22,58 @@ import { LoadingState } from '../core/loading-state';
       <p class="error" role="alert">{{ error() }}</p>
     }
     <section class="card">
-      <form class="toolbar execution-filters" (ngSubmit)="apply()">
-        <label
-          >Phase<select name="phase" aria-label="Phase" [(ngModel)]="phase">
-            @for (value of phases; track value) {
-              <option [value]="value">{{ value }}</option>
-            }
-          </select></label
-        >
-        <label
-          >Browser or API<select name="browser" aria-label="Browser or API" [(ngModel)]="browser">
-            @for (value of ['all', 'api', 'chromium', 'firefox', 'webkit']; track value) {
-              <option>{{ value }}</option>
-            }
-          </select></label
-        >
-        <label
-          >Contains outcome<select name="outcome" [(ngModel)]="outcome">
-            @for (value of ['all', 'passed', 'failed', 'broken', 'skipped']; track value) {
-              <option>{{ value }}</option>
-            }
-          </select></label
-        ><label for="from-date"
-          >From (UTC)<app-date-picker label="From date" [(value)]="from" /></label
-        ><label for="through-date"
-          >Through (UTC)<app-date-picker label="Through date" [(value)]="to"
-        /></label>
-        <label
-          >Suite<select name="suite" [(ngModel)]="suite">
-            <option value="">All suites and selections</option>
-            @for (item of suites(); track item.id) {
-              <option [value]="item.id">{{ item.name }}</option>
-            }
-          </select></label
-        >
-        <label
-          >Environment<select name="environment" [(ngModel)]="environment">
-            <option value="">All environments</option>
-            @for (item of environments(); track item.id) {
-              <option [value]="item.id">{{ item.name }}</option>
-            }
-          </select></label
-        >
-        <div class="filter-actions">
-          <button type="submit" [disabled]="loading()">Apply filters</button>
-          <button type="button" [disabled]="loading()" (click)="load()">Refresh</button>
-        </div>
-      </form>
+      <details class="execution-filter-panel" [open]="filtersOpen" (toggle)="filterToggle($event)">
+        <summary>
+          Filters <span class="muted">{{ filterCount() }} selected</span>
+        </summary>
+        <form class="toolbar execution-filters" (ngSubmit)="apply()">
+          <label
+            >Phase<select name="phase" aria-label="Phase" [(ngModel)]="phase">
+              @for (value of phases; track value) {
+                <option [value]="value">{{ value }}</option>
+              }
+            </select></label
+          >
+          <label
+            >Browser or API<select name="browser" aria-label="Browser or API" [(ngModel)]="browser">
+              @for (value of ['all', 'api', 'chromium', 'firefox', 'webkit']; track value) {
+                <option>{{ value }}</option>
+              }
+            </select></label
+          >
+          <label
+            >Contains outcome<select name="outcome" [(ngModel)]="outcome">
+              @for (value of ['all', 'passed', 'failed', 'broken', 'skipped']; track value) {
+                <option>{{ value }}</option>
+              }
+            </select></label
+          ><label for="from-date"
+            >From (UTC)<app-date-picker label="From date" [(value)]="from" /></label
+          ><label for="through-date"
+            >Through (UTC)<app-date-picker label="Through date" [(value)]="to"
+          /></label>
+          <label
+            >Suite<select name="suite" [(ngModel)]="suite">
+              <option value="">All suites and selections</option>
+              @for (item of suites(); track item.id) {
+                <option [value]="item.id">{{ item.name }}</option>
+              }
+            </select></label
+          >
+          <label
+            >Environment<select name="environment" [(ngModel)]="environment">
+              <option value="">All environments</option>
+              @for (item of environments(); track item.id) {
+                <option [value]="item.id">{{ item.name }}</option>
+              }
+            </select></label
+          >
+          <div class="filter-actions">
+            <button type="submit" [disabled]="loading()">Apply filters</button>
+            <button type="button" [disabled]="loading()" (click)="load()">Refresh</button>
+          </div>
+        </form>
+      </details>
       @if (loading() && !hasLoaded()) {
         <app-loading-state label="Loading history…" />
       } @else {
@@ -156,6 +161,7 @@ export class Runs {
     'infrastructure_error',
     'timed_out',
   ];
+  public filtersOpen = window.matchMedia('(min-width: 701px)').matches;
   public phase = this.route.snapshot.queryParamMap.get('phase') ?? 'all';
   public browser = this.route.snapshot.queryParamMap.get('browser') ?? 'all';
   public from = this.route.snapshot.queryParamMap.get('from') ?? '';
@@ -185,6 +191,22 @@ export class Runs {
   private requestVersion = 0;
   public constructor() {
     void this.load();
+  }
+  public filterToggle(event: Event): void {
+    if (event.target instanceof HTMLDetailsElement) {
+      this.filtersOpen = event.target.open;
+    }
+  }
+  public filterCount(): number {
+    return [
+      this.phase !== 'all',
+      this.browser !== 'all',
+      this.outcome !== 'all',
+      !!this.from,
+      !!this.to,
+      !!this.suite,
+      !!this.environment,
+    ].filter(Boolean).length;
   }
   public sortBy(key: 'id' | 'phase' | 'selected' | 'createdAt'): void {
     if (this.sortKey() === key) {

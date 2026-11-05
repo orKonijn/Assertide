@@ -36,7 +36,7 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
     @if (draftMessage()) {
       <p role="status" class="muted">{{ draftMessage() }}</p>
     }
-    @if (error()) {
+    @if (error() && !editing()) {
       <p class="error" role="alert">{{ error() }} <button (click)="load()">Retry</button></p>
     }
     @if (editing(); as test) {
@@ -64,6 +64,17 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
           </button>
         </header>
         <form (ngSubmit)="saveMetadata()" class="metadata-editor">
+          @if (error()) {
+            <div class="error editor-request-error" role="alert">
+              <strong>Changes were not saved.</strong>
+              <p>{{ error() }}</p>
+              <p>
+                Your changes are preserved. Retry Save, or cancel and reopen to load the latest
+                metadata after a conflict.
+              </p>
+            </div>
+          }
+
           <div class="editor-fields">
             <label
               >Feature<input name="feature" [(ngModel)]="feature" required maxlength="120"
@@ -87,15 +98,31 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
           <section class="editor-behavior" aria-label="Execution behavior">
             <h3>Execution behavior</h3>
             <label class="editor-toggle"
-              ><input name="enabled" type="checkbox" [(ngModel)]="enabled" /><span
+              ><input
+                name="enabled"
+                aria-label="Enabled for future selections"
+                aria-describedby="enabled-help"
+                type="checkbox"
+                [(ngModel)]="enabled"
+              /><span
                 ><strong>Enabled for future selections</strong
-                ><small>Make this test available when building a run.</small></span
+                ><small id="enabled-help"
+                  >Make this test available when building a run.</small
+                ></span
               ></label
             >
             <label class="editor-toggle"
-              ><input name="quarantined" type="checkbox" [(ngModel)]="quarantined" /><span
+              ><input
+                name="quarantined"
+                aria-label="Quarantine future results"
+                aria-describedby="quarantine-help"
+                type="checkbox"
+                [(ngModel)]="quarantined"
+              /><span
                 ><strong>Quarantine future results</strong
-                ><small>Exclude this test from headline metrics while investigating.</small></span
+                ><small id="quarantine-help"
+                  >Exclude this test from headline metrics while investigating.</small
+                ></span
               ></label
             >
           </section>

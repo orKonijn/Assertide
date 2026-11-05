@@ -10,7 +10,7 @@
   --surface: #e3e7e2;
   --soft: #cbd3cf;
   --text: #202b30;
-  --muted: #526169;
+  --muted: #45545c;
   --border: #bdc8c8;
   --control-border: #7c8a8d;
   --brand: #4d4cac;
@@ -5007,4 +5007,54 @@ textarea::placeholder {
 }
 .suite-dialog .suite-options[open] {
   padding-bottom: 4px;
+}
+
+.editor-request-error {
+  margin: 0 0 20px;
+}
+.editor-request-error p {
+  margin: 6px 0 0;
+}
+.membership-review {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+.membership-review label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.membership-review select {
+  width: 76px;
+  margin: 0;
+}
+.execution-filter-panel {
+  margin-bottom: 20px;
+}
+.execution-filter-panel > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.execution-filter-panel > summary::before {
+  content: '+';
+}
+.execution-filter-panel[open] > summary::before {
+  content: '\2212';
+}
+.execution-filter-panel[open] > summary {
+  margin-bottom: 18px;
+}
+.execution-filter-panel > summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
 }

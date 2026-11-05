@@ -1,0 +1,1 @@
+export const productVersion = '0.3.0';

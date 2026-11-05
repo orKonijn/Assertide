@@ -18,7 +18,7 @@ import { Modal } from '../core/modal';
         <button class="primary" (click)="reset(); editorOpen.set(true)">Create suite</button>
       }
     </header>
-    @if (error()) {
+    @if (error() && !editorOpen()) {
       <p role="alert" class="error">{{ error() }}</p>
     }
     <div class="split suite-layout">
@@ -135,6 +135,17 @@ import { Modal } from '../core/modal';
           </button>
         </header>
         <form class="suite-editor" (ngSubmit)="save()">
+          @if (error()) {
+            <div role="alert" class="error editor-request-error">
+              <strong>Suite was not saved.</strong>
+              <p>{{ error() }}</p>
+              <p>
+                Your draft is preserved. Retry Save, or cancel and reopen if the suite was changed
+                elsewhere.
+              </p>
+            </div>
+          }
+
           <div class="suite-builder-columns">
             <section class="suite-details" aria-label="Suite details">
               <h3>Suite details</h3>
@@ -184,6 +195,28 @@ import { Modal } from '../core/modal';
                     <option value="all">All types</option>
                     <option value="api">API</option>
                     <option value="ui">Browser</option>
+                  </select></label
+                >
+              </div>
+              <div class="membership-review">
+                <label
+                  ><input
+                    type="checkbox"
+                    [ngModel]="selectedOnly()"
+                    (ngModelChange)="selectedOnly.set($event); testPage.set(1)"
+                    name="selectedOnly"
+                  />Selected only</label
+                >
+                <label
+                  >Tests per page<select
+                    aria-label="Tests per page"
+                    name="testPageSize"
+                    [ngModel]="testPageSize()"
+                    (ngModelChange)="testPageSize.set(+$event); testPage.set(1)"
+                  >
+                    <option [ngValue]="4">4</option>
+                    <option [ngValue]="8">8</option>
+                    <option [ngValue]="12">12</option>
                   </select></label
                 >
               </div>
@@ -267,6 +300,8 @@ export class Suites {
     return Array.from({ length: Math.min(5, this.pageCount()) }, (_, index) => start + index);
   });
   public readonly editorOpen = signal(false);
+  public readonly selectedOnly = signal(false);
+  public readonly testPageSize = signal(4);
   public readonly testKind = signal('all');
   public readonly tests = signal<TestCase[]>([]);
   public readonly selected = signal<string[]>([]);
@@ -277,16 +312,20 @@ export class Suites {
     return this.tests().filter(
       (test) =>
         (test.id + ' ' + test.title).toLowerCase().includes(query) &&
+        (!this.selectedOnly() || this.selected().includes(test.id)) &&
         (this.testKind() === 'all' ||
           (this.testKind() === 'ui' ? test.id.startsWith('UI-') : !test.id.startsWith('UI-'))),
     );
   });
   public readonly testPageCount = computed(() =>
-    Math.max(1, Math.ceil(this.filteredTests().length / 4)),
+    Math.max(1, Math.ceil(this.filteredTests().length / this.testPageSize())),
   );
   public readonly currentTestPage = computed(() => Math.min(this.testPage(), this.testPageCount()));
   public readonly pageTests = computed(() =>
-    this.filteredTests().slice((this.currentTestPage() - 1) * 4, this.currentTestPage() * 4),
+    this.filteredTests().slice(
+      (this.currentTestPage() - 1) * this.testPageSize(),
+      this.currentTestPage() * this.testPageSize(),
+    ),
   );
   public readonly error = signal('');
   public readonly busy = signal(false);
@@ -313,6 +352,7 @@ export class Suites {
     return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');
   }
   public edit(suite: Suite): void {
+    this.selectedOnly.set(false);
     this.editorOpen.set(true);
     this.testQuery.set('');
     this.testPage.set(1);
@@ -326,6 +366,8 @@ export class Suites {
     this.error.set('');
   }
   public reset(): void {
+    this.selectedOnly.set(false);
+    this.testKind.set('all');
     this.testQuery.set('');
     this.testPage.set(1);
     this.editing.set(null);
