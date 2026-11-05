@@ -26,6 +26,10 @@ This change addresses the 2026-11-05 design and usability audit of v0.2.2. It do
 
 These are screenshots of the running local implementation with controlled data and an explicitly injected save error. For comparable prior behavior, see the audit PDF's findings F01-F04; no generated mockups are used.
 
+## Publication build prerequisite
+
+The first publication scan rejected the worker base image for fixable HIGH findings in apt and libapt-pkg6.0t64 (installed 2.8.3; scanner fixed version 2.8.4ubuntu0.1). The worker build now upgrades those system packages alongside the existing Brotli update. The vulnerability gate remains enabled; the replacement publication must pass before deployment.
+
 ## Compatibility
 
 The change is a compatible UI/workflow addition, planned as product 0.3.0 under the pre-1.0 policy. No API or database migration is needed. Existing run outcomes, selections in saved suites, permissions and evidence retention are unchanged. Deployment can update the web image; rollback restores its previous signed digest. The release metadata constant should be updated when assigning subsequent product versions.

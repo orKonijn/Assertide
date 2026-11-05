@@ -1,5 +1,5 @@
 FROM mcr.microsoft.com/playwright:v1.64.1-noble
-RUN apt-get update && apt-get install -y --only-upgrade libbrotli1 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --only-upgrade libbrotli1 apt libapt-pkg6.0t64 && rm -rf /var/lib/apt/lists/*
 WORKDIR /app/apps/api
 COPY apps/api/package.json apps/api/package-lock.json ./
 RUN npm ci
