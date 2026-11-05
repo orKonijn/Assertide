@@ -28,8 +28,24 @@ These are screenshots of the running local implementation with controlled data a
 
 ## Publication build prerequisite
 
-The first publication scan rejected the worker base image for fixable HIGH findings in apt and libapt-pkg6.0t64 (installed 2.8.3; scanner fixed version 2.8.4ubuntu0.1). The worker build now upgrades those system packages alongside the existing Brotli update. The vulnerability gate remains enabled; the replacement publication must pass before deployment.
+The first publication scan rejected the worker base image for fixable HIGH findings in apt and libapt-pkg6.0t64 (installed 2.8.3; scanner fixed version 2.8.4ubuntu0.1). The worker build now upgrades those system packages alongside the existing Brotli update. The vulnerability gate remained enabled; the final replacement publication passed before deployment.
 
 ## Compatibility
 
-The change is a compatible UI/workflow addition, planned as product 0.3.0 under the pre-1.0 policy. No API or database migration is needed. Existing run outcomes, selections in saved suites, permissions and evidence retention are unchanged. Deployment can update the web image; rollback restores its previous signed digest. The release metadata constant should be updated when assigning subsequent product versions.
+The change is a compatible UI/workflow addition, published as product 0.3.0 under the pre-1.0 policy. No API or database migration is needed. Existing run outcomes, selections in saved suites, permissions and evidence retention are unchanged. This publication updated the web and service/worker images together to include the worker system-package fixes. Rollback restores the previous signed image set and worker-image configuration from the private pre-rollout snapshot. The release metadata constant should be updated when assigning subsequent product versions.
+
+## Production publication - 2026-11-05
+
+Published application source `5236f5cb95f9f07d1cc05192f8c9abd88b5a16ae` to main. [Image publication 42033762823](https://github.com/orKonijn/Assertide/actions/runs/42033762823) passed builds, smoke tests, vulnerability scans and signing. All three image digests were verified against this exact source and the hosted workflow before rollout.
+
+- web: `ghcr.io/orkonijn/assertide-web@sha256:005e8394c22cd5fcec8d701290413273294e1e8261419affe5121b4bd272f70b`
+- service: `ghcr.io/orkonijn/assertide-service@sha256:70b2c5ea7ca6127d327fba694b9905e48a8e3ff4d4162f4a7457feb9290b978a`
+- worker: `ghcr.io/orkonijn/assertide-worker@sha256:4614859476b7b41b7051ddc7bf08cf2213ab67faeb10e1df0237ddb29cc92a7d`
+
+API, web, execution and report deployments became ready; backup jobs use the same service image. Previous configuration was saved privately for rollback. No data migration, authentication-policy change, storage cap increase or owner credential change occurred.
+
+Live checks passed for sign-in, anonymous access denial, mobile navigation, selected-only/page-size review, visible/focused mobile suite-save errors, metadata conflict feedback, collapsed mobile history with visible results, the v0.3.0 About identity, a light-theme explorer axe scan and logout. Save faults were intercepted in the verification browser; the draft suite and metadata conflict were not persisted in production.
+
+Controlled run `b4dc0e07-29ef-41db-84f2-4b1117cb2ee3` completed with both API/browser tests passed on the new isolated worker. Its private Allure report reached ready, opened for the authenticated verifier and denied anonymous access. This validates that owned run, not every historical production report.
+
+The temporary verification identity was disabled, its provider/application sessions and project access revoked, and the temporary local password file removed. The original owner account was unchanged. [Broader Verify 42033761801](https://github.com/orKonijn/Assertide/actions/runs/42033761801) was still running at handoff; no fully green infrastructure-CI or complete accessibility-conformance claim is made.

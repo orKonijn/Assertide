@@ -4,7 +4,11 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.3.0 — 2026-11-05
+
 ### Audit remediation
+
+- Published to main and deployed to [assertide.com](https://assertide.com). Signed image publication and live modal recovery, suite review, mobile history, light-theme contrast and release identity checks passed. A controlled API/browser run passed and its private Allure report generated and opened successfully; anonymous access was denied. [Deployment evidence and limitations](docs/audit-remediation.md#production-publication---2026-11-05).
 
 - Updated worker system package upgrades after the image gate identified newly fixable high-severity apt/library findings; the security gate remains enforced.
 
