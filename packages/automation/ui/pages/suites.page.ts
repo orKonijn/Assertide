@@ -12,6 +12,21 @@ export class SuitesPage {
   public goto(): Promise<Response | null> {
     return workflow('Open test suites', () => this.page.goto(Routes.suites));
   }
+  public openBuilder(): Promise<void> {
+    return this.page.getByRole('button', { name: S.create, exact: true }).click();
+  }
+  public showSelectedOnly(): Promise<void> {
+    return this.page.getByLabel(S.selectedOnly, { exact: true }).check();
+  }
+  public showAllTests(): Promise<void> {
+    return this.page.getByRole('button', { name: S.showAll, exact: true }).click();
+  }
+  public selectMatchingTests(): Promise<void> {
+    return this.page.getByRole('button', { name: S.matching, exact: true }).click();
+  }
+  public emptySelection(): Locator {
+    return this.dialog().getByText(S.emptySelection, { exact: true });
+  }
   public async createWithType(kind: string): Promise<void> {
     await this.page.getByRole('button', { name: S.create, exact: true }).click();
     await this.page.getByLabel(S.kind, { exact: true }).selectOption(kind);

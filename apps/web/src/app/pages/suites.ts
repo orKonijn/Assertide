@@ -240,7 +240,21 @@ import { Modal } from '../core/modal';
                 >
               }
               @if (!filteredTests().length) {
-                <p class="muted">No matching tests.</p>
+                <div class="suite-selection-empty" role="status">
+                  <strong>{{
+                    selectedOnly() && !selected().length
+                      ? 'No tests selected yet'
+                      : 'No tests match these filters'
+                  }}</strong>
+                  <p class="muted">
+                    {{
+                      selectedOnly() && !selected().length
+                        ? 'Selected only shows tests you have already checked. Show all tests to choose them, or select matching tests above.'
+                        : 'Try another search or test type, or show all tests to start again.'
+                    }}
+                  </p>
+                  <button type="button" (click)="showAllTests()">Show all tests</button>
+                </div>
               }
               <nav class="suite-test-pages" aria-label="Suite membership pages">
                 <button
@@ -309,16 +323,20 @@ export class Suites {
   public readonly selected = signal<string[]>([]);
   public readonly testQuery = signal('');
   public readonly testPage = signal(1);
-  public readonly filteredTests = computed(() => {
+  public readonly matchingTests = computed(() => {
     const query = this.testQuery().trim().toLowerCase();
     return this.tests().filter(
       (test) =>
         (test.id + ' ' + test.title).toLowerCase().includes(query) &&
-        (!this.selectedOnly() || this.selected().includes(test.id)) &&
         (this.testKind() === 'all' ||
           (this.testKind() === 'ui' ? test.id.startsWith('UI-') : !test.id.startsWith('UI-'))),
     );
   });
+  public readonly filteredTests = computed(() =>
+    this.matchingTests().filter(
+      (test) => !this.selectedOnly() || this.selected().includes(test.id),
+    ),
+  );
   public readonly testPageCount = computed(() =>
     Math.max(1, Math.ceil(this.filteredTests().length / this.testPageSize())),
   );
@@ -351,11 +369,17 @@ export class Suites {
     this.selected.update((ids) => [
       ...new Set([
         ...ids,
-        ...this.filteredTests()
+        ...this.matchingTests()
           .filter((test) => test.enabled)
           .map((test) => test.id),
       ]),
     ]);
+  }
+  public showAllTests(): void {
+    this.selectedOnly.set(false);
+    this.testQuery.set('');
+    this.testKind.set('all');
+    this.testPage.set(1);
   }
   public canEdit(): boolean {
     return ['administrator', 'maintainer'].includes(this.api.identity()?.role ?? '');

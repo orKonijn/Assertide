@@ -29,6 +29,21 @@ test.describe('Saved suites', () => {
     await page.keyboard.press('Escape');
     await expect(suites.dialog()).not.toBeVisible();
   });
+  test('selected-only with an empty draft explains how to choose tests', async () => {
+    await suites.openBuilder();
+    await suites.showSelectedOnly();
+    await expect(suites.emptySelection()).toBeVisible();
+    await suites.showAllTests();
+    await expect(suites.membership('LAB-001')).not.toBeChecked();
+    await expect(suites.dialog()).toContainText('0 selected');
+  });
+  test('bulk selection works even when the selected-only review is empty', async () => {
+    await suites.openBuilder();
+    await suites.showSelectedOnly();
+    await suites.selectMatchingTests();
+    await expect(suites.membership('LAB-001')).toBeChecked();
+    await expect(suites.emptySelection()).toHaveCount(0);
+  });
   test('metadata and membership survive editing and reload', async ({ page }) => {
     const name = uniqueName('Regression');
     await suites.fillDetails({

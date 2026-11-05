@@ -4,6 +4,11 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Empty suite selection recovery
+
+- Explain why Selected only is empty before any tests are checked, with a Show all tests action that restores the catalog without changing membership. Select matching tests now uses the search/type matches independently of the selected-only review, so it also works from an empty review.
+- Local quick verification, 11 focused browser journeys and architecture/reporting checks passed. Actual [desktop](docs/changelog/assets/unreleased/suite-empty-selection-1440.png) and [mobile](docs/changelog/assets/unreleased/suite-empty-selection-390.png) captures. This fix is not yet published; no release number has been assigned.
+
 ## 0.3.0 — 2026-11-05
 
 ### Audit remediation

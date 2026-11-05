@@ -1,4 +1,6 @@
 export const SuitesSelectors = {
+  showAll: 'Show all tests',
+  emptySelection: 'No tests selected yet',
   selectedOnly: 'Selected only',
   pageSize: 'Tests per page',
   search: 'Search tests',

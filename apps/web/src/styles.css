@@ -5058,3 +5058,14 @@ textarea::placeholder {
   outline: 2px solid var(--brand);
   outline-offset: 3px;
 }
+
+.suite-selection-empty {
+  padding: 20px 0;
+  text-align: center;
+}
+.suite-selection-empty p {
+  max-width: 360px;
+  margin: 10px auto 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
