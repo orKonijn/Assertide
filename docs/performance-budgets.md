@@ -1,4 +1,4 @@
-# Performance budget foundation (unreleased)
+# Performance budget foundation (0.5.0)
 
 This is an internal, tested parser and advisory evaluator in `apps/api/src/lighthouse-results.ts`. It is not wired into run launch, workers, artifact import, API responses or the UI. It does not run Lighthouse or generate a performance report. No dependency, service, external destination or traffic-testing capability is enabled.
 

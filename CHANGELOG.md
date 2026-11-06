@@ -6,7 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## 0.5.0 — 2026-11-06
 
-Release candidate: verified locally; publication and rollout are pending.
+Published to main and deployed to [assertide.com](https://assertide.com). [Signed image publication 42281882582](https://github.com/orKonijn/Assertide/actions/runs/42281882582) passed builds, vulnerability scans and signing after the client dependency patch. Live sign-in, isolated API/browser execution, investigation navigation, mobile repeated clicks, persisted triage ownership, private evidence access, Allure generation/opening, version identity and logout passed. [Deployment evidence and CI limits](docs/run-accessibility.md#publication---050---2026-11-06).
 
 ### Fixed
 
@@ -14,14 +14,14 @@ Release candidate: verified locally; publication and rollout are pending.
 
 ### Added
 
-- Accessibility triage saves an owner label, Open/Investigating status and notes across compatible rule-level checks. Administrators can approve exceptions for up to 30 days; expired exceptions remain visible. Findings and functional outcomes are never suppressed or rewritten. Project authorization, edit-conflict protection and audit records apply. [Usage, identity and retention](docs/run-accessibility.md#unreleased-investigation-and-triage).
+- Accessibility triage saves an owner label, Open/Investigating status and notes across compatible rule-level checks. Administrators can approve exceptions for up to 30 days; expired exceptions remain visible. Findings and functional outcomes are never suppressed or rewritten. Project authorization, edit-conflict protection and audit records apply. [Usage, identity and retention](docs/run-accessibility.md#050-investigation-and-triage).
 - Internal Lighthouse normalization and three-sample advisory metric budgets, with invalid/missing/noisy measurements kept Inconclusive. This is a tested foundation only: no runnable Lighthouse collector or load-testing integration is enabled. [Contract and remaining work](docs/performance-budgets.md).
 
 ### Verification and compatibility
 
 - Rebuild the bundled Kubernetes client with `golang.org/x/net` 0.62.0 after the image security gate identified CVE-2026-78661. The vulnerability gate remains enforced.
-- Local quick verification, five focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light accessibility/reflow checks passed. The browser journey covers a result on a later page, repeated clicks, saved ownership and mobile note focus. API tests cover scoped access, administrator approval, concurrent edits, automatic expiry and unchanged recorded outcomes. Linux infrastructure CI and production rollout were not run for this unreleased change. Existing CSS-budget and logo-sizing warnings remain.
-- No database migration, new service or worker policy change is required. Matching API/web images are required when releasing triage; review records use existing storage and 365-day retention. This compatible workflow addition is prepared as **0.5.0**; publication is pending.
+- Local quick verification, five focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light accessibility/reflow checks passed. The browser journey covers a result on a later page, repeated clicks, saved ownership and mobile note focus. API tests cover scoped access, administrator approval, concurrent edits, automatic expiry and unchanged recorded outcomes. The publication above also verified a live isolated Kubernetes run. The broader Linux Verify workflow was still running its controlled cross-browser regression step when deployment was checked; no fully green infrastructure CI claim is made. Existing CSS-budget and logo-sizing warnings remain.
+- No database migration, new service or worker policy change is required. Matching API/web images are required when releasing triage; review records use existing storage and 365-day retention. This compatible workflow addition is published as **0.5.0**.
 
 ![Saved accessibility ownership and administrator-approved exception on desktop](docs/changelog/assets/0.5.0/triage-1440-dark.png)
 

@@ -29,7 +29,7 @@ See [implementation, test coverage and remaining production gates](docs/implemen
 
 ## Web development
 
-Available in 0.4.0: [opt-in accessibility review on controlled browser runs](docs/run-accessibility.md), with advisory rule findings, manual-review needs and explicit final-state coverage. This is separate from the platform's own accessibility acceptance checks.
+Available in 0.5.0: [opt-in accessibility review on controlled browser runs](docs/run-accessibility.md), with advisory rule findings, manual-review needs, explicit final-state coverage, saved ownership and expiring administrator-approved exceptions. This is separate from the platform's own accessibility acceptance checks.
 
 For a new local checkout with Node.js 24 and npm 11 installed, run `npm run setup` once, then `npm start`. Open [Assertide locally](http://127.0.0.1:4200). Sign in as `admin` using the generated password in the ignored `.local/credentials.json`; issuer, client ID and callback settings are automatic. Stop the services with Ctrl+C. Run `npm run verify:quick` for local domain/API/web checks and `npm run test:e2e` for connected browser acceptance. The default local setup uses embedded PostgreSQL and filesystem evidence; S3 and isolated Linux workers remain optional infrastructure configurations below.
 

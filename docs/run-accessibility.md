@@ -25,9 +25,9 @@ The focused browser journey launches an owned UI-001 run, observes an unchanged 
 
 Local quick verification, architecture/reporting checks and five focused browser journeys (new coverage plus existing execution behavior) passed with this change. Linux OCI/Kubernetes checks were skipped in local verification. The publication below additionally verified one live isolated Kubernetes execution; it does not substitute for the complete infrastructure CI matrix. Existing upstream build warnings are not suppressed.
 
-The published 0.4.0 slice did not include assignment or expiring exceptions. The local, unreleased extension below adds rule-level review records. Named intermediate state inventories, DOM-node identity/deduplication, approved baselines and full manual-audit records remain future work. Lighthouse collection and bounded protocol load testing remain later roadmap phases. No external traffic testing is enabled.
+The published 0.4.0 slice did not include assignment or expiring exceptions. The 0.5.0 extension below adds rule-level review records. Named intermediate state inventories, DOM-node identity/deduplication, approved baselines and full manual-audit records remain future work. Lighthouse collection and bounded protocol load testing remain later roadmap phases. No external traffic testing is enabled.
 
-## Unreleased: investigation and triage
+## 0.5.0: investigation and triage
 
 **Investigate result and add a note** now selects the result's table page, opens its details, focuses Diagnosis and brings it into view. Repeated clicks on the same result work, including mobile and reduced-motion mode. Read-only users reach the result summary instead of an unavailable editing field.
 
@@ -64,3 +64,19 @@ Actual controlled browser run; automated findings and manual-assessment needs ar
 ![Actual mobile accessibility review in light mode](changelog/assets/0.4.0/accessibility-review-390-light.png)
 
 The same recorded state stacks at mobile width without page overflow.
+
+## Publication - 0.5.0 - 2026-11-06
+
+Source `98832b7059c2c1d7c729fa7137b80ed70d073118` was published to main. [Image publication 42281882582](https://github.com/orKonijn/Assertide/actions/runs/42281882582) passed builds, security scans and signing. The earlier candidate was rejected by the vulnerability gate for CVE-2026-78661 in the bundled Kubernetes client's `golang.org/x/net`; it was rebuilt with 0.62.0 without weakening the gate. Signed image provenance was verified against the final source before rollout.
+
+| Component                             | Deployed digest                                                           |
+| ------------------------------------- | ------------------------------------------------------------------------- |
+| API, execution and report supervisors | `sha256:55aa80b9b4aa8bfb927d1ce4b964a616c8b1520eaef8bf5ad3b5cae29b407671` |
+| Web                                   | `sha256:ac11275d64dc34115591fc048578dd7c1ed5bdab45f3fcba8572ff808ca03ef9` |
+| Isolated browser worker               | `sha256:0627fbde70847da0d031ce56b93da99450510e7455970ab8b1231b9fd7d6badb` |
+
+Images were pre-pulled, queues were confirmed idle, and matching API/worker/web components were rolled out. The previous deployment/configuration snapshot remains private for rollback. No migration, authentication-policy change, new service or egress relaxation was introduced.
+
+Live verification used a temporary identity with an explicitly provisioned membership matched to the provider-issued subject. LAB-001 and UI-001 passed in an isolated run, with recorded accessibility coverage. Desktop/mobile themes, the investigation jump and note save, repeated mobile clicks, saved ownership after reopening triage, private artifact retrieval and anonymous denial, Allure generation/opening, v0.5.0 identity and logout passed. The verification identity was disabled, its provider/application sessions revoked, project access removed and the local credential copy deleted. The owner's identity was unchanged.
+
+[Broader Verify run 42281881914](https://github.com/orKonijn/Assertide/actions/runs/42281881914) was still running controlled cross-browser regression when deployment was checked. The live smoke run does not establish the full Linux infrastructure matrix. Lighthouse collection and protocol load testing are not enabled in 0.5.0.
