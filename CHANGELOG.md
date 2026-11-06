@@ -4,21 +4,30 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
-## 0.6.2 � Release draft
+## 0.6.2 — 2026-11-07
+
+Published to main and deployed to [assertide.com](https://assertide.com). [Signed image publication 42300506426](https://github.com/orKonijn/Assertide/actions/runs/42300506426) passed builds, security scans and signing. Live sign-in, setting recovery, isolated browser/Lighthouse and ordinary API execution, retained private metrics, mobile themes, Allure generation/opening, version identity and logout passed. The temporary verification account was disabled and its sessions revoked. [Publication evidence and CI status](docs/performance-budgets.md#publication---062---2026-11-07).
 
 ### Fixed after Linux QA
 
 - Corrected the performance-evidence integration check to read from the configured private object store and verify its checksum, rather than assuming a local artifact file still exists after upload. The MinIO-backed Linux matrix exposed this test defect; application storage and authorization are unchanged.
-- Verified the corrected normalization/content check against an owned, real private MinIO fixture with object versioning; the fixture was removed afterward. Includes the 0.6.0 feature and 0.6.1 review fixes below. Publication and live verification are pending.
+- Verified the corrected normalization/content check against an owned, real private MinIO fixture with object versioning; the fixture was removed afterward. The corrected GitHub Linux run also passed its PostgreSQL/MinIO-backed API tests, load/restore and isolated-worker checks. Its broader regression and infrastructure matrix was still running when live publication was verified; no fully green infrastructure CI claim is made.
+- Local quick verification, all **65** acceptance journeys, reporting/architecture checks and four desktop/mobile dark/light accessibility/reflow checks passed. Includes the 0.6.0 feature and 0.6.1 review fixes below; neither earlier milestone was deployed separately.
 
-## 0.6.1 — Release draft
+![Actual live Lighthouse metrics and advisory budget decisions](docs/changelog/assets/0.6.2/live-performance-desktop.png)
+
+Three real isolated samples: noisy blocking-time measurements remain Inconclusive, while the functional test stays passed.
+
+![Live performance review displayed as mobile cards in light mode](docs/changelog/assets/0.6.2/live-performance-390-light.png)
+
+## 0.6.1 — 2026-11-06 (source milestone)
 
 ### Fixed after QA and code review
 
 - Test explorer explains incompatible benchmark settings before launch and disables both Start execution buttons until corrected. Switching off the benchmark restores ordinary execution; server policy remains enforced.
 - Missing performance metric ranges now say Unavailable instead of showing an empty dash. Missing measurements remain Inconclusive. The Browser control has an explicit accessible name so keyboard/assistive technology and acceptance checks can identify it consistently.
 - Quick verification, the nine focused browser journeys (including the corrected recovery check), architecture/reporting checks and four desktop/mobile dark/light axe/reflow checks passed. The full 65-journey suite and publication checks are recorded separately when complete.
-- Prepared for publication together with the 0.6.0 feature milestone below. Publication and deployment are pending verification.
+- Published to main as source `946fd8b`; included in the first live rollout, **0.6.2**, after the object-storage test correction. No separate 0.6.1 deployment is claimed.
 
 ![Benchmark settings explain how to recover before launching an unsupported profile](docs/changelog/assets/0.6.1/benchmark-settings-1440-dark.png)
 
@@ -26,14 +35,14 @@ Actual desktop configuration: fix the listed settings or turn the benchmark off 
 
 ![The same benchmark recovery guidance on mobile in light mode](docs/changelog/assets/0.6.1/benchmark-settings-390-light.png)
 
-## 0.6.0 — Source milestone (release draft)
+## 0.6.0 — 2026-11-06 (source milestone)
 
 ### Added - Controlled Lighthouse benchmark
 
 - Test explorer can opt UI-001 into a fixed Chromium desktop benchmark. After the functional test, Lighthouse measures the controlled catalog three times with a cold browser cache. Run detail retains LCP, layout shift, blocking time and transferred-byte medians/ranges, alongside advisory budgets and explicit Inconclusive/Not measured states. Functional outcomes are unchanged.
-- Measurement attachments exclude raw reports, DOM, screenshots and authentication values. Server/worker policies restrict the supported case, environment, browser and concurrency. Existing project authorization, private artifacts and retention apply. Matching API/web/worker images and a rebuilt approved source snapshot are required; no database migration or new public service is added. [Use, rollout and limitations](docs/performance-budgets.md#unreleased-controlled-catalog-benchmark).
+- Measurement attachments exclude raw reports, DOM, screenshots and authentication values. Server/worker policies restrict the supported case, environment, browser and concurrency. Existing project authorization, private artifacts and retention apply. Matching API/web/worker images and a rebuilt approved source snapshot are required; no database migration or new public service is added. [Use, rollout and limitations](docs/performance-budgets.md#controlled-catalog-benchmark).
 - Preserve functional screenshots/traces before handing off to the separate benchmark browser. One benchmark renderer and independent browser control avoid process-pressure and trace-shutdown failures without raising worker resource limits. Kubernetes cancellation uses a lightweight flag operation, and interrupted Playwright trace resources containing `@` can be transferred without relaxing path-containment checks.
-- Local quick verification, eight focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light accessibility/reflow checks passed. Separate ARM64 OCI and Kubernetes checks retained three valid samples and functional screenshots, preserved the functional pass, and verified cancellation with cleanup. Kubernetes cooperative cancellation also retained the evidence-transfer path. Candidate resources were removed and live deployment images/configuration were unchanged. [Linux evidence and remaining release gates](docs/performance-budgets.md#isolated-linux-verification---2026-11-06). This compatible workflow addition is the **0.6.0** source milestone; the reviewed **0.6.2** patch will be the first deployed version of this feature. Publication is pending; the live version remains **0.5.0**.
+- Local quick verification, eight focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light accessibility/reflow checks passed. Separate ARM64 OCI and Kubernetes checks retained three valid samples and functional screenshots, preserved the functional pass, and verified cancellation with cleanup. Kubernetes cooperative cancellation also retained the evidence-transfer path. Candidate resources were removed and live deployment images/configuration were unchanged. [Linux evidence and remaining release gates](docs/performance-budgets.md#isolated-linux-verification---2026-11-06). This compatible workflow addition is the **0.6.0** source milestone; the reviewed **0.6.2** patch is the first deployed version of this feature, published on **2026-11-07**. Source milestone: `5247c77`.
 
 ![Actual Lighthouse metric budgets from three controlled-store samples on desktop](docs/changelog/assets/0.6.0/performance-1440-dark.png)
 

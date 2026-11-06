@@ -1,6 +1,6 @@
 # Performance budgets
 
-The published **0.5.0** release contains the internal parser and advisory evaluator in `apps/api/src/lighthouse-results.ts`. That release does not launch Lighthouse. The local, **unreleased** collector extension described below connects real measurements to run evidence and the UI.
+The **0.5.0** release introduced the internal parser and advisory evaluator in `apps/api/src/lighthouse-results.ts`. The **0.6.0** source milestone added real collection; **0.6.1** and **0.6.2** contain the QA corrections below. The combined feature was first deployed as **0.6.2 on 2026-11-07**.
 
 ## Accepted measurements
 
@@ -16,7 +16,7 @@ The caller supplies absolute limits for all four metrics. LCP, CLS and total blo
 
 The contract follows the [official Lighthouse result schema](https://github.com/GoogleChrome/lighthouse/blob/main/types/lhr/lhr.d.ts). Timing variability is a reason to retain sample context rather than equate a single score with a regression; see [Lighthouse performance scoring](https://developer.chrome.com/docs/lighthouse/performance/performance-scoring/).
 
-## Unreleased: controlled catalog benchmark
+## Controlled catalog benchmark
 
 1. In Test explorer, select **UI-001** only. Choose Chromium, the Local Lab sandbox, one worker, zero retries and headless mode.
 2. Enable **Benchmark catalog performance** and start the execution. Test explorer explains incompatible settings and keeps both Start execution buttons disabled until corrected or the benchmark is switched off. The server independently rejects other combinations; old runs default this optional setting to false. Existing operator/project authorization and execution quotas still apply.
@@ -35,11 +35,11 @@ The automation lockfile pins Lighthouse 13.6.0, chrome-launcher 1.2.3 and Puppet
 
 The Kubernetes cancel flag is written with a single-process file operation in the existing transfer container, avoiding another Node VM near the pod PID limit. Canceled Playwright traces can retain resource names containing `@`; both transfer endpoints accept that character while retaining their path traversal, absolute-path, symlink and size checks. The existing hard-stop fallback remains available.
 
-Deploy matching API, web and rebuilt worker images before enabling the option in isolated environments. Rebuild the approved automation source snapshot: its new lockfile must match the immutable worker image. Historical runs keep their original source/image constraints. Disable the option to return to ordinary functional execution; rolling back does not require rewriting prior results. This extension has been exercised with the trusted Windows local runner and separate Linux OCI/Kubernetes candidate jobs. It remains **unreleased and undeployed**; the live application is still 0.5.0.
+Deploy matching API, web and rebuilt worker images before enabling the option in isolated environments. Rebuild the approved automation source snapshot: its new lockfile must match the immutable worker image. Historical runs keep their original source/image constraints. Disable the option to return to ordinary functional execution; rolling back does not require rewriting prior results. This extension has been exercised with the trusted Windows local runner and separate Linux OCI/Kubernetes candidate jobs. The matching images were published and deployed as **0.6.2**; see the publication record below.
 
 ### Verification and remaining scope
 
-Local quick verification, eight focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light axe/reflow checks cover the extension. The benchmark journey collected real Lighthouse samples and reloaded their budget table while UI-001 remained passed, including combined accessibility/performance collection. Importer tests reject malformed evidence and keep private canaries out of stored JSON; API tests reject unsupported profiles and unauthorized launch. Actual screenshots are recorded in the Unreleased changelog. Those screenshots show a trusted local UI run; the separate Linux checks below verify isolated worker behavior.
+Local quick verification, eight focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light axe/reflow checks cover the extension. The benchmark journey collected real Lighthouse samples and reloaded their budget table while UI-001 remained passed, including combined accessibility/performance collection. Importer tests reject malformed evidence and keep private canaries out of stored JSON; API tests reject unsupported profiles and unauthorized launch. Actual screenshots are recorded in the 0.6.0/0.6.1 source milestone and 0.6.2 release entries. The milestone screenshots show a trusted local UI run; the 0.6.2 screenshots show the deployed site. The separate Linux checks below verify isolated worker behavior.
 
 ### Isolated Linux verification - 2026-11-06
 
@@ -66,10 +66,28 @@ OCI_WORKER_IMAGE=sha256:<image-id> npx tsx --test test/performance-worker.test.t
 TEST_KUBERNETES=true OCI_WORKER_IMAGE=<image>@sha256:<digest> npx tsx --test test/performance-worker.test.ts
 ```
 
-The test file skips a runtime when its prerequisites are absent; a skip is not a pass. The established Linux CI commands now include this file after the baseline worker checks. The Windows checks and the bounded ARM64 candidate checks do not establish a fully green GitHub/Linux infrastructure matrix. Signed image scanning/publication, deployment and live verification remain release-finalization work when publication is requested.
+The test file skips a runtime when its prerequisites are absent; a skip is not a pass. The established Linux CI commands now include this file after the baseline worker checks. The Windows checks and the bounded ARM64 candidate checks do not establish a fully green GitHub/Linux infrastructure matrix. At that candidate-verification point, signed image publication, deployment and live verification remained pending. Their completed 0.6.2 evidence is recorded below.
 
 Additional routes, mobile profiles, configurable per-project budgets, cross-run comparison UI, CI blocking gates and bounded protocol-load testing remain future work. The bounded candidate checks do not establish production performance, availability or a production SLA.
 
-## QA review patch � 0.6.1 release draft
+## QA review patches - 0.6.1 and 0.6.2
 
-The 0.6.0 implementation is preserved as source milestone `5247c77`. The reviewed 0.6.1 candidate adds pre-launch profile recovery, an explicit Browser control name and clear Unavailable metric ranges. The 0.6.2 release candidate additionally corrects the evidence test to use the configured S3/filesystem backend. It is the first intended live rollout of this feature; no separate 0.6.0 or 0.6.1 live deployment is claimed. The worker collector, approved targets, sample profile, isolation and cancellation contracts are unchanged from the Linux verification above.
+The 0.6.0 implementation is preserved as source milestone `5247c77`. The reviewed 0.6.1 source milestone adds pre-launch profile recovery, an explicit Browser control name and clear Unavailable metric ranges. The 0.6.2 patch additionally corrects the evidence test to use the configured S3/filesystem backend. It is the first live rollout of this feature; no separate 0.6.0 or 0.6.1 live deployment is claimed. The worker collector, approved targets, sample profile, isolation and cancellation contracts are unchanged from the Linux verification above.
+
+## Publication - 0.6.2 - 2026-11-07
+
+Source `3569c80e9c5ee084232ac5e9625788ded07dd96c` was published to main. [Image publication 42300506426](https://github.com/orKonijn/Assertide/actions/runs/42300506426) passed native ARM64 builds, vulnerability gates and signing. Each image's signed provenance was verified against this source before rollout.
+
+| Component | Deployed digest                                                           |
+| --------- | ------------------------------------------------------------------------- |
+| service   | `sha256:cfc70d6c76a7c482e6b8ee910029252627a796aefa35d89bc2762277b0e0634d` |
+| web       | `sha256:d322516a4f83bd27cb89948b2556d833f123864f3b7e9fa22cf9e952a2c930bf` |
+| worker    | `sha256:f02979150f8cc1ebb53500b70e167395158cb503916b4957174acebab5cc3414` |
+
+Images were pre-pulled, execution/report queues were confirmed idle, and matching API, execution/report supervisor and web components were rolled out. All four deployments became ready and their configured image digests matched the verified images; the worker setting matched too. The previous deployment/configuration snapshot remains private for rollback. No database migration, authorization change, public destination, new service or egress relaxation was introduced.
+
+Live verification passed entry/anonymous denial, sign-in, invalid benchmark-setting recovery, UI-001 with combined accessibility and three valid Lighthouse samples, retained functional screenshot, ordinary LAB-001 with benchmark disabled, reload persistence, dark/light mobile reflow, normalized private artifact access, anonymous artifact denial, private Allure generation/opening, v0.6.2 build identity and logout. Blocking-time variability was correctly Inconclusive; it did not change the functional pass. Actual live desktop/mobile screenshots are included in the changelog. The temporary verification identity was disabled, provider/application sessions revoked, project access removed, and its local credential copy deleted; the owner identity was unchanged.
+
+The initial [Verify run 42299121645](https://github.com/orKonijn/Assertide/actions/runs/42299121645) exposed a filesystem-only assumption in the new performance-evidence test when the private object-store backend was active. That was corrected in 0.6.2 without changing application storage or authorization. The corrected test passed three checks against an owned, real versioned MinIO fixture, then passed again in the GitHub PostgreSQL/MinIO-backed API matrix. [Verify run 42300505824](https://github.com/orKonijn/Assertide/actions/runs/42300505824) also passed load/restore and isolated-worker checks and was still running the broader controlled regression/infrastructure matrix at publication. No fully green infrastructure CI claim is made.
+
+Final local verification: quick lint/format/type/unit/build checks, all 65 platform acceptance journeys, reporting/architecture checks, and four desktop/mobile dark/light axe/reflow checks passed. The 0.6.2 correction was additionally tested against the private MinIO fixture; the fixture was removed afterward. Existing CSS-budget/logo-size warnings and moderate frontend/reporting toolchain audit findings remain; the high/critical dependency and image gates passed. The bounded ARM64 candidate and live checks do not establish production performance or an availability SLA.
