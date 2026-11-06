@@ -10,6 +10,7 @@ import {
   performanceCoverage,
   summarizeLighthouse,
 } from '../src/lighthouse-results.ts';
+import { objectStore } from '../src/object-store.ts';
 
 const report = (second: number, lcp = 2000): unknown => ({
   gatherMode: 'navigation',
@@ -145,7 +146,12 @@ await test('performance evidence import retains only bounded metrics and require
   );
   assert.equal(valid?.performance?.status, 'measured');
   assert.ok(valid);
-  const bytes = await readFile(`${root}/artifacts/${valid.id}`, 'utf8');
+  assert.equal(valid.unavailableReason, undefined);
+  const bytes = (
+    valid.object && objectStore
+      ? await objectStore.get(valid.object)
+      : await readFile(`${root}/artifacts/${valid.id}`)
+  ).toString('utf8');
   assert.ok(!bytes.includes('PRIVATE_DOM_CANARY'));
   assert.ok(!bytes.includes('requestedUrl'));
   assert.ok(invalid?.unavailableReason);

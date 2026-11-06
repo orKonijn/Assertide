@@ -72,4 +72,4 @@ Additional routes, mobile profiles, configurable per-project budgets, cross-run 
 
 ## QA review patch � 0.6.1 release draft
 
-The 0.6.0 implementation is preserved as source milestone `5247c77`. The reviewed 0.6.1 candidate adds pre-launch profile recovery, an explicit Browser control name and clear Unavailable metric ranges. It is the first intended live rollout of this feature; no separate 0.6.0 live deployment is claimed. The worker collector, approved targets, sample profile, isolation and cancellation contracts are unchanged from the Linux verification above.
+The 0.6.0 implementation is preserved as source milestone `5247c77`. The reviewed 0.6.1 candidate adds pre-launch profile recovery, an explicit Browser control name and clear Unavailable metric ranges. The 0.6.2 release candidate additionally corrects the evidence test to use the configured S3/filesystem backend. It is the first intended live rollout of this feature; no separate 0.6.0 or 0.6.1 live deployment is claimed. The worker collector, approved targets, sample profile, isolation and cancellation contracts are unchanged from the Linux verification above.
