@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import type { Express } from 'express';
 import { z } from 'zod';
 
+import { accessibilityCheckpoint } from './accessibility.ts';
 import type { SqlConnection } from './database.ts';
 import type { IdentityService } from './identity.ts';
 import { objectReference, objectStore } from './object-store.ts';
@@ -29,6 +30,7 @@ export const artifactSchema = z.object({
   expiresAt: z.iso.datetime(),
   redactionPolicy: z.string(),
   unavailableReason: z.string().optional(),
+  accessibility: accessibilityCheckpoint.optional(),
   object: objectReference.optional(),
   exchange: z
     .object({
@@ -106,6 +108,12 @@ export async function captureAttachments(
       }
       if (['application/json', 'text/plain'].includes(attachment.contentType)) {
         bytes = Buffer.from(redact(bytes.toString('utf8')));
+      }
+      if (attachment.name === 'accessibility-checkpoint.json') {
+        if (attachment.contentType !== 'application/json' || bytes.length > 100_000) {
+          throw new Error('Accessibility evidence exceeds policy');
+        }
+        item.accessibility = accessibilityCheckpoint.parse(JSON.parse(bytes.toString('utf8')));
       }
       if (attachment.name === 'api-exchange.json' || attachment.name === 'api-transport.json') {
         const exchange = z

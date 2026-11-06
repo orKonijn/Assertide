@@ -42,6 +42,12 @@ export class ExecutionPage {
   public id(): string {
     return new URL(this.page.url()).pathname.split('/').at(-1)!;
   }
+  public accessibilityReview(): Locator {
+    return this.page.getByRole('region', { name: S.accessibility, exact: true });
+  }
+  public openAccessibilityState(resultId: string): Promise<void> {
+    return this.accessibilityReview().locator('summary').filter({ hasText: resultId }).click();
+  }
   public heading(id: string): Locator {
     return this.page.getByRole('heading', { name: S.heading(id), exact: true });
   }

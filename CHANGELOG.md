@@ -4,6 +4,20 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Added - Advisory accessibility review
+
+- Browser runs can opt into axe checks of each test's final browser state. Run detail shows checked/expected coverage, rule findings, manual-assessment guidance and investigation-note links, with ten coverage rows per page. Missing scans and missing final-retry evidence are labeled Not checked; findings do not change functional outcomes.
+- Capture is limited to the approved controlled storefront and excludes sensitive tests, DOM, selectors and page values. Bounded summaries use existing project authorization and retention. [Usage, rollout and remaining roadmap work](docs/run-accessibility.md).
+- Local quick verification, five focused browser journeys (including the opted-in run), architecture/reporting checks and four desktop/mobile dark/light axe/reflow checks passed. Actual [desktop](docs/changelog/assets/0.4.0/accessibility-review-1440-dark.png) and [mobile light](docs/changelog/assets/0.4.0/accessibility-review-390-light.png) captures. Linux OCI/Kubernetes integration is not locally verified. Unreleased; the published product remains 0.3.1.
+
+![Accessibility coverage recorded for a browser test on desktop](docs/changelog/assets/0.4.0/accessibility-review-1440-dark.png)
+
+Actual controlled run: checked coverage and manual-assessment needs are kept separate from functional outcomes.
+
+![The same accessibility review on mobile in light mode](docs/changelog/assets/0.4.0/accessibility-review-390-light.png)
+
+The review stacks at mobile width; rule guidance remains available without horizontal page overflow.
+
 ## 0.3.1 — 2026-11-05
 
 ### Empty suite selection recovery

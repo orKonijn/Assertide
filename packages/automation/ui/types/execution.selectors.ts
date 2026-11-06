@@ -1,4 +1,5 @@
 export const ExecutionSelectors = {
+  accessibility: 'Accessibility review',
   status: 'status',
   heading: (id: string) => `Run ${id.slice(0, 8)}`,
   openReport: 'Open report',

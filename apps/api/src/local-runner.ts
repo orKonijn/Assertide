@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import { z } from 'zod';
 
+import { accessibilityCoverage } from './accessibility.ts';
 import {
   type Artifact,
   attachmentSchema,
@@ -49,6 +50,7 @@ export const runRoot = path.join(root, '.local', 'runs');
 const automationRoot = path.join(root, 'packages', 'automation');
 const configuration = z.object({
   headed: z.boolean().default(false),
+  accessibility: z.boolean().default(false),
   environmentId: z.string().default('local-lab'),
   catalogRevision: z.string(),
   workers: z.number().int().min(1).max(4),
@@ -518,6 +520,7 @@ export class LocalRunner {
         run.id,
         {
           RUN_VIDEO: run.config.video,
+          RUN_ACCESSIBILITY: String(run.config.accessibility),
           RUN_API_URL: run.environment.apiUrl,
           RUN_BROWSER_URL: run.environment.browserUrl,
           ...(password ? { LAB_PASSWORD: password } : {}),
@@ -536,6 +539,7 @@ export class LocalRunner {
                 ],
                 video: run.config.video,
                 headed: run.config.headed,
+                accessibility: run.config.accessibility,
                 password:
                   password || process.env['LAB_PASSWORD'] || randomBytes(32).toString('hex'),
                 signingKey: randomBytes(32).toString('hex'),
@@ -650,6 +654,9 @@ export class LocalRunner {
         endedAt: new Date().toISOString(),
         results,
         artifacts,
+        ...(run.config.accessibility
+          ? { accessibility: accessibilityCoverage(results, artifacts) }
+          : {}),
         reportPhase: canceled ? 'failed' : 'generating',
       });
       executionFinalized = true;

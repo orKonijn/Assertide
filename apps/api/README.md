@@ -9,3 +9,7 @@ The opt-in controlled Lab uses `/lab/v1`, separate from platform authentication.
 Set `DATABASE_URL` to PostgreSQL for deployment. Non-production fallback uses PGlite, optionally persisted at `LOCAL_DATABASE_PATH`. Production refuses fallback and Lab mode. Checksum-locked migrations preserve existing data; separate execution/report supervisors use leases and bounded shutdown. Execution supervisors prepare current-image sources before claiming work. Production uses shared durable `SOURCE_ROOT` storage for historical revisions.
 
 See [production deployment](../../docs/production-deployment.md), [migrations](../../docs/migrations.md), [worker isolation](../../docs/isolated-workers.md) and [implementation/test coverage](../../docs/implementation-verification.md). Infrastructure-gated tests run in Linux CI; local skipped tests are not reported as passing.
+
+## Optional run accessibility evidence
+
+Browser run launch requests accept `accessibility: true` (default false). The option is frozen in the run configuration and rejected for API-only selections. Completed opted-in runs expose `accessibility` coverage for each selected case/browser's final attempt. Missing or unavailable evidence is not a successful scan. The existing scoped run/artifact routes protect these summaries; there is no new public endpoint. See [run accessibility policy, retention and rollout](../../docs/run-accessibility.md).

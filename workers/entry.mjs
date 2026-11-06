@@ -21,6 +21,7 @@ const spec = z
       .max(4),
     video: z.enum(['off', 'retain-on-failure']),
     headed: z.boolean().default(false),
+    accessibility: z.boolean().default(false),
     password: z.string().min(12),
     signingKey: z.string().min(32),
   })
@@ -67,6 +68,7 @@ const child = spawn(
       PLAYWRIGHT_BROWSERS_PATH: '/ms-playwright',
       RUN_OUTPUT: '/output',
       RUN_VIDEO: spec.video,
+      RUN_ACCESSIBILITY: String(spec.accessibility),
       RUN_API_URL: 'http://127.0.0.1:4010/lab/v1/',
       RUN_BROWSER_URL: 'http://127.0.0.1:4013',
       LAB_PASSWORD: spec.password,

@@ -91,6 +91,7 @@ const runInput = z
     workers: z.number().int().min(1).max(4),
     retries: z.number().int().min(0).max(2),
     headed: z.boolean().default(false),
+    accessibility: z.boolean().default(false),
     video: z.enum(['off', 'retain-on-failure']),
     commitSha: z
       .string()
@@ -501,6 +502,9 @@ export class PlatformService {
       },
     };
     const hasUi = config.selection.testIds.some((id) => id.startsWith('UI-'));
+    if (config.accessibility && !hasUi) {
+      throw new ApiError(422, 'Accessibility checks require a browser test selection');
+    }
     if (hasUi !== Boolean(config.browserProjects.length)) {
       throw new ApiError(
         422,
@@ -719,6 +723,7 @@ export class PlatformService {
         browserProjects: ids.some((testId) => testId.startsWith('UI-'))
           ? config.browserProjects
           : [],
+        accessibility: config.accessibility && ids.some((testId) => testId.startsWith('UI-')),
       },
       key,
       id,

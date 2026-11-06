@@ -89,6 +89,9 @@ export class CatalogPage {
   public selectEnvironment(name: string): Promise<string[]> {
     return this.page.getByLabel(S.environment, { exact: true }).selectOption({ label: name });
   }
+  public checkAccessibility(): Promise<void> {
+    return this.page.getByLabel(S.accessibility, { exact: true }).check();
+  }
   public startExecution(): Promise<void> {
     return workflow('Start selected execution', () =>
       this.page.getByRole('button', { name: S.start, exact: true }).first().click(),

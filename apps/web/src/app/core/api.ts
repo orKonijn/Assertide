@@ -61,6 +61,7 @@ export interface Suite {
   priority?: string;
 }
 export interface Run {
+  accessibility?: AccessibilityCoverage[];
   id: string;
   projectId: string;
   phase: string;
@@ -82,6 +83,7 @@ export interface Run {
     retries: number;
     video: string;
     headed: boolean;
+    accessibility?: boolean;
     browserProjects: string[];
   };
   logTail?: string;
@@ -107,6 +109,32 @@ export interface Run {
     unavailableReason?: string;
     exchange?: { method: string; path: string; status?: number; durationMs: number };
   }[];
+}
+export interface AccessibilityCoverage {
+  resultId: string;
+  attempt: number | null;
+  checkpoint: {
+    status: 'checked' | 'unavailable';
+    engine: string;
+    viewport: { width: number; height: number } | null;
+    reason?: string;
+    violations: {
+      id: string;
+      impact: string | null;
+      description: string;
+      helpUrl: string;
+      nodes: number;
+    }[];
+    reviewRules?: {
+      id: string;
+      impact: string | null;
+      description: string;
+      helpUrl: string;
+      nodes: number;
+    }[];
+    incomplete: number;
+    truncated: boolean;
+  } | null;
 }
 export interface CaseResult {
   quarantined?: boolean;
@@ -249,6 +277,7 @@ export class Api {
     environmentId = 'local-lab',
     headed = false,
     suite?: { id: string; version: number },
+    accessibility = false,
   ): Promise<Run> {
     const catalogRevision =
       revision ??
@@ -265,6 +294,7 @@ export class Api {
         retries,
         headed,
         video,
+        accessibility,
       },
       key,
     );

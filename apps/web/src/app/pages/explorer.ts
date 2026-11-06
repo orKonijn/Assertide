@@ -318,6 +318,11 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
         <h2>Configure execution</h2>
         <p>{{ selected().length }} tests selected</p>
         @if (hasUi()) {
+          <label><input type="checkbox" [(ngModel)]="accessibility" />Check accessibility</label>
+          <p class="muted">
+            Scan the final browser state with axe. Findings are advisory and do not change
+            functional test outcomes.
+          </p>
           @if (canHeaded()) {
             <label
               ><input type="checkbox" [(ngModel)]="headed" />Headed browser in a virtual
@@ -410,6 +415,7 @@ export class Explorer {
   public readonly environments = signal<Environment[]>([]);
   public readonly headedAvailable = signal(false);
   public headed = false;
+  public accessibility = false;
   public video: 'off' | 'retain-on-failure' = 'off';
   public readonly hasUi = computed(() => this.selected().some((id) => id.startsWith('UI-')));
   private key = crypto.randomUUID();
@@ -631,6 +637,8 @@ export class Explorer {
         this.video,
         this.environmentId,
         this.hasUi() && this.canHeaded() && this.headed,
+        undefined,
+        this.hasUi() && this.accessibility,
       );
       this.clearSelection();
       await this.router.navigate(['/runs', run.id]);

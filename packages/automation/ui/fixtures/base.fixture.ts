@@ -8,6 +8,7 @@ import {
   screenshot,
   setStepScreenshotPage,
 } from '../utils/allure.utils';
+import { captureRunAccessibility } from '../utils/run-accessibility.utils';
 export const test = base.extend<{
   diagnostics: { errors: string[]; secrets: string[] };
   sensitive: boolean;
@@ -36,6 +37,7 @@ export const test = base.extend<{
       await metadata(info, `${browserName} ${browser.version()}`);
       try {
         await use({ errors, secrets });
+        await captureRunAccessibility(page, info, sensitive);
         if (info.status === 'passed' && !sensitive && !page.isClosed()) {
           await screenshot(page, 'final-state.png');
         }

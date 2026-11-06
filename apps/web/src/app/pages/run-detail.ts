@@ -4,12 +4,13 @@ import { Component, computed, DestroyRef, inject, signal, viewChild } from '@ang
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { AccessibilityReview } from '../core/accessibility-review';
 import type { Environment, Run } from '../core/api';
 import { Api, errorMessage } from '../core/api';
 import { ResultNotes, ResultSteps } from '../core/result-investigation';
 import { ScreenshotViewer } from '../core/screenshot-viewer';
 @Component({
-  imports: [RouterLink, DatePipe, ResultSteps, ResultNotes, ScreenshotViewer],
+  imports: [RouterLink, DatePipe, ResultSteps, ResultNotes, ScreenshotViewer, AccessibilityReview],
   styles: [
     'dialog { color: var(--text); background: var(--surface); border: 1px solid var(--border); max-width: min(40rem, 90vw); border-radius: .75rem; } dialog::backdrop { background: #0009; }',
   ],
@@ -74,6 +75,14 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
       </p>
     }
     @if (run(); as current) {
+      @if (current.config?.accessibility) {
+        <app-accessibility-review
+          [runId]="id"
+          [coverage]="current.accessibility ?? []"
+          [expected]="accessibilityExpected()"
+          [terminal]="!['queued', 'running', 'provisioning', 'finalizing'].includes(current.phase)"
+        />
+      }
       <div class="grid execution-summary">
         <div class="execution-overview">
           <section class="card phase-overview">
@@ -398,6 +407,11 @@ export class RunDetail {
     [],
   );
   public readonly run = signal<Run | null>(null);
+  public readonly accessibilityExpected = computed(
+    () =>
+      (this.run()?.selection.testIds.filter((id) => id.startsWith('UI-')).length ?? 0) *
+      (this.run()?.config?.browserProjects.length ?? 0),
+  );
   public readonly resultPage = signal<number | null>(null);
   public readonly resultPageCount = computed(() =>
     Math.max(1, Math.ceil((this.run()?.results?.length ?? 0) / 10)),

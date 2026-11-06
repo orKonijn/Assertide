@@ -56,6 +56,14 @@ await test('platform authorization, suite concurrency, launch deduplication and 
       ),
       { status: 422 },
     );
+    await assert.rejects(
+      service.launch(admin, localProjectId, { ...config, accessibility: true }, randomUUID()),
+      { status: 422 },
+    );
+    await assert.rejects(
+      service.launch(viewer, localProjectId, { ...config, accessibility: true }, randomUUID()),
+      { status: 403 },
+    );
     const key = randomUUID();
     const runs = await Promise.all([
       service.launch(admin, localProjectId, config, key),
