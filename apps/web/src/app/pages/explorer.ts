@@ -324,16 +324,6 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
         <p>{{ selected().length }} tests selected</p>
         @if (hasUi()) {
           <label><input type="checkbox" [(ngModel)]="accessibility" />Check accessibility</label>
-          <label
-            ><input type="checkbox" [(ngModel)]="performance" />Benchmark catalog performance</label
-          >
-          <p class="muted">
-            Lighthouse desktop profile: select UI-001 only, Chromium, one worker, zero retries and
-            headless mode. Measures the controlled catalog three times; budgets are advisory.
-          </p>
-          @if (performanceIssue(); as issue) {
-            <p role="status" class="muted">{{ issue }}</p>
-          }
           <p class="muted">
             Scan the final browser state with axe. Findings are advisory and do not change
             functional test outcomes.
@@ -357,6 +347,17 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
               <option>webkit</option>
             </select></label
           >
+        }
+        <label
+          ><input type="checkbox" [(ngModel)]="performance" />Benchmark catalog performance</label
+        >
+        <p class="muted">
+          Runs once after your selected tests and all retries finish. Measures the controlled
+          catalog three times in headless Chromium. Your test selection, browser, workers and
+          retries stay unchanged. Available in Local Lab; budgets are advisory.
+        </p>
+        @if (performanceIssue(); as issue) {
+          <p role="status" class="muted">{{ issue }}</p>
         }
         <label
           >Environment<select aria-label="Environment" [(ngModel)]="environmentId">
@@ -663,7 +664,7 @@ export class Explorer {
         this.hasUi() && this.canHeaded() && this.headed,
         undefined,
         this.hasUi() && this.accessibility,
-        this.hasUi() && this.performance,
+        this.performance,
       );
       this.clearSelection();
       await this.router.navigate(['/runs', run.id]);
@@ -674,20 +675,8 @@ export class Explorer {
     }
   }
   public performanceIssue(): string {
-    if (!this.performance || !this.hasUi()) {
-      return '';
-    }
-    if (
-      this.selected().length !== 1 ||
-      this.selected()[0] !== 'UI-001' ||
-      this.browser !== 'chromium' ||
-      this.environmentId !== 'local-lab' ||
-      this.workers !== 1 ||
-      this.retries !== 0 ||
-      (this.canHeaded() && this.headed)
-    ) {
-      return 'To benchmark, select UI-001 only and use Chromium, Local Lab, one worker, zero retries and headless mode. Or turn off Benchmark catalog performance.';
-    }
-    return '';
+    return this.performance && this.environmentId !== 'local-lab'
+      ? 'Catalog performance benchmarking is available in Local Lab. Choose Local Lab or turn off the benchmark.'
+      : '';
   }
 }

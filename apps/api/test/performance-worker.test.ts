@@ -43,14 +43,20 @@ for (const runtime of ['oci', 'kubernetes'] as const) {
     async (context) => {
       await prepareSource();
       const output = await mkdtemp(path.join(tmpdir(), 'assertide-performance-'));
+      const functionalOutput = await mkdtemp(
+        path.join(tmpdir(), 'assertide-performance-functional-'),
+      );
       const cancelOutput = await mkdtemp(path.join(tmpdir(), 'assertide-performance-cancel-'));
       assert.equal(path.dirname(output), path.resolve(tmpdir()));
       assert.ok(path.basename(output).startsWith('assertide-performance-'));
+      assert.equal(path.dirname(functionalOutput), path.resolve(tmpdir()));
+      assert.ok(path.basename(functionalOutput).startsWith('assertide-performance-functional-'));
       assert.equal(path.dirname(cancelOutput), path.resolve(tmpdir()));
       assert.ok(path.basename(cancelOutput).startsWith('assertide-performance-cancel-'));
       const id = randomUUID();
+      const functionalId = randomUUID();
       const cancelId = randomUUID();
-      const input = JSON.stringify({
+      const benchmarkSpec = {
         testIds: ['UI-001'],
         workers: 1,
         retries: 0,
@@ -59,12 +65,14 @@ for (const runtime of ['oci', 'kubernetes'] as const) {
         performance: true,
         password: randomBytes(24).toString('hex'),
         signingKey: randomBytes(32).toString('hex'),
-      });
+      };
+      const input = JSON.stringify(benchmarkSpec);
       const cleanup = async (runId: string): Promise<boolean> =>
         runtime === 'kubernetes' ? deleteWorkerJob(runId) : stopContainer(runId);
       const invoke = (
         command: { executable: string; args: string[] },
         cancel?: () => Promise<boolean>,
+        payload = input,
       ): Promise<{ code: number; canceled: boolean }> =>
         new Promise((resolve, reject) => {
           const child = spawn(command.executable, command.args, {
@@ -82,7 +90,7 @@ for (const runtime of ['oci', 'kubernetes'] as const) {
           });
           child.stderr.resume();
           child.stdin.on('error', () => {});
-          child.stdin.end(input);
+          child.stdin.end(payload);
           child.once('error', reject);
           child.once('close', (status) => {
             void Promise.resolve(cancellation ?? false)
@@ -91,6 +99,34 @@ for (const runtime of ['oci', 'kubernetes'] as const) {
           });
         });
       try {
+        const functional = await invoke(
+          (runtime === 'oci' ? ociCommand : kubernetesCommand)(
+            functionalId,
+            await verifySource(catalogRevision),
+            functionalOutput,
+            1,
+          ),
+          undefined,
+          JSON.stringify({
+            ...benchmarkSpec,
+            performance: false,
+            testIds: ['LAB-001', 'UI-002', 'UI-003'],
+            projects: ['api', 'chromium'],
+            retries: 2,
+          }),
+        );
+        assert.equal(
+          functional.code,
+          0,
+          'Selected functional tests must finish before the benchmark',
+        );
+        const functionalResults: unknown = JSON.parse(
+          await readFile(path.join(functionalOutput, 'results.json'), 'utf8'),
+        );
+        z.object({ stats: z.object({ expected: z.literal(3), unexpected: z.literal(0) }) }).parse(
+          functionalResults,
+        );
+        assert.equal(attachmentPaths(functionalResults, 'performance-checkpoint.json').length, 0);
         const command = (runtime === 'oci' ? ociCommand : kubernetesCommand)(
           id,
           await verifySource(catalogRevision),
@@ -170,6 +206,9 @@ for (const runtime of ['oci', 'kubernetes'] as const) {
             verification: 'isolated-lighthouse',
             runtime,
             samples: 3,
+            functionalCases: 3,
+            configuredRetries: 2,
+            benchmarkRuns: 1,
             functional: 'passed',
             cancellation: 'passed',
             metrics: decisions.map(({ metric, status }) => ({ metric, status })),
@@ -177,8 +216,10 @@ for (const runtime of ['oci', 'kubernetes'] as const) {
         );
       } finally {
         await cleanup(id);
+        await cleanup(functionalId);
         await cleanup(cancelId);
         await rm(output, { recursive: true, force: true });
+        await rm(functionalOutput, { recursive: true, force: true });
         await rm(cancelOutput, { recursive: true, force: true });
       }
     },

@@ -508,20 +508,10 @@ export class PlatformService {
       },
     };
     const hasUi = config.selection.testIds.some((id) => id.startsWith('UI-'));
-    if (
-      config.performance &&
-      (config.environmentId !== 'local-lab' ||
-        config.selection.testIds.length !== 1 ||
-        config.selection.testIds[0] !== 'UI-001' ||
-        config.browserProjects.length !== 1 ||
-        config.browserProjects[0] !== 'chromium' ||
-        config.workers !== 1 ||
-        config.retries !== 0 ||
-        config.headed)
-    ) {
+    if (config.performance && config.environmentId !== 'local-lab') {
       throw new ApiError(
         422,
-        'Performance profile requires local-lab, UI-001 only, Chromium, one worker, no retries and headless mode',
+        'Catalog performance benchmarking requires the Local Lab environment',
       );
     }
     if (config.accessibility && !hasUi) {

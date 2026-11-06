@@ -94,7 +94,10 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
     }
     @if (run(); as current) {
       @if (current.config?.performance) {
-        <app-performance-review [coverage]="current.performance ?? []" />
+        <app-performance-review
+          [coverage]="current.performance ?? []"
+          [phase]="current.performancePhase"
+        />
       }
       @if (current.config?.accessibility) {
         <app-accessibility-review

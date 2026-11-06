@@ -43,6 +43,15 @@ describe('Performance measurement review', () => {
 });
 
 describe('Unavailable performance metrics', () => {
+  it('explains the once-per-run benchmark phase without showing a premature pass', async () => {
+    await TestBed.configureTestingModule({ imports: [PerformanceReview] }).compileComponents();
+    const fixture = TestBed.createComponent(PerformanceReview);
+    fixture.componentRef.setInput('phase', 'running');
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Selected tests have finished');
+    expect(element.querySelector('[data-status="pass"]')).toBeNull();
+  });
   it('labels both missing medians and missing ranges instead of rendering an empty range', async () => {
     await TestBed.configureTestingModule({ imports: [PerformanceReview] }).compileComponents();
     const fixture = TestBed.createComponent(PerformanceReview);

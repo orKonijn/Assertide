@@ -65,45 +65,37 @@ await test('platform authorization, suite concurrency, launch deduplication and 
       { status: 403 },
     );
     const key = randomUUID();
-    for (const invalid of [
-      { ...config, performance: true },
+    await assert.rejects(
+      service.launch(
+        admin,
+        localProjectId,
+        {
+          ...config,
+          performance: true,
+          environmentId: 'other-environment',
+        },
+        randomUUID(),
+      ),
+      { status: 422 },
+    );
+    for (const valid of [
+      { ...config, performance: true, retries: 2 },
       {
         ...config,
         performance: true,
-        selection: { testIds: ['UI-002'] },
-        browserProjects: ['chromium'],
-      },
-      {
-        ...config,
-        performance: true,
-        selection: { testIds: ['UI-001'] },
+        selection: { testIds: ['UI-001', 'UI-002', 'LAB-001'] },
         browserProjects: ['firefox'],
-      },
-      {
-        ...config,
-        performance: true,
-        selection: { testIds: ['UI-001'] },
-        browserProjects: ['chromium'],
         workers: 2,
-      },
-      {
-        ...config,
-        performance: true,
-        selection: { testIds: ['UI-001'] },
-        browserProjects: ['chromium'],
         retries: 1,
       },
-      {
-        ...config,
-        performance: true,
-        selection: { testIds: ['UI-001'] },
-        browserProjects: ['chromium'],
-        headed: true,
-      },
     ]) {
-      await assert.rejects(service.launch(admin, localProjectId, invalid, randomUUID()), {
-        status: 422,
-      });
+      const benchmarkRun = await service.launch(admin, localProjectId, valid, randomUUID());
+      assert.equal((benchmarkRun['config'] as { performance: boolean }).performance, true);
+      await service.cancel(admin, String(benchmarkRun['id']));
+      await db.query('DELETE FROM run_outbox WHERE run_id=$1', [benchmarkRun['id']]);
+      await db.query("DELETE FROM platform_documents WHERE id=$1 AND kind='run'", [
+        benchmarkRun['id'],
+      ]);
     }
     await assert.rejects(
       service.launch(viewer, localProjectId, { ...config, performance: true }, randomUUID()),

@@ -237,6 +237,29 @@ export function performanceCoverage(
       };
     });
 }
+/** One run-level benchmark is independent of selected cases and functional retry attempts. */
+export function executionPerformanceCoverage(
+  artifacts: Parameters<typeof performanceCoverage>[1],
+): ReturnType<typeof performanceCoverage> {
+  const matching = artifacts.filter(
+    (item) =>
+      item.resultId === 'catalog-benchmark' &&
+      item.attempt === 1 &&
+      !item.unavailableReason &&
+      item.performance,
+  );
+  const checkpoint = matching.length === 1 ? matching[0]!.performance! : null;
+  return [
+    {
+      resultId: 'catalog-benchmark',
+      checkpoint,
+      decisions:
+        checkpoint?.status === 'measured'
+          ? evaluateLighthouseBudgets(checkpoint.samples, controlledPerformanceBudgets)
+          : [],
+    },
+  ];
+}
 export interface PerformanceDecision {
   metric: Metric;
   status: 'pass' | 'fail' | 'inconclusive';

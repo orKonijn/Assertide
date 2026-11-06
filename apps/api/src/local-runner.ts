@@ -19,7 +19,7 @@ import type { SqlConnection } from './database.ts';
 import { defaultEnvironment, environmentSchema, resolveSecret } from './environments.ts';
 import { executionPhase } from './execution-outcome.ts';
 import { cancelWorkerJob, kubernetesCommand } from './kubernetes-worker.ts';
-import { performanceCoverage } from './lighthouse-results.ts';
+import { executionPerformanceCoverage } from './lighthouse-results.ts';
 import { ociCommand, stopContainer } from './oci-worker.ts';
 import { stopProcessTree } from './process-tree.ts';
 import { archiveRaw, rawManifest, restoreRaw } from './raw-storage.ts';
@@ -365,6 +365,7 @@ export class LocalRunner {
       snapshot: string;
       workers: number;
       input: Record<string, unknown>;
+      jobId?: string;
     },
   ): Promise<number> {
     const redact = (text: string): string =>
@@ -378,9 +379,10 @@ export class LocalRunner {
           [id],
         )
       ).rows[0]?.log ?? '';
+    const workerId = isolated?.jobId ?? id;
     const command = isolated
       ? (process.env['WORKER_RUNTIME'] === 'kubernetes' ? kubernetesCommand : ociCommand)(
-          id,
+          workerId,
           isolated.snapshot,
           output,
           isolated.workers,
@@ -392,7 +394,7 @@ export class LocalRunner {
         workerRuntime: process.env['WORKER_RUNTIME'],
         workerHost: hostname(),
       });
-      this.containerId = id;
+      this.containerId = workerId;
     }
     return new Promise((resolve, reject) => {
       const child = spawn(command.executable, command.args, {
@@ -455,7 +457,7 @@ export class LocalRunner {
       };
       child.once('error', (error) => {
         clean();
-        void (isolated ? stopContainer(id) : Promise.resolve()).then(() => {
+        void (isolated ? stopContainer(workerId) : Promise.resolve()).then(() => {
           this.containerId = undefined;
           reject(error);
         });
@@ -464,7 +466,7 @@ export class LocalRunner {
         flush();
         clean();
         void pending
-          .then(() => (isolated ? stopContainer(id) : undefined))
+          .then(() => (isolated ? stopContainer(workerId) : undefined))
           .then(() => {
             this.containerId = undefined;
           })
@@ -523,7 +525,7 @@ export class LocalRunner {
         {
           RUN_VIDEO: run.config.video,
           RUN_ACCESSIBILITY: String(run.config.accessibility),
-          RUN_PERFORMANCE: String(run.config.performance),
+          RUN_PERFORMANCE: 'false',
           RUN_API_URL: run.environment.apiUrl,
           RUN_BROWSER_URL: run.environment.browserUrl,
           ...(password ? { LAB_PASSWORD: password } : {}),
@@ -543,7 +545,7 @@ export class LocalRunner {
                 video: run.config.video,
                 headed: run.config.headed,
                 accessibility: run.config.accessibility,
-                performance: run.config.performance,
+                performance: false,
                 password:
                   password || process.env['LAB_PASSWORD'] || randomBytes(32).toString('hex'),
                 signingKey: randomBytes(32).toString('hex'),
@@ -551,6 +553,76 @@ export class LocalRunner {
             }
           : undefined,
       );
+      const benchmarkOutput = path.join(output, 'benchmark');
+      if (run.config.performance && (code === 0 || code === 1)) {
+        const cancel =
+          (
+            await this.db.query<{ cancel: string | null }>(
+              "SELECT body->>'cancelRequested' AS cancel FROM platform_documents WHERE id=$1",
+              [run.id],
+            )
+          ).rows[0]?.cancel === 'true';
+        if (!cancel) {
+          await mkdir(benchmarkOutput, { recursive: true });
+          await this.update(run.id, { performancePhase: 'running' });
+          try {
+            // A fresh, serial worker measures the catalog once after all functional retries.
+            // Its private output is never merged into the selected functional test results.
+            const benchmarkCode = await this.command(
+              [
+                'node_modules/@playwright/test/cli.js',
+                'test',
+                '--config',
+                path.join(snapshot, 'playwright.config.ts'),
+                '--grep',
+                'UI-001 ',
+                '--workers',
+                '1',
+                '--retries',
+                '0',
+                '--project',
+                'chromium',
+              ],
+              benchmarkOutput,
+              run.id,
+              {
+                RUN_VIDEO: 'off',
+                RUN_ACCESSIBILITY: 'false',
+                RUN_PERFORMANCE: 'true',
+                RUN_API_URL: run.environment.apiUrl,
+                RUN_BROWSER_URL: run.environment.browserUrl,
+                ...(password ? { LAB_PASSWORD: password } : {}),
+              },
+              ['oci', 'kubernetes'].includes(process.env['WORKER_RUNTIME'] ?? '')
+                ? {
+                    snapshot,
+                    workers: 1,
+                    jobId: randomUUID(),
+                    input: {
+                      testIds: ['UI-001'],
+                      projects: ['chromium'],
+                      workers: 1,
+                      retries: 0,
+                      video: 'off',
+                      headed: false,
+                      accessibility: false,
+                      performance: true,
+                      password:
+                        password || process.env['LAB_PASSWORD'] || randomBytes(32).toString('hex'),
+                      signingKey: randomBytes(32).toString('hex'),
+                    },
+                  }
+                : undefined,
+            );
+            await this.update(run.id, {
+              performancePhase: benchmarkCode === 0 ? 'completed' : 'unavailable',
+            });
+          } catch {
+            // Benchmark infrastructure is advisory; functional outcomes are already recorded.
+            await this.update(run.id, { performancePhase: 'unavailable' });
+          }
+        }
+      }
       const canceled =
         (
           await this.db.query<{ cancel: string | null }>(
@@ -560,6 +632,35 @@ export class LocalRunner {
         ).rows[0]?.cancel === 'true';
       const data = await readResults(output);
       const artifacts: Artifact[] = [];
+      if (run.config.performance) {
+        try {
+          const benchmark = await readResults(benchmarkOutput);
+          for (const spec of benchmark.suites.flatMap(flatten)) {
+            for (const test of spec.tests) {
+              for (const attempt of test.results) {
+                artifacts.push(
+                  ...(await captureAttachments(
+                    run.id,
+                    'catalog-benchmark',
+                    1,
+                    attempt.attachments
+                      .filter((item) => item.name === 'performance-checkpoint.json')
+                      .map((item) => ({
+                        ...item,
+                        ...(item.path?.startsWith('/output/')
+                          ? { path: path.join(benchmarkOutput, item.path.slice(8)) }
+                          : {}),
+                      })),
+                    redact,
+                  )),
+                );
+              }
+            }
+          }
+        } catch {
+          await this.update(run.id, { performancePhase: 'unavailable' });
+        }
+      }
       for (const spec of data.suites.flatMap(flatten)) {
         for (const test of spec.tests) {
           const caseId = spec.title.split(' ')[0] ?? spec.title;
@@ -661,7 +762,7 @@ export class LocalRunner {
         ...(run.config.accessibility
           ? { accessibility: accessibilityCoverage(results, artifacts) }
           : {}),
-        ...(run.config.performance ? { performance: performanceCoverage(results, artifacts) } : {}),
+        ...(run.config.performance ? { performance: executionPerformanceCoverage(artifacts) } : {}),
         reportPhase: canceled ? 'failed' : 'generating',
       });
       executionFinalized = true;

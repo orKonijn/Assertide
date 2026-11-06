@@ -4,6 +4,25 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.7.0 - Release draft
+
+### Added - One catalog benchmark per execution
+
+- Performance benchmarking now accepts multiple selected tests and configured retries. Selected tests keep their browser, workers and retry settings; one separate, serial headless Chromium benchmark collects three catalog samples after all functional attempts finish. UI-001 no longer needs to be selected.
+- The benchmark has its own output and worker lifetime. It does not add a selected test result or an Allure test, and unavailable measurements do not turn functional results into failures. Canceling the benchmark preserves completed functional outcomes. Existing Local Lab restrictions, private evidence and advisory budgets remain.
+- Run detail identifies the run-level benchmark and explains when it is running. The configuration panel explains the once-per-execution behavior and remains usable with retries enabled.
+- Local verification exercised the exact 62-browser-test selection with one retry configured: 62 functional passes, one checkpoint, one three-sample collection and a ready Allure report. Mixed selections without UI-001, configured retries and cancellation during the separate phase also passed. Native ARM64 OCI/Kubernetes phase and cancellation checks passed and their resources were cleaned up. [Usage, evidence and compatibility](docs/performance-budgets.md#070-rollout-and-compatibility-unreleased).
+
+![62 selected tests with retries enabled and Start execution available](docs/changelog/assets/0.7.0/settings-mobile-dark.png)
+
+The benchmark no longer restricts the selected cases or retry count.
+
+![One run-level benchmark after all selected tests finish](docs/changelog/assets/0.7.0/results-desktop.png)
+
+The separate three-sample measurement does not add a functional result.
+
+![Run-level performance review on mobile in light mode](docs/changelog/assets/0.7.0/results-mobile.png)
+
 ## 0.6.2 — 2026-11-07
 
 Published to main and deployed to [assertide.com](https://assertide.com). [Signed image publication 42300506426](https://github.com/orKonijn/Assertide/actions/runs/42300506426) passed builds, security scans and signing. Live sign-in, setting recovery, isolated browser/Lighthouse and ordinary API execution, retained private metrics, mobile themes, Allure generation/opening, version identity and logout passed. The temporary verification account was disabled and its sessions revoked. [Publication evidence and CI status](docs/performance-budgets.md#publication---062---2026-11-07).

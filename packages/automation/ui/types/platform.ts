@@ -16,6 +16,7 @@ export interface Project {
   name: string;
 }
 export interface RunRecord {
+  performancePhase?: string;
   id: string;
   phase: string;
   reportPhase: string;

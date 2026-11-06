@@ -79,6 +79,7 @@ export interface PerformanceCoverage {
   }[];
 }
 export interface Run {
+  performancePhase?: string;
   performance?: PerformanceCoverage[];
   accessibility?: AccessibilityCoverage[];
   id: string;

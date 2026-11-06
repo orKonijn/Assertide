@@ -17,10 +17,11 @@ import type { PerformanceCoverage } from './api';
       </header>
       <p class="muted">
         Lighthouse measures the controlled inventory route. Budgets do not change functional
-        outcomes. These laboratory measurements are not field INP or a conformance score.
+        outcomes. These laboratory measurements are not field INP or a conformance score. The
+        benchmark runs once after the selected tests and their retries finish.
       </p>
       @for (row of coverage(); track row.resultId) {
-        <h3>{{ row.resultId }}</h3>
+        <h3>{{ row.resultId === 'catalog-benchmark' ? 'Run benchmark' : row.resultId }}</h3>
         @if (row.checkpoint?.status === 'measured') {
           @for (sample of row.checkpoint.samples?.slice(0, 1) ?? []; track sample.profile) {
             <p class="muted">
@@ -89,8 +90,12 @@ import type { PerformanceCoverage } from './api';
         }
       } @empty {
         <p role="status">
-          Measurements appear after the benchmark finishes. Missing evidence is never a performance
-          pass.
+          @if (phase() === 'running') {
+            Selected tests have finished. Running the catalog benchmark once, with three samples.
+          } @else {
+            Measurements appear after the benchmark finishes. Missing evidence is never a
+            performance pass.
+          }
         </p>
       }
     </section>
@@ -173,6 +178,7 @@ import type { PerformanceCoverage } from './api';
   ],
 })
 export class PerformanceReview {
+  public readonly phase = input<string>();
   public readonly coverage = input<PerformanceCoverage[]>([]);
   public label(metric: string): string {
     return (

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { captureAttachments } from '../src/artifacts.ts';
 import {
   evaluateLighthouseBudgets,
+  executionPerformanceCoverage,
   performanceCoverage,
   summarizeLighthouse,
 } from '../src/lighthouse-results.ts';
@@ -157,6 +158,11 @@ await test('performance evidence import retains only bounded metrics and require
   assert.ok(invalid?.unavailableReason);
   const results = [{ id: 'UI-001:chromium', browser: 'chromium', attempts: [{}] }];
   assert.equal(performanceCoverage(results, [valid])[0]?.decisions.length, 4);
+  const runArtifact = { ...valid, resultId: 'catalog-benchmark' };
+  assert.equal(executionPerformanceCoverage([valid])[0]?.checkpoint, null);
+  assert.equal(executionPerformanceCoverage([valid, runArtifact])[0]?.decisions.length, 4);
+  assert.equal(executionPerformanceCoverage([runArtifact, runArtifact])[0]?.checkpoint, null);
+  assert.equal(executionPerformanceCoverage([{ ...runArtifact, attempt: 2 }])[0]?.checkpoint, null);
   assert.equal(performanceCoverage(results, [valid, valid])[0]?.checkpoint, null);
   assert.equal(
     performanceCoverage([{ ...results[0]!, attempts: [{}, {}] }], [valid])[0]?.checkpoint,

@@ -2,7 +2,7 @@ export const CatalogSelectors = {
   accessibility: 'Check accessibility',
   performance: 'Benchmark catalog performance',
   performanceIssue:
-    'To benchmark, select UI-001 only and use Chromium, Local Lab, one worker, zero retries and headless mode. Or turn off Benchmark catalog performance.',
+    'Catalog performance benchmarking is available in Local Lab. Choose Local Lab or turn off the benchmark.',
   browser: 'Browser',
   workers: 'Workers',
   retries: 'Retries',
