@@ -48,6 +48,36 @@ export class ExecutionPage {
   public openAccessibilityState(resultId: string): Promise<void> {
     return this.accessibilityReview().locator('summary').filter({ hasText: resultId }).click();
   }
+  public investigateAccessibility(): Promise<void> {
+    return this.accessibilityReview()
+      .getByRole('button', { name: S.investigateAccessibility, exact: true })
+      .click();
+  }
+  public diagnosis(): Locator {
+    return this.page.getByLabel(S.diagnosis, { exact: true });
+  }
+  public triageDialog(): Locator {
+    return this.page.getByRole('dialog', { name: S.triage, exact: true });
+  }
+  public openTriage(): Promise<void> {
+    return this.accessibilityReview()
+      .getByRole('button', { name: S.triageButton, exact: true })
+      .click();
+  }
+  public async assignAccessibility(owner: string): Promise<void> {
+    await this.triageDialog().getByLabel('Owner label', { exact: true }).fill(owner);
+    await this.triageDialog()
+      .getByRole('button', { name: 'Save accessibility review', exact: true })
+      .click();
+  }
+  public closeTriage(): Promise<void> {
+    return this.triageDialog()
+      .getByRole('button', { name: 'Close accessibility triage', exact: true })
+      .click();
+  }
+  public reviewOwner(): Locator {
+    return this.triageDialog().getByLabel('Owner label', { exact: true });
+  }
   public heading(id: string): Locator {
     return this.page.getByRole('heading', { name: S.heading(id), exact: true });
   }

@@ -1,8 +1,17 @@
 import { DatePipe } from '@angular/common';
 import type { ElementRef } from '@angular/core';
-import { Component, computed, DestroyRef, inject, signal, viewChild } from '@angular/core';
+import {
+  afterRenderEffect,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+  viewChild,
+  viewChildren,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, Scroll } from '@angular/router';
 
 import { AccessibilityReview } from '../core/accessibility-review';
 import type { Environment, Run } from '../core/api';
@@ -77,6 +86,7 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
     @if (run(); as current) {
       @if (current.config?.accessibility) {
         <app-accessibility-review
+          (investigate)="investigateResult($event)"
           [runId]="id"
           [coverage]="current.accessibility ?? []"
           [expected]="accessibilityExpected()"
@@ -257,6 +267,8 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
                   </td>
                   <td data-label="Test result">
                     <details
+                      #resultDetails
+                      [attr.data-result-id]="result.id"
                       [open]="focusedResult() === result.id"
                       (toggle)="toggleResult(result.id, $event)"
                     >
@@ -449,11 +461,52 @@ export class RunDetail {
   public readonly selected = signal<string[]>([]);
   public readonly focusedResult = signal('');
   public readonly expanded = signal<string[]>([]);
+  private readonly resultDetails = viewChildren<ElementRef<HTMLDetailsElement>>('resultDetails');
+  private readonly pendingInvestigation = signal<string | null>(null);
+  private readonly investigationReady = signal(false);
   private stream: EventSource | undefined;
   private lastSequence = 0;
   private loadGeneration = 0;
   private accessRevoked = false;
   public constructor() {
+    this.router.events.pipe(takeUntilDestroyed()).subscribe((event) => {
+      if (event instanceof Scroll && this.pendingInvestigation()) {
+        this.investigationReady.set(true);
+      }
+    });
+    afterRenderEffect((onCleanup) => {
+      if (!this.investigationReady()) {
+        return;
+      }
+      const id = this.pendingInvestigation();
+      if (!id) {
+        return;
+      }
+      const details = this.resultDetails().find(
+        (element) => element.nativeElement.dataset['resultId'] === id,
+      )?.nativeElement;
+      if (!details?.open) {
+        return;
+      }
+      const target =
+        details.querySelector<HTMLElement>('textarea[name="diagnosis"]') ??
+        details.querySelector<HTMLElement>('summary');
+      if (!target) {
+        return;
+      }
+      const frame = requestAnimationFrame(() => {
+        if (!target.isConnected) {
+          return;
+        }
+        target.focus({ preventScroll: true });
+        target.scrollIntoView({
+          block: 'center',
+          behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+        });
+        this.pendingInvestigation.set(null);
+      });
+      onCleanup(() => cancelAnimationFrame(frame));
+    });
     inject(ActivatedRoute)
       .queryParamMap.pipe(takeUntilDestroyed())
       .subscribe((params) => {
@@ -486,6 +539,22 @@ export class RunDetail {
     this.expanded.update((items) =>
       open ? [...new Set([...items, id])] : items.filter((item) => item !== id),
     );
+  }
+  public async investigateResult(id: string): Promise<void> {
+    if (!this.run()?.results?.some((result) => result.id === id)) {
+      return;
+    }
+    this.investigationReady.set(false);
+    this.pendingInvestigation.set(id);
+    const navigated = await this.router.navigate(['/runs', this.id], {
+      queryParams: { result: id },
+    });
+    this.focusedResult.set(id);
+    this.resultPage.set(null);
+    this.expanded.update((items) => [...new Set([...items, id])]);
+    if (!navigated) {
+      this.investigationReady.set(true);
+    }
   }
   public canRerun(): boolean {
     return (

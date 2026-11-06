@@ -3,6 +3,11 @@ import { randomUUID } from 'node:crypto';
 import type { Express, Request, Response } from 'express';
 import { z } from 'zod';
 
+import {
+  AccessibilityReviewError,
+  readAccessibilityReviews,
+  saveAccessibilityReview,
+} from './accessibility-reviews.ts';
 import { initializeAnalyticsProjection } from './analytics-projection.ts';
 import type { SqlConnection } from './database.ts';
 import { discoverApprovedSource, discoveredCase } from './discovery.ts';
@@ -833,12 +838,13 @@ export function mountPlatform(
         }
         await fn(req, res, principal);
       } catch (error) {
-        const status = error instanceof ApiError ? error.status : 500;
+        const known = error instanceof ApiError || error instanceof AccessibilityReviewError;
+        const status = known ? error.status : 500;
         failureResponse(
           res,
           error,
           'platform',
-          error instanceof ApiError ? error.message : 'Internal service error',
+          known ? error.message : 'Internal service error',
           status,
         );
       }
@@ -1037,6 +1043,36 @@ export function mountPlatform(
         [principal.organizationId, run['projectId'], run['id']],
       );
       res.json({ items: rows.rows.map((row) => row.body) });
+    }),
+  );
+  app.get(
+    '/v1/runs/:id/results/:result/accessibility/reviews',
+    handler(async (req, res, principal) => {
+      const run = await service.get(principal, String(req.params['id']), 'run');
+      res.json({
+        items: await readAccessibilityReviews(
+          service,
+          principal,
+          run,
+          String(req.params['result']),
+        ),
+      });
+    }),
+  );
+  app.patch(
+    '/v1/runs/:id/results/:result/accessibility/reviews/:finding',
+    handler(async (req, res, principal) => {
+      const run = await service.get(principal, String(req.params['id']), 'run');
+      await saveAccessibilityReview(
+        service,
+        principal,
+        run,
+        String(req.params['result']),
+        String(req.params['finding']),
+        req.body as unknown,
+        req.get('If-Match'),
+      );
+      res.status(204).end();
     }),
   );
   app.post(

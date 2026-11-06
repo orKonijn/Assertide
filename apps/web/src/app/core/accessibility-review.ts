@@ -1,11 +1,11 @@
-import { Component, computed, input, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, computed, input, output, signal } from '@angular/core';
 
+import { AccessibilityTriage } from './accessibility-triage';
 import type { AccessibilityCoverage } from './api';
 
 @Component({
   selector: 'app-accessibility-review',
-  imports: [RouterLink],
+  imports: [AccessibilityTriage],
   template: `
     <section class="card accessibility-review" aria-labelledby="accessibility-heading">
       <header class="accessibility-heading">
@@ -102,9 +102,17 @@ import type { AccessibilityCoverage } from './api';
             </p>
           }
           <p>
-            <a [routerLink]="['/runs', runId()]" [queryParams]="{ result: row.resultId }"
-              >Investigate result and add a note</a
-            >
+            @if (
+              row.checkpoint?.status === 'checked' &&
+              row.checkpoint.violations.length + (row.checkpoint.reviewRules?.length ?? 0) > 0
+            ) {
+              <button type="button" (click)="triageResult.set(row.resultId)">
+                Triage findings
+              </button>
+            }
+            <button type="button" (click)="investigate.emit(row.resultId)">
+              Investigate result and add a note
+            </button>
           </p>
         </details>
       } @empty {
@@ -138,6 +146,13 @@ import type { AccessibilityCoverage } from './api';
         </nav>
       }
     </section>
+    @if (triageResult(); as resultId) {
+      <app-accessibility-triage
+        [runId]="runId()"
+        [resultId]="resultId"
+        (closed)="triageResult.set(null)"
+      />
+    }
   `,
   styles: [
     `
@@ -214,6 +229,8 @@ import type { AccessibilityCoverage } from './api';
   ],
 })
 export class AccessibilityReview {
+  public readonly investigate = output<string>();
+  public readonly triageResult = signal<string | null>(null);
   public readonly runId = input.required<string>();
   public readonly coverage = input<AccessibilityCoverage[]>([]);
   public readonly expected = input(0);

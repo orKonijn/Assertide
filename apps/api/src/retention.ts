@@ -115,6 +115,10 @@ export async function expireRunData(
     historyCutoff,
   ]);
   await db.query(
+    "DELETE FROM platform_documents WHERE kind='accessibility-review' AND body->>'updatedAt'<$1",
+    [historyCutoff],
+  );
+  await db.query(
     "UPDATE report_history SET body=COALESCE((SELECT jsonb_agg(entry) FROM jsonb_array_elements(body) entry WHERE entry->>'endedAt'>=$1),'[]'::jsonb),version=version+1 WHERE (lease_expires IS NULL OR lease_expires<now()) AND EXISTS (SELECT 1 FROM jsonb_array_elements(body) entry WHERE entry->>'endedAt'<$1)",
     [historyCutoff],
   );

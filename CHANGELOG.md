@@ -4,6 +4,36 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.5.0 — 2026-11-06
+
+Release candidate: verified locally; publication and rollout are pending.
+
+### Fixed
+
+- **Investigate result and add a note** now opens the correct results page and details, focuses Diagnosis and scrolls it into view. Repeated clicks and mobile reduced-motion mode work after router scroll restoration finishes.
+
+### Added
+
+- Accessibility triage saves an owner label, Open/Investigating status and notes across compatible rule-level checks. Administrators can approve exceptions for up to 30 days; expired exceptions remain visible. Findings and functional outcomes are never suppressed or rewritten. Project authorization, edit-conflict protection and audit records apply. [Usage, identity and retention](docs/run-accessibility.md#unreleased-investigation-and-triage).
+- Internal Lighthouse normalization and three-sample advisory metric budgets, with invalid/missing/noisy measurements kept Inconclusive. This is a tested foundation only: no runnable Lighthouse collector or load-testing integration is enabled. [Contract and remaining work](docs/performance-budgets.md).
+
+### Verification and compatibility
+
+- Local quick verification, five focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light accessibility/reflow checks passed. The browser journey covers a result on a later page, repeated clicks, saved ownership and mobile note focus. API tests cover scoped access, administrator approval, concurrent edits, automatic expiry and unchanged recorded outcomes. Linux infrastructure CI and production rollout were not run for this unreleased change. Existing CSS-budget and logo-sizing warnings remain.
+- No database migration, new service or worker policy change is required. Matching API/web images are required when releasing triage; review records use existing storage and 365-day retention. This compatible workflow addition is prepared as **0.5.0**; publication is pending.
+
+![Saved accessibility ownership and administrator-approved exception on desktop](docs/changelog/assets/0.5.0/triage-1440-dark.png)
+
+Actual controlled run: review decisions remain separate from recorded findings and functional results.
+
+![Accessibility triage on mobile in light mode](docs/changelog/assets/0.5.0/triage-390-light.png)
+
+The same saved review stacks at mobile width without horizontal overflow.
+
+![Investigation button focuses the visible mobile Diagnosis field](docs/changelog/assets/0.5.0/investigation-jump-390.png)
+
+Actual post-click state with reduced motion: Diagnosis is focused and visible, ready for a note.
+
 ## 0.4.0 — 2026-11-06
 
 ### Added - Advisory accessibility review

@@ -25,7 +25,21 @@ The focused browser journey launches an owned UI-001 run, observes an unchanged 
 
 Local quick verification, architecture/reporting checks and five focused browser journeys (new coverage plus existing execution behavior) passed with this change. Linux OCI/Kubernetes checks were skipped in local verification. The publication below additionally verified one live isolated Kubernetes execution; it does not substitute for the complete infrastructure CI matrix. Existing upstream build warnings are not suppressed.
 
-Still to build: named intermediate state inventories, cross-run finding identity/deduplication, assignment, approved baselines, expiring exceptions and manual-audit records. Lighthouse and bounded protocol load testing remain later roadmap phases. No external traffic testing is enabled by this slice.
+The published 0.4.0 slice did not include assignment or expiring exceptions. The local, unreleased extension below adds rule-level review records. Named intermediate state inventories, DOM-node identity/deduplication, approved baselines and full manual-audit records remain future work. Lighthouse collection and bounded protocol load testing remain later roadmap phases. No external traffic testing is enabled.
+
+## Unreleased: investigation and triage
+
+**Investigate result and add a note** now selects the result's table page, opens its details, focuses Diagnosis and brings it into view. Repeated clicks on the same result work, including mobile and reduced-motion mode. Read-only users reach the result summary instead of an unavailable editing field.
+
+Use **Triage findings** beside a checked state with findings to open its recorded rules. Operators can save an owner label, Open/Investigating status and a review note. These are review records, not changes to immutable results. An owner label does not grant project membership or send a notification.
+
+Administrators can approve or remove an exception with a reason and an expiry within the next 30 days. Expiry is evaluated on every read and automatically changes the exception to Expired. Exceptions remain visible and do not suppress findings, change coverage, rewrite functional outcomes or affect analytics. Ordinary operators can update ownership/notes while preserving an existing exception. The audit trail records the reviewer and finding ID without copying note content.
+
+Review identity is scoped to the organization and project, then keyed by environment, test/browser instance, axe engine version, final checkpoint state, finding kind and rule ID. Compatible runs share the saved review. A changed environment or engine creates a separate identity. This is rule-level continuity, not per-node deduplication or proof a missing finding was resolved; changed test implementations can retain the same rule key and require human reassessment.
+
+The API requires current project access and an optimistic version on every save. Conflicting edits return 412; the dialog preserves the draft and offers Reload reviews. Human operator access is required for edits; exception approval additionally requires administrator access. Reviews use the existing `platform_documents` storage and expire 365 days after their last update. No database migration, new service or worker policy change is needed. Deploy matching API/web images when this extension is released; old run summaries remain readable. Rolling back the extension leaves the added review records unused without rewriting historical results.
+
+The next performance phase currently has an [internal normalization and advisory-budget foundation](performance-budgets.md). A runnable Lighthouse collector is not included.
 
 ## Publication - 2026-11-06
 
