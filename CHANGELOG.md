@@ -4,6 +4,10 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Fixed
+
+- Suite and API launches now use a selectable enabled environment instead of assuming `local-lab`; launching is disabled when none is available. Reports and API execution history can load older pages, and API history filters on the server before pagination. Execution history keeps draft filters separate until Apply, preventing mixed pages. Six focused browser regressions pass, including real alternate-environment launches and pagination recovery. See [environment behavior and actual desktop/mobile captures](docs/environments.md#launch-environment-selection). Local and unreleased; no migration or version change.
+
 ## 0.7.0 — 2026-11-07
 
 Published to main and deployed to [assertide.com](https://assertide.com). [Signed image publication 42305471058](https://github.com/orKonijn/Assertide/actions/runs/42305471058) passed builds, security scans and signing. Live mixed API/Firefox execution preserved two configured retries and three selected functional results, then retained exactly one separate Chromium benchmark. Private metrics, mobile themes, ordinary API execution, Allure generation/opening, version identity and logout passed. [Publication and verification limits](docs/performance-budgets.md#publication---070---2026-11-07).

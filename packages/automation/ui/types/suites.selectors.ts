@@ -16,6 +16,8 @@ export const SuitesSelectors = {
   tags: 'Tags (comma separated)',
   save: 'Save suite',
   run: 'Run suite',
+  environment: 'Execution environment',
+  unavailable: 'No enabled execution environment.',
   article: 'article',
   edit: (name: string) => `Edit ${name}`,
 } as const;

@@ -38,6 +38,10 @@ Allure results are grouped by feature/story with owner, severity, tags, stable c
 
 OCI and Kubernetes CI runs independently upload raw Allure results, generated HTML reports and browser evidence under `platform-oci-report-and-evidence` and `platform-kubernetes-report-and-evidence`, including failed runs. Artifacts expire after 14 days. History is cached per branch and runtime, bounded to 30 entries; a cache miss starts a new history. Local output lives under ignored `.local/platform/<runtime>`. Each invocation clears that runtime's previous raw results, preventing stale tests from appearing in a new report. Generated reports and credentials are never committed.
 
+## QA boundary regressions
+
+From `packages/automation`, run `npx playwright test --config platform.config.ts qa-boundaries.spec.ts` for six regressions covering enabled-environment selection, disabled launch states, older report/API pages, pagination retry and applied-versus-draft history filters. Environment tests launch real controlled cases in test-owned projects. Pagination tests use 101 synthetic executions through a project-scoped response fixture; these verify frontend paging behavior rather than backend storage performance. They are also included in the standard platform acceptance suite.
+
 ## Evidence and privacy
 
 Authenticated app tests disable raw traces, video and automatic screenshots because they can contain session cookies or one-time credentials. Every failed UI case instead receives a masked screenshot, a URL without query/fragment, and bounded sanitized console/error context. Input and textarea fields are masked, including the CI token. Credential-entry tests omit console text. Known secrets are registered before use, and domain-step errors are redacted before reporting. Never place secrets in test names, parameters, assertions, descriptions or attachment names.

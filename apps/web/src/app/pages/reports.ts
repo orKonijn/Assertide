@@ -113,6 +113,11 @@ import { Api, errorMessage } from '../core/api';
           </tbody>
         </table>
       </div>
+      @if (nextCursor()) {
+        <button type="button" [disabled]="loading()" (click)="load(true)">
+          Load older reports
+        </button>
+      }
     </section>`,
 })
 export class Reports {
@@ -123,19 +128,27 @@ export class Reports {
   );
   public readonly error = signal('');
   public readonly loading = signal(false);
+  public readonly nextCursor = signal<string | null>(null);
   public constructor() {
     void this.load();
   }
-  public async load(): Promise<void> {
-    if (this.loading()) {
+  public async load(more = false): Promise<void> {
+    if (this.loading() || (more && !this.nextCursor())) {
       return;
     }
     this.loading.set(true);
     this.error.set('');
     try {
-      this.runs.set(
-        (await this.api.get<{ items: Run[] }>(`/runs?projectId=${this.api.projectId()}`)).items,
+      const query = new URLSearchParams({ projectId: this.api.projectId() });
+      const cursor = this.nextCursor();
+      if (more && cursor) {
+        query.set('cursor', cursor);
+      }
+      const result = await this.api.get<{ items: Run[]; nextCursor: string | null }>(
+        `/runs?${query}`,
       );
+      this.runs.set(more ? [...this.runs(), ...result.items] : result.items);
+      this.nextCursor.set(result.nextCursor);
     } catch (error) {
       this.error.set(errorMessage(error));
     } finally {

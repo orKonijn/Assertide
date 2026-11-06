@@ -15,6 +15,9 @@ export const AnalyticsSelectors = {
   period: (days: number) => `Last ${days} days`,
 } as const;
 export const HistorySelectors = {
+  rows: 'tbody tr',
+  older: 'Load older executions',
+  refresh: 'Refresh',
   filters: 'details.execution-filter-panel',
   noResults: 'No executions match this filter.',
   phase: 'Phase',

@@ -3,7 +3,7 @@ import { afterRenderEffect, Component, computed, inject, signal, viewChild } fro
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-import type { Suite, TestCase } from '../core/api';
+import type { Environment, Suite, TestCase } from '../core/api';
 import { Api, errorMessage } from '../core/api';
 import { Modal } from '../core/modal';
 @Component({
@@ -22,6 +22,25 @@ import { Modal } from '../core/modal';
     @if (error() && !editorOpen()) {
       <p role="alert" class="error">{{ error() }}</p>
     }
+    <section class="card toolbar" aria-label="Suite execution settings">
+      <label
+        >Execution environment<select
+          name="environment"
+          aria-label="Execution environment"
+          [(ngModel)]="environmentId"
+          [disabled]="busy() || !environments().length"
+        >
+          @for (environment of environments(); track environment.id) {
+            <option [value]="environment.id">{{ environment.name }}</option>
+          }
+        </select></label
+      >
+      @if (!environments().length) {
+        <p role="status">
+          No enabled execution environment. Ask an administrator to enable one in Settings.
+        </p>
+      }
+    </section>
     <div class="split suite-layout">
       <section class="suite-list">
         <nav class="result-pagination" aria-label="Suite pages">
@@ -99,7 +118,12 @@ import { Modal } from '../core/modal';
                   </button>
                 }
                 <button
-                  [disabled]="busy() || !suite.testIds.length || api.identity()?.role === 'viewer'"
+                  [disabled]="
+                    busy() ||
+                    !suite.testIds.length ||
+                    !environmentId ||
+                    api.identity()?.role === 'viewer'
+                  "
                   class="suite-run"
                   (click)="run(suite)"
                 >
@@ -349,6 +373,8 @@ export class Suites {
   );
   public readonly error = signal('');
   public readonly busy = signal(false);
+  public readonly environments = signal<Environment[]>([]);
+  public environmentId = '';
   public readonly editing = signal<Suite | null>(null);
   public name = '';
   public description = '';
@@ -413,12 +439,20 @@ export class Suites {
   }
   public async load(): Promise<void> {
     try {
-      const [suites, tests] = await Promise.all([
+      const [suites, tests, environments] = await Promise.all([
         this.api.get<{ items: Suite[] }>(`/projects/${this.api.projectId()}/suites`),
         this.api.get<{ items: TestCase[] }>(`/projects/${this.api.projectId()}/catalog`),
+        this.api.get<{ items: Environment[] }>(`/projects/${this.api.projectId()}/environments`),
       ]);
       this.suites.set(suites.items);
       this.tests.set(tests.items);
+      this.environments.set(environments.items.filter((environment) => environment.enabled));
+      if (!this.environments().some((environment) => environment.id === this.environmentId)) {
+        this.environmentId =
+          this.environments().find((environment) => environment.id === 'local-lab')?.id ??
+          this.environments()[0]?.id ??
+          '';
+      }
     } catch (error) {
       this.error.set(errorMessage(error));
     }
@@ -459,17 +493,27 @@ export class Suites {
     }
   }
   public async run(suite: Suite): Promise<void> {
+    const environment = this.environments().find((item) => item.id === this.environmentId);
+    if (
+      this.busy() ||
+      !environment ||
+      !suite.testIds.length ||
+      this.api.identity()?.role === 'viewer'
+    ) {
+      return;
+    }
     this.busy.set(true);
+    this.error.set('');
     try {
       const run = await this.api.launch(
         suite.testIds,
         crypto.randomUUID(),
         1,
         0,
-        'chromium',
+        environment.browsers.includes('chromium') ? 'chromium' : environment.browsers[0],
         undefined,
         'off',
-        'local-lab',
+        environment.id,
         false,
         { id: suite.id, version: suite.version },
       );
