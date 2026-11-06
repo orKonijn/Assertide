@@ -4,14 +4,16 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
-## 0.7.0 - Release draft
+## 0.7.0 — 2026-11-07
+
+Published to main and deployed to [assertide.com](https://assertide.com). [Signed image publication 42305471058](https://github.com/orKonijn/Assertide/actions/runs/42305471058) passed builds, security scans and signing. Live mixed API/Firefox execution preserved two configured retries and three selected functional results, then retained exactly one separate Chromium benchmark. Private metrics, mobile themes, ordinary API execution, Allure generation/opening, version identity and logout passed. [Publication and verification limits](docs/performance-budgets.md#publication---070---2026-11-07).
 
 ### Added - One catalog benchmark per execution
 
 - Performance benchmarking now accepts multiple selected tests and configured retries. Selected tests keep their browser, workers and retry settings; one separate, serial headless Chromium benchmark collects three catalog samples after all functional attempts finish. UI-001 no longer needs to be selected.
 - The benchmark has its own output and worker lifetime. It does not add a selected test result or an Allure test, and unavailable measurements do not turn functional results into failures. Canceling the benchmark preserves completed functional outcomes. Existing Local Lab restrictions, private evidence and advisory budgets remain.
 - Run detail identifies the run-level benchmark and explains when it is running. The configuration panel explains the once-per-execution behavior and remains usable with retries enabled.
-- Local verification exercised the exact 62-browser-test selection with one retry configured: 62 functional passes, one checkpoint, one three-sample collection and a ready Allure report. Mixed selections without UI-001, configured retries and cancellation during the separate phase also passed. Native ARM64 OCI/Kubernetes phase and cancellation checks passed and their resources were cleaned up. [Usage, evidence and compatibility](docs/performance-budgets.md#070-rollout-and-compatibility-unreleased).
+- Local verification exercised the exact 62-browser-test selection with one retry configured: 62 functional passes, one checkpoint, one three-sample collection and a ready Allure report. Mixed selections without UI-001, configured retries and cancellation during the separate phase also passed. All **66** platform acceptance journeys, quick verification, architecture/reporting checks and the four theme/viewport checks passed. Native ARM64 OCI/Kubernetes phase and cancellation checks passed and their resources were cleaned up. [Usage, evidence and compatibility](docs/performance-budgets.md#070-rollout-and-compatibility).
 
 ![62 selected tests with retries enabled and Start execution available](docs/changelog/assets/0.7.0/settings-mobile-dark.png)
 
