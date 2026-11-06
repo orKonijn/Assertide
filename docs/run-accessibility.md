@@ -1,6 +1,6 @@
 # Accessibility checks on browser runs
 
-This first roadmap slice is implemented locally and remains **Unreleased**. It adds opt-in advisory axe checks to the approved controlled storefront. It does not enable arbitrary destinations, claim accessibility conformance, or implement the complete accessibility roadmap.
+This first roadmap slice was published as **0.4.0 on 2026-11-06** to main and assertide.com. It adds opt-in advisory axe checks to the approved controlled storefront. It does not enable arbitrary destinations, claim accessibility conformance, or implement the complete accessibility roadmap.
 
 ## Use
 
@@ -23,9 +23,25 @@ Functional test outcomes, retry-aware analytics and Allure report readiness rema
 
 The focused browser journey launches an owned UI-001 run, observes an unchanged functional pass, reloads the page and verifies retained final-state coverage. API tests cover imported checkpoint validation, unsafe links, missing retry evidence, duplicate scans, unavailable artifacts, operator permissions and API-only rejection. The web component test distinguishes findings, manual review and missing evidence. Actual dark/light desktop/mobile captures and four axe/reflow checks cover the review surface.
 
-Local quick verification, architecture/reporting checks and five focused browser journeys (new coverage plus existing execution behavior) passed with this change. Linux OCI/Kubernetes execution is wired through the strict worker input but has not been executed locally; its infrastructure checks remain required before release. Existing upstream build warnings are not suppressed.
+Local quick verification, architecture/reporting checks and five focused browser journeys (new coverage plus existing execution behavior) passed with this change. Linux OCI/Kubernetes checks were skipped in local verification. The publication below additionally verified one live isolated Kubernetes execution; it does not substitute for the complete infrastructure CI matrix. Existing upstream build warnings are not suppressed.
 
 Still to build: named intermediate state inventories, cross-run finding identity/deduplication, assignment, approved baselines, expiring exceptions and manual-audit records. Lighthouse and bounded protocol load testing remain later roadmap phases. No external traffic testing is enabled by this slice.
+
+## Publication - 2026-11-06
+
+[Source 729f4ff](https://github.com/orKonijn/Assertide/commit/729f4ff0595e836c86bf8f7aa490f9304fe3726a) was published to main. [Image publication 42255711010](https://github.com/orKonijn/Assertide/actions/runs/42255711010) passed builds, security scans and signing. Each native ARM64 image's signed provenance was verified against that source before rollout:
+
+| Component                             | Verified deployed digest                                                  |
+| ------------------------------------- | ------------------------------------------------------------------------- |
+| API, execution and report supervisors | `sha256:473d76702ce682395f0ed2edf7c0f1d0488eef81d045425d8686f3f148db9121` |
+| Web                                   | `sha256:f7d924748103a41fbdef6acdeecd670097779565a735d71c1004e3454bce71a6` |
+| Isolated browser worker               | `sha256:f0ee30f06e38e8346637e9c98fc652ddded3ae746a0687654adf3f2e32917ec3` |
+
+Images were pre-pulled, idle execution/report queues were checked, and matching API/worker/web components were rolled out with a brief single-node restart. The previous deployment/configuration snapshot remains private for recovery. No database migration, identity-provider change or egress-policy relaxation was introduced.
+
+Live verification used a temporary controlled identity and its own run of LAB-001 and UI-001. Both functional results passed on the isolated worker; the final browser accessibility checkpoint was recorded with its engine and manual-review rule summaries. Desktop/mobile review in both themes, authenticated artifact retrieval, anonymous artifact denial, private Allure generation/opening, v0.4.0 identity and logout passed. The temporary identity was disabled afterward, its sessions revoked and project access removed; its local credential copy was deleted.
+
+[Broader Verify run 42255688132](https://github.com/orKonijn/Assertide/actions/runs/42255688132) was still running its full controlled API/cross-browser regression step when publication was verified. No fully green infrastructure CI claim is made. Public or arbitrary-target scanning, intermediate-state coverage, finding ownership/baselines and blocking accessibility gates are not part of this release.
 
 ![Actual desktop accessibility review](changelog/assets/0.4.0/accessibility-review-1440-dark.png)
 

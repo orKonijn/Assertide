@@ -4,11 +4,13 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.4.0 — 2026-11-06
+
 ### Added - Advisory accessibility review
 
 - Browser runs can opt into axe checks of each test's final browser state. Run detail shows checked/expected coverage, rule findings, manual-assessment guidance and investigation-note links, with ten coverage rows per page. Missing scans and missing final-retry evidence are labeled Not checked; findings do not change functional outcomes.
 - Capture is limited to the approved controlled storefront and excludes sensitive tests, DOM, selectors and page values. Bounded summaries use existing project authorization and retention. [Usage, rollout and remaining roadmap work](docs/run-accessibility.md).
-- Local quick verification, five focused browser journeys (including the opted-in run), architecture/reporting checks and four desktop/mobile dark/light axe/reflow checks passed. Actual [desktop](docs/changelog/assets/0.4.0/accessibility-review-1440-dark.png) and [mobile light](docs/changelog/assets/0.4.0/accessibility-review-390-light.png) captures. Linux OCI/Kubernetes integration is not locally verified. Unreleased; the published product remains 0.3.1.
+- Local quick verification, five focused browser journeys (including the opted-in run), architecture/reporting checks and four desktop/mobile dark/light axe/reflow checks passed. Actual [desktop](docs/changelog/assets/0.4.0/accessibility-review-1440-dark.png) and [mobile light](docs/changelog/assets/0.4.0/accessibility-review-390-light.png) captures. Published to main and deployed to [assertide.com](https://assertide.com). [Image publication 42255711010](https://github.com/orKonijn/Assertide/actions/runs/42255711010) passed builds, scans and signing; signed image digests were verified against source `729f4ff0595e836c86bf8f7aa490f9304fe3726a`. Live isolated API/browser execution, accessibility coverage, private artifact access, mobile themes, Allure generation/opening, release identity and logout passed. The temporary verification identity was disabled. [Rollout evidence and broader CI limitations](docs/run-accessibility.md#publication---2026-11-06).
 
 ![Accessibility coverage recorded for a browser test on desktop](docs/changelog/assets/0.4.0/accessibility-review-1440-dark.png)
 
