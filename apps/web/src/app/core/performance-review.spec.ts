@@ -41,3 +41,33 @@ describe('Performance measurement review', () => {
     expect(element.querySelector('[data-status="inconclusive"]')).not.toBeNull();
   });
 });
+
+describe('Unavailable performance metrics', () => {
+  it('labels both missing medians and missing ranges instead of rendering an empty range', async () => {
+    await TestBed.configureTestingModule({ imports: [PerformanceReview] }).compileComponents();
+    const fixture = TestBed.createComponent(PerformanceReview);
+    fixture.componentRef.setInput('coverage', [
+      {
+        resultId: 'UI-001:chromium',
+        checkpoint: { status: 'measured', samples: [] },
+        decisions: [
+          {
+            metric: 'lcpMs',
+            status: 'inconclusive',
+            samples: 0,
+            median: null,
+            minimum: null,
+            maximum: null,
+            limit: 2500,
+            reason: 'missing-metric',
+          },
+        ],
+      },
+    ]);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('[data-label="Median"]')?.textContent?.trim()).toBe('Unavailable');
+    expect(element.querySelector('[data-label="Range"]')?.textContent?.trim()).toBe('Unavailable');
+    expect(element.querySelector('[data-status="pass"]')).toBeNull();
+  });
+});

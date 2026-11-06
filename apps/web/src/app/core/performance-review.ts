@@ -51,9 +51,13 @@ import type { PerformanceCoverage } from './api';
                       }}
                     </td>
                     <td data-label="Range">
-                      {{ decision.minimum | number: '1.0-3' }}–{{
-                        decision.maximum | number: '1.0-3'
-                      }}
+                      @if (decision.minimum === null || decision.maximum === null) {
+                        Unavailable
+                      } @else {
+                        {{ decision.minimum | number: '1.0-3' }}–{{
+                          decision.maximum | number: '1.0-3'
+                        }}
+                      }
                     </td>
                     <td data-label="Budget">{{ decision.limit | number: '1.0-3' }}</td>
                     <td data-label="Assessment">

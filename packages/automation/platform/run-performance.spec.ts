@@ -35,4 +35,22 @@ test.describe('Run performance budgets', () => {
     await expect(execution.performanceReview()).not.toContainText('missing metric');
     await expect(execution.performanceReview()).not.toContainText('invalid measurement');
   });
+  test('incompatible benchmark settings explain recovery before launch', async () => {
+    await catalog.goto();
+    await catalog.select(['UI-001']);
+    await catalog.checkPerformance();
+    await catalog.configureBenchmark('firefox', 2, 1);
+    await expect(catalog.performanceIssue()).toBeVisible();
+    await expect(catalog.startButtons.first()).toBeDisabled();
+    await expect(catalog.startButtons.last()).toBeDisabled();
+    await catalog.configureBenchmark('chromium', 1, 0);
+    await expect(catalog.performanceIssue()).not.toBeVisible();
+    await expect(catalog.startButtons.first()).toBeEnabled();
+    await catalog.select(['UI-002']);
+    await expect(catalog.performanceIssue()).toBeVisible();
+    await expect(catalog.startButtons.first()).toBeDisabled();
+    await catalog.uncheckPerformance();
+    await expect(catalog.performanceIssue()).not.toBeVisible();
+    await expect(catalog.startButtons.first()).toBeEnabled();
+  });
 });

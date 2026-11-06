@@ -95,6 +95,21 @@ export class CatalogPage {
   public checkPerformance(): Promise<void> {
     return this.page.getByLabel(S.performance, { exact: true }).check();
   }
+  public performanceIssue(): Locator {
+    return this.page.getByText(S.performanceIssue, { exact: true });
+  }
+  public async configureBenchmark(
+    browser: string,
+    workers: number,
+    retries: number,
+  ): Promise<void> {
+    await this.page.getByLabel(S.browser, { exact: true }).selectOption(browser);
+    await this.page.getByLabel(S.workers, { exact: true }).fill(String(workers));
+    await this.page.getByLabel(S.retries, { exact: true }).fill(String(retries));
+  }
+  public uncheckPerformance(): Promise<void> {
+    return this.page.getByLabel(S.performance, { exact: true }).uncheck();
+  }
   public startExecution(): Promise<void> {
     return workflow('Start selected execution', () =>
       this.page.getByRole('button', { name: S.start, exact: true }).first().click(),

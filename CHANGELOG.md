@@ -4,18 +4,35 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.6.1 — Release draft
+
+### Fixed after QA and code review
+
+- Test explorer explains incompatible benchmark settings before launch and disables both Start execution buttons until corrected. Switching off the benchmark restores ordinary execution; server policy remains enforced.
+- Missing performance metric ranges now say Unavailable instead of showing an empty dash. Missing measurements remain Inconclusive. The Browser control has an explicit accessible name so keyboard/assistive technology and acceptance checks can identify it consistently.
+- Quick verification, the nine focused browser journeys (including the corrected recovery check), architecture/reporting checks and four desktop/mobile dark/light axe/reflow checks passed. The full 65-journey suite and publication checks are recorded separately when complete.
+- Prepared for publication together with the 0.6.0 feature milestone below. Publication and deployment are pending verification.
+
+![Benchmark settings explain how to recover before launching an unsupported profile](docs/changelog/assets/0.6.1/benchmark-settings-1440-dark.png)
+
+Actual desktop configuration: fix the listed settings or turn the benchmark off to continue.
+
+![The same benchmark recovery guidance on mobile in light mode](docs/changelog/assets/0.6.1/benchmark-settings-390-light.png)
+
+## 0.6.0 — Source milestone (release draft)
+
 ### Added - Controlled Lighthouse benchmark
 
 - Test explorer can opt UI-001 into a fixed Chromium desktop benchmark. After the functional test, Lighthouse measures the controlled catalog three times with a cold browser cache. Run detail retains LCP, layout shift, blocking time and transferred-byte medians/ranges, alongside advisory budgets and explicit Inconclusive/Not measured states. Functional outcomes are unchanged.
 - Measurement attachments exclude raw reports, DOM, screenshots and authentication values. Server/worker policies restrict the supported case, environment, browser and concurrency. Existing project authorization, private artifacts and retention apply. Matching API/web/worker images and a rebuilt approved source snapshot are required; no database migration or new public service is added. [Use, rollout and limitations](docs/performance-budgets.md#unreleased-controlled-catalog-benchmark).
 - Preserve functional screenshots/traces before handing off to the separate benchmark browser. One benchmark renderer and independent browser control avoid process-pressure and trace-shutdown failures without raising worker resource limits. Kubernetes cancellation uses a lightweight flag operation, and interrupted Playwright trace resources containing `@` can be transferred without relaxing path-containment checks.
-- Local quick verification, eight focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light accessibility/reflow checks passed. Separate ARM64 OCI and Kubernetes checks retained three valid samples and functional screenshots, preserved the functional pass, and verified cancellation with cleanup. Kubernetes cooperative cancellation also retained the evidence-transfer path. Candidate resources were removed and live deployment images/configuration were unchanged. [Linux evidence and remaining release gates](docs/performance-budgets.md#isolated-linux-verification---2026-11-06). The published version is still **0.5.0**; this compatible workflow addition is prepared for **0.6.0** and remains unreleased.
+- Local quick verification, eight focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light accessibility/reflow checks passed. Separate ARM64 OCI and Kubernetes checks retained three valid samples and functional screenshots, preserved the functional pass, and verified cancellation with cleanup. Kubernetes cooperative cancellation also retained the evidence-transfer path. Candidate resources were removed and live deployment images/configuration were unchanged. [Linux evidence and remaining release gates](docs/performance-budgets.md#isolated-linux-verification---2026-11-06). This compatible workflow addition is the **0.6.0** source milestone; the reviewed **0.6.1** patch will be the first deployed version of this feature. Publication is pending; the live version remains **0.5.0**.
 
-![Actual Lighthouse metric budgets from three controlled-store samples on desktop](docs/changelog/assets/unreleased/performance-1440-dark.png)
+![Actual Lighthouse metric budgets from three controlled-store samples on desktop](docs/changelog/assets/0.6.0/performance-1440-dark.png)
 
 Actual measurements show medians, ranges and advisory assessments; byte budgets use the worst sample.
 
-![The same Lighthouse measurements displayed as mobile metric cards in light mode](docs/changelog/assets/unreleased/performance-390-light.png)
+![The same Lighthouse measurements displayed as mobile metric cards in light mode](docs/changelog/assets/0.6.0/performance-390-light.png)
 
 The table becomes readable cards at mobile width without horizontal overflow.
 

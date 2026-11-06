@@ -35,7 +35,12 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
         <span class="selection-count" role="status">{{ selected().length }} selected</span>
         <button
           class="primary"
-          [disabled]="!selected().length || starting() || api.identity()?.role === 'viewer'"
+          [disabled]="
+            !selected().length ||
+            starting() ||
+            !!performanceIssue() ||
+            api.identity()?.role === 'viewer'
+          "
           (click)="start()"
         >
           {{ starting() ? 'Starting…' : 'Start execution' }}
@@ -326,6 +331,9 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
             Lighthouse desktop profile: select UI-001 only, Chromium, one worker, zero retries and
             headless mode. Measures the controlled catalog three times; budgets are advisory.
           </p>
+          @if (performanceIssue(); as issue) {
+            <p role="status" class="muted">{{ issue }}</p>
+          }
           <p class="muted">
             Scan the final browser state with axe. Findings are advisory and do not change
             functional test outcomes.
@@ -343,7 +351,7 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
             </select></label
           >
           <label
-            >Browser<select [(ngModel)]="browser">
+            >Browser<select aria-label="Browser" [(ngModel)]="browser">
               <option>chromium</option>
               <option>firefox</option>
               <option>webkit</option>
@@ -366,7 +374,12 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
         </p>
         <button
           class="primary"
-          [disabled]="!selected().length || starting() || api.identity()?.role === 'viewer'"
+          [disabled]="
+            !selected().length ||
+            starting() ||
+            !!performanceIssue() ||
+            api.identity()?.role === 'viewer'
+          "
           (click)="start()"
         >
           {{ starting() ? 'Starting…' : 'Start execution' }}
@@ -632,6 +645,9 @@ export class Explorer {
     this.key = crypto.randomUUID();
   }
   public async start(): Promise<void> {
+    if (this.performanceIssue()) {
+      return;
+    }
     this.starting.set(true);
     this.error.set('');
     try {
@@ -656,5 +672,22 @@ export class Explorer {
     } finally {
       this.starting.set(false);
     }
+  }
+  public performanceIssue(): string {
+    if (!this.performance || !this.hasUi()) {
+      return '';
+    }
+    if (
+      this.selected().length !== 1 ||
+      this.selected()[0] !== 'UI-001' ||
+      this.browser !== 'chromium' ||
+      this.environmentId !== 'local-lab' ||
+      this.workers !== 1 ||
+      this.retries !== 0 ||
+      (this.canHeaded() && this.headed)
+    ) {
+      return 'To benchmark, select UI-001 only and use Chromium, Local Lab, one worker, zero retries and headless mode. Or turn off Benchmark catalog performance.';
+    }
+    return '';
   }
 }

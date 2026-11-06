@@ -19,7 +19,7 @@ The contract follows the [official Lighthouse result schema](https://github.com/
 ## Unreleased: controlled catalog benchmark
 
 1. In Test explorer, select **UI-001** only. Choose Chromium, the Local Lab sandbox, one worker, zero retries and headless mode.
-2. Enable **Benchmark catalog performance** and start the execution. The server rejects other combinations; old runs default this optional setting to false. Existing operator/project authorization and execution quotas still apply.
+2. Enable **Benchmark catalog performance** and start the execution. Test explorer explains incompatible settings and keeps both Start execution buttons disabled until corrected or the benchmark is switched off. The server independently rejects other combinations; old runs default this optional setting to false. Existing operator/project authorization and execution quotas still apply.
 3. After the functional login test, its final screenshot, diagnostics and trace are preserved before releasing its browser. A separate temporary Chromium profile receives the controlled fixture's browser storage in memory. Lighthouse **13.6.0** measures `/inventory.html` three times. Raw storage, authentication values, DOM, screenshots and diagnostic bodies are excluded from the measurement attachment; ordinary private functional evidence keeps its existing policy.
 4. Run detail displays **Catalog performance** with metric medians, ranges, budgets and Pass/Fail/Inconclusive indicators. The original functional result stays independent. Reloading retains the metrics. Missing final-attempt evidence or failed measurement is labeled Not measured, never a pass.
 
@@ -69,3 +69,7 @@ TEST_KUBERNETES=true OCI_WORKER_IMAGE=<image>@sha256:<digest> npx tsx --test tes
 The test file skips a runtime when its prerequisites are absent; a skip is not a pass. The established Linux CI commands now include this file after the baseline worker checks. The Windows checks and the bounded ARM64 candidate checks do not establish a fully green GitHub/Linux infrastructure matrix. Signed image scanning/publication, deployment and live verification remain release-finalization work when publication is requested.
 
 Additional routes, mobile profiles, configurable per-project budgets, cross-run comparison UI, CI blocking gates and bounded protocol-load testing remain future work. The bounded candidate checks do not establish production performance, availability or a production SLA.
+
+## QA review patch � 0.6.1 release draft
+
+The 0.6.0 implementation is preserved as source milestone `5247c77`. The reviewed 0.6.1 candidate adds pre-launch profile recovery, an explicit Browser control name and clear Unavailable metric ranges. It is the first intended live rollout of this feature; no separate 0.6.0 live deployment is claimed. The worker collector, approved targets, sample profile, isolation and cancellation contracts are unchanged from the Linux verification above.

@@ -1,6 +1,11 @@
 export const CatalogSelectors = {
   accessibility: 'Check accessibility',
   performance: 'Benchmark catalog performance',
+  performanceIssue:
+    'To benchmark, select UI-001 only and use Chromium, Local Lab, one worker, zero retries and headless mode. Or turn off Benchmark catalog performance.',
+  browser: 'Browser',
+  workers: 'Workers',
+  retries: 'Retries',
   dialog: 'Edit test metadata',
   restored: 'Selection restored for this tab. Review execution settings before starting.',
   clear: 'Clear selection',
