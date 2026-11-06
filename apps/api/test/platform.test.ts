@@ -65,6 +65,50 @@ await test('platform authorization, suite concurrency, launch deduplication and 
       { status: 403 },
     );
     const key = randomUUID();
+    for (const invalid of [
+      { ...config, performance: true },
+      {
+        ...config,
+        performance: true,
+        selection: { testIds: ['UI-002'] },
+        browserProjects: ['chromium'],
+      },
+      {
+        ...config,
+        performance: true,
+        selection: { testIds: ['UI-001'] },
+        browserProjects: ['firefox'],
+      },
+      {
+        ...config,
+        performance: true,
+        selection: { testIds: ['UI-001'] },
+        browserProjects: ['chromium'],
+        workers: 2,
+      },
+      {
+        ...config,
+        performance: true,
+        selection: { testIds: ['UI-001'] },
+        browserProjects: ['chromium'],
+        retries: 1,
+      },
+      {
+        ...config,
+        performance: true,
+        selection: { testIds: ['UI-001'] },
+        browserProjects: ['chromium'],
+        headed: true,
+      },
+    ]) {
+      await assert.rejects(service.launch(admin, localProjectId, invalid, randomUUID()), {
+        status: 422,
+      });
+    }
+    await assert.rejects(
+      service.launch(viewer, localProjectId, { ...config, performance: true }, randomUUID()),
+      { status: 403 },
+    );
     const runs = await Promise.all([
       service.launch(admin, localProjectId, config, key),
       service.launch(admin, localProjectId, config, key),

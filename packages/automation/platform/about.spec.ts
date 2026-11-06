@@ -12,6 +12,7 @@ test.describe('About Assertide', () => {
     await expect(about.creator).toBeVisible();
     await about.openInside();
     await expect(about.inside).toBeFocused();
+    await about.goto('#inside');
     await about.reload();
     await expect(about.inside).toBeFocused();
     await about.expandArchitecture();
@@ -23,7 +24,9 @@ test.describe('About Assertide', () => {
       }
     }
   });
-  test('anonymous direct access stays at sign-in', async ({ browser }) => {
+  test('anonymous visitors can inspect the public About page while private projects require sign-in', async ({
+    browser,
+  }) => {
     const context = await browser.newContext({
       storageState: { cookies: [], origins: [] },
       baseURL: 'http://127.0.0.1:4200',
@@ -31,8 +34,10 @@ test.describe('About Assertide', () => {
     try {
       const about = new AboutPage(await context.newPage());
       await about.goto('#inside');
-      await expect(about.signIn).toBeVisible();
-      await expect(about.title).toHaveCount(0);
+      await expect(about.title).toBeVisible();
+      await expect(about.creator).toBeVisible();
+      await expect(about.inside).toBeFocused();
+      expect((await context.request.get('/v1/projects')).status()).toBe(401);
     } finally {
       await context.close();
     }

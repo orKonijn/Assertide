@@ -1,21 +1,18 @@
 import type { Page, Response } from '@playwright/test';
 
 import { AboutSelectors as S } from '../types/about.selectors';
-import { AuthenticationSelectors } from '../types/authentication.selectors';
 
 export class AboutPage {
   public readonly title;
   public readonly creator;
   public readonly inside;
   public readonly architecture;
-  public readonly signIn;
   private readonly link;
   public constructor(private readonly page: Page) {
     this.title = page.getByRole('heading', { name: S.title, exact: true });
-    this.creator = page.getByRole('heading', { name: 'Independent freelancer', exact: true });
+    this.creator = page.locator('#creator-title');
     this.inside = page.locator('#inside-title');
     this.architecture = page.locator('.architecture details');
-    this.signIn = page.getByRole('link', { name: AuthenticationSelectors.sso });
     this.link = page.getByRole('link', { name: S.title, exact: true });
   }
   public goto(fragment = ''): Promise<Response | null> {

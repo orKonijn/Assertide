@@ -1,5 +1,6 @@
 export const CatalogSelectors = {
   accessibility: 'Check accessibility',
+  performance: 'Benchmark catalog performance',
   dialog: 'Edit test metadata',
   restored: 'Selection restored for this tab. Review execution settings before starting.',
   clear: 'Clear selection',

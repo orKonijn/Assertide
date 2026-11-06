@@ -4,6 +4,21 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+### Added - Controlled Lighthouse benchmark
+
+- Test explorer can opt UI-001 into a fixed Chromium desktop benchmark. After the functional test, Lighthouse measures the controlled catalog three times with a cold browser cache. Run detail retains LCP, layout shift, blocking time and transferred-byte medians/ranges, alongside advisory budgets and explicit Inconclusive/Not measured states. Functional outcomes are unchanged.
+- Measurement attachments exclude raw reports, DOM, screenshots and authentication values. Server/worker policies restrict the supported case, environment, browser and concurrency. Existing project authorization, private artifacts and retention apply. Matching API/web/worker images and a rebuilt approved source snapshot are required; no database migration or new public service is added. [Use, rollout and limitations](docs/performance-budgets.md#unreleased-controlled-catalog-benchmark).
+- Preserve functional screenshots/traces before handing off to the separate benchmark browser. One benchmark renderer and independent browser control avoid process-pressure and trace-shutdown failures without raising worker resource limits. Kubernetes cancellation uses a lightweight flag operation, and interrupted Playwright trace resources containing `@` can be transferred without relaxing path-containment checks.
+- Local quick verification, eight focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light accessibility/reflow checks passed. Separate ARM64 OCI and Kubernetes checks retained three valid samples and functional screenshots, preserved the functional pass, and verified cancellation with cleanup. Kubernetes cooperative cancellation also retained the evidence-transfer path. Candidate resources were removed and live deployment images/configuration were unchanged. [Linux evidence and remaining release gates](docs/performance-budgets.md#isolated-linux-verification---2026-11-06). The published version is still **0.5.0**; this compatible workflow addition is prepared for **0.6.0** and remains unreleased.
+
+![Actual Lighthouse metric budgets from three controlled-store samples on desktop](docs/changelog/assets/unreleased/performance-1440-dark.png)
+
+Actual measurements show medians, ranges and advisory assessments; byte budgets use the worst sample.
+
+![The same Lighthouse measurements displayed as mobile metric cards in light mode](docs/changelog/assets/unreleased/performance-390-light.png)
+
+The table becomes readable cards at mobile width without horizontal overflow.
+
 ## 0.5.0 — 2026-11-06
 
 Published to main and deployed to [assertide.com](https://assertide.com). [Signed image publication 42281882582](https://github.com/orKonijn/Assertide/actions/runs/42281882582) passed builds, vulnerability scans and signing after the client dependency patch. Live sign-in, isolated API/browser execution, investigation navigation, mobile repeated clicks, persisted triage ownership, private evidence access, Allure generation/opening, version identity and logout passed. [Deployment evidence and CI limits](docs/run-accessibility.md#publication---050---2026-11-06).

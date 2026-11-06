@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { accessibilityCheckpoint } from './accessibility.ts';
 import type { SqlConnection } from './database.ts';
 import type { IdentityService } from './identity.ts';
+import { importPerformanceCheckpoint, performanceCheckpoint } from './lighthouse-results.ts';
 import { objectReference, objectStore } from './object-store.ts';
 import type { PlatformService } from './platform.ts';
 
@@ -31,6 +32,7 @@ export const artifactSchema = z.object({
   redactionPolicy: z.string(),
   unavailableReason: z.string().optional(),
   accessibility: accessibilityCheckpoint.optional(),
+  performance: performanceCheckpoint.optional(),
   object: objectReference.optional(),
   exchange: z
     .object({
@@ -114,6 +116,15 @@ export async function captureAttachments(
           throw new Error('Accessibility evidence exceeds policy');
         }
         item.accessibility = accessibilityCheckpoint.parse(JSON.parse(bytes.toString('utf8')));
+      }
+      if (attachment.name === 'performance-checkpoint.json') {
+        if (attachment.contentType !== 'application/json' || bytes.length > 100_000) {
+          throw new Error('Performance evidence exceeds policy');
+        }
+        item.performance = importPerformanceCheckpoint(JSON.parse(bytes.toString('utf8')));
+        bytes = Buffer.from(JSON.stringify(item.performance));
+        item.redactionPolicy =
+          'Bounded laboratory metrics only; raw reports, DOM and screenshots excluded';
       }
       if (attachment.name === 'api-exchange.json' || attachment.name === 'api-transport.json') {
         const exchange = z

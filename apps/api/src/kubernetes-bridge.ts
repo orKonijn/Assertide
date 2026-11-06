@@ -145,7 +145,7 @@ try {
     }
     const item = z
       .object({
-        name: z.string().regex(/^[a-zA-Z0-9_./ -]+$/),
+        name: z.string().regex(/^[a-zA-Z0-9_@./ -]+$/),
         data: z.string().max(90 * 1024 * 1024),
       })
       .parse(JSON.parse(line));

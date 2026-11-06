@@ -42,7 +42,7 @@ kubectl -n assertide create token assertide-execution --duration=10m > "$RUNNER_
 node --input-type=module -e 'import fs from "node:fs"; const p=process.env.RUNNER_TEMP; const config=JSON.parse(fs.readFileSync(p+"/scoped-kubeconfig")); config.users[0].user={token:fs.readFileSync(p+"/supervisor-jwt","utf8").trim()}; fs.writeFileSync(p+"/scoped-kubeconfig",JSON.stringify(config),{mode:0o600});'
 if KUBECONFIG="$RUNNER_TEMP/scoped-kubeconfig" kubectl auth can-i get secrets -n assertide; then echo "Supervisor must not read service secrets"; exit 1; fi
 export TEST_KUBERNETES=true
-(cd apps/api && KUBECONFIG="$RUNNER_TEMP/scoped-kubeconfig" npx tsx --test test/kubernetes-worker.test.ts)
+(cd apps/api && KUBECONFIG="$RUNNER_TEMP/scoped-kubeconfig" npx tsx --test --test-concurrency=1 test/kubernetes-worker.test.ts test/performance-worker.test.ts)
 
 # Real Vault + real Kubernetes TokenReview, isolated from worker namespace.
 kubectl create serviceaccount vault

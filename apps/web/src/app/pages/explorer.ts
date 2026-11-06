@@ -319,6 +319,13 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
         <p>{{ selected().length }} tests selected</p>
         @if (hasUi()) {
           <label><input type="checkbox" [(ngModel)]="accessibility" />Check accessibility</label>
+          <label
+            ><input type="checkbox" [(ngModel)]="performance" />Benchmark catalog performance</label
+          >
+          <p class="muted">
+            Lighthouse desktop profile: select UI-001 only, Chromium, one worker, zero retries and
+            headless mode. Measures the controlled catalog three times; budgets are advisory.
+          </p>
           <p class="muted">
             Scan the final browser state with axe. Findings are advisory and do not change
             functional test outcomes.
@@ -416,6 +423,7 @@ export class Explorer {
   public readonly headedAvailable = signal(false);
   public headed = false;
   public accessibility = false;
+  public performance = false;
   public video: 'off' | 'retain-on-failure' = 'off';
   public readonly hasUi = computed(() => this.selected().some((id) => id.startsWith('UI-')));
   private key = crypto.randomUUID();
@@ -639,6 +647,7 @@ export class Explorer {
         this.hasUi() && this.canHeaded() && this.headed,
         undefined,
         this.hasUi() && this.accessibility,
+        this.hasUi() && this.performance,
       );
       this.clearSelection();
       await this.router.navigate(['/runs', run.id]);

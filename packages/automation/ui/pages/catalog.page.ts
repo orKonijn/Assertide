@@ -92,6 +92,9 @@ export class CatalogPage {
   public checkAccessibility(): Promise<void> {
     return this.page.getByLabel(S.accessibility, { exact: true }).check();
   }
+  public checkPerformance(): Promise<void> {
+    return this.page.getByLabel(S.performance, { exact: true }).check();
+  }
   public startExecution(): Promise<void> {
     return workflow('Start selected execution', () =>
       this.page.getByRole('button', { name: S.start, exact: true }).first().click(),

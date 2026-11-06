@@ -9,6 +9,7 @@ import {
   setStepScreenshotPage,
 } from '../utils/allure.utils';
 import { captureRunAccessibility } from '../utils/run-accessibility.utils';
+import { captureRunPerformance } from '../utils/run-performance.utils';
 export const test = base.extend<{
   diagnostics: { errors: string[]; secrets: string[] };
   sensitive: boolean;
@@ -42,11 +43,12 @@ export const test = base.extend<{
           await screenshot(page, 'final-state.png');
         }
         await failureContext(page, info, sensitive ? [] : [...errors, ...consoleErrors], secrets);
+        await captureRunPerformance(page, info, sensitive);
       } finally {
         setStepScreenshotPage();
       }
     },
-    { auto: true },
+    { auto: true, ...(process.env['RUN_PERFORMANCE'] === 'true' ? { timeout: 180_000 } : {}) },
   ],
 });
 export { expect };

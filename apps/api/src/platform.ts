@@ -97,6 +97,7 @@ const runInput = z
     retries: z.number().int().min(0).max(2),
     headed: z.boolean().default(false),
     accessibility: z.boolean().default(false),
+    performance: z.boolean().default(false),
     video: z.enum(['off', 'retain-on-failure']),
     commitSha: z
       .string()
@@ -507,6 +508,22 @@ export class PlatformService {
       },
     };
     const hasUi = config.selection.testIds.some((id) => id.startsWith('UI-'));
+    if (
+      config.performance &&
+      (config.environmentId !== 'local-lab' ||
+        config.selection.testIds.length !== 1 ||
+        config.selection.testIds[0] !== 'UI-001' ||
+        config.browserProjects.length !== 1 ||
+        config.browserProjects[0] !== 'chromium' ||
+        config.workers !== 1 ||
+        config.retries !== 0 ||
+        config.headed)
+    ) {
+      throw new ApiError(
+        422,
+        'Performance profile requires local-lab, UI-001 only, Chromium, one worker, no retries and headless mode',
+      );
+    }
     if (config.accessibility && !hasUi) {
       throw new ApiError(422, 'Accessibility checks require a browser test selection');
     }

@@ -22,10 +22,23 @@ const spec = z
     video: z.enum(['off', 'retain-on-failure']),
     headed: z.boolean().default(false),
     accessibility: z.boolean().default(false),
+    performance: z.boolean().default(false),
     password: z.string().min(12),
     signingKey: z.string().min(32),
   })
   .strict()
+  .refine(
+    (value) =>
+      !value.performance ||
+      (value.testIds.length === 1 &&
+        value.testIds[0] === 'UI-001' &&
+        value.projects.length === 1 &&
+        value.projects[0] === 'chromium' &&
+        value.workers === 1 &&
+        value.retries === 0 &&
+        !value.headed),
+    { message: 'Unsupported performance execution profile' },
+  )
   .parse(JSON.parse(input));
 const lock = await readFile('/source/package-lock.json');
 const expected = (await readFile('/app/automation-lock.sha256', 'utf8')).trim();
@@ -69,6 +82,7 @@ const child = spawn(
       RUN_OUTPUT: '/output',
       RUN_VIDEO: spec.video,
       RUN_ACCESSIBILITY: String(spec.accessibility),
+      RUN_PERFORMANCE: String(spec.performance),
       RUN_API_URL: 'http://127.0.0.1:4010/lab/v1/',
       RUN_BROWSER_URL: 'http://127.0.0.1:4013',
       LAB_PASSWORD: spec.password,

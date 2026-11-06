@@ -19,6 +19,7 @@ import type { SqlConnection } from './database.ts';
 import { defaultEnvironment, environmentSchema, resolveSecret } from './environments.ts';
 import { executionPhase } from './execution-outcome.ts';
 import { cancelWorkerJob, kubernetesCommand } from './kubernetes-worker.ts';
+import { performanceCoverage } from './lighthouse-results.ts';
 import { ociCommand, stopContainer } from './oci-worker.ts';
 import { stopProcessTree } from './process-tree.ts';
 import { archiveRaw, rawManifest, restoreRaw } from './raw-storage.ts';
@@ -51,6 +52,7 @@ const automationRoot = path.join(root, 'packages', 'automation');
 const configuration = z.object({
   headed: z.boolean().default(false),
   accessibility: z.boolean().default(false),
+  performance: z.boolean().default(false),
   environmentId: z.string().default('local-lab'),
   catalogRevision: z.string(),
   workers: z.number().int().min(1).max(4),
@@ -521,6 +523,7 @@ export class LocalRunner {
         {
           RUN_VIDEO: run.config.video,
           RUN_ACCESSIBILITY: String(run.config.accessibility),
+          RUN_PERFORMANCE: String(run.config.performance),
           RUN_API_URL: run.environment.apiUrl,
           RUN_BROWSER_URL: run.environment.browserUrl,
           ...(password ? { LAB_PASSWORD: password } : {}),
@@ -540,6 +543,7 @@ export class LocalRunner {
                 video: run.config.video,
                 headed: run.config.headed,
                 accessibility: run.config.accessibility,
+                performance: run.config.performance,
                 password:
                   password || process.env['LAB_PASSWORD'] || randomBytes(32).toString('hex'),
                 signingKey: randomBytes(32).toString('hex'),
@@ -657,6 +661,7 @@ export class LocalRunner {
         ...(run.config.accessibility
           ? { accessibility: accessibilityCoverage(results, artifacts) }
           : {}),
+        ...(run.config.performance ? { performance: performanceCoverage(results, artifacts) } : {}),
         reportPhase: canceled ? 'failed' : 'generating',
       });
       executionFinalized = true;

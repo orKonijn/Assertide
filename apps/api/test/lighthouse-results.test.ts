@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { mkdir, readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
-import { evaluateLighthouseBudgets, summarizeLighthouse } from '../src/lighthouse-results.ts';
+import { captureAttachments } from '../src/artifacts.ts';
+import {
+  evaluateLighthouseBudgets,
+  performanceCoverage,
+  summarizeLighthouse,
+} from '../src/lighthouse-results.ts';
 
 const report = (second: number, lcp = 2000): unknown => ({
   gatherMode: 'navigation',
@@ -10,9 +18,16 @@ const report = (second: number, lcp = 2000): unknown => ({
   fetchTime: `2026-11-06T10:00:0${second}.000Z`,
   lighthouseVersion: '12.8.0',
   configSettings: {
-    formFactor: 'mobile',
+    formFactor: 'desktop',
     throttlingMethod: 'simulate',
-    throttling: { rttMs: 150, throughputKbps: 1600, cpuSlowdownMultiplier: 4 },
+    throttling: { rttMs: 40, throughputKbps: 10_240, cpuSlowdownMultiplier: 1 },
+    screenEmulation: {
+      width: 1350,
+      height: 940,
+      deviceScaleFactor: 1,
+      mobile: false,
+      disabled: false,
+    },
   },
   environment: { hostUserAgent: 'HeadlessChrome/130.0.0.0' },
   audits: {
@@ -102,5 +117,43 @@ await test('Lighthouse boundaries reject external or credential-bearing routes a
       runtimeError: { code: 'NO_DOCUMENT_REQUEST', message: 'PRIVATE_ERROR' },
     }).validity,
     'runtime-error',
+  );
+});
+
+await test('performance evidence import retains only bounded metrics and requires unique final-attempt evidence', async () => {
+  const id = randomUUID();
+  const root = fileURLToPath(new URL(`../../../.local/runs/${id}/`, import.meta.url));
+  await mkdir(root, { recursive: true });
+  const attachment = (input: unknown): { name: string; contentType: string; body: string } => ({
+    name: 'performance-checkpoint.json',
+    contentType: 'application/json',
+    body: Buffer.from(JSON.stringify(input)).toString('base64'),
+  });
+  const [valid, invalid] = await captureAttachments(
+    id,
+    'UI-001:chromium',
+    1,
+    [
+      attachment({
+        version: 1,
+        status: 'measured',
+        reports: [1, 2, 3].map((second) => report(second)),
+      }),
+      attachment({ version: 1, status: 'measured', reports: [report(1)] }),
+    ],
+    (value) => value,
+  );
+  assert.equal(valid?.performance?.status, 'measured');
+  assert.ok(valid);
+  const bytes = await readFile(`${root}/artifacts/${valid.id}`, 'utf8');
+  assert.ok(!bytes.includes('PRIVATE_DOM_CANARY'));
+  assert.ok(!bytes.includes('requestedUrl'));
+  assert.ok(invalid?.unavailableReason);
+  const results = [{ id: 'UI-001:chromium', browser: 'chromium', attempts: [{}] }];
+  assert.equal(performanceCoverage(results, [valid])[0]?.decisions.length, 4);
+  assert.equal(performanceCoverage(results, [valid, valid])[0]?.checkpoint, null);
+  assert.equal(
+    performanceCoverage([{ ...results[0]!, attempts: [{}, {}] }], [valid])[0]?.checkpoint,
+    null,
   );
 });

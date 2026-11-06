@@ -215,9 +215,9 @@ export async function cancelWorkerJob(id: string): Promise<boolean> {
         '-c',
         'transfer',
         '--',
-        'node',
-        '/app/workers/kubernetes-transfer.mjs',
-        'cancel',
+        // Cancellation must remain available near the pod PID limit; do not launch another Node VM.
+        '/usr/bin/touch',
+        '/input/cancel',
       ],
       { windowsHide: true, stdio: 'ignore' },
     );

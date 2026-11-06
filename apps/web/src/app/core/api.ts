@@ -60,7 +60,26 @@ export interface Suite {
   tags: string[];
   priority?: string;
 }
+export interface PerformanceCoverage {
+  resultId: string;
+  checkpoint: {
+    status: 'measured' | 'unavailable';
+    reason?: string;
+    samples?: { route: string; toolVersion: string; formFactor: string; profile: string }[];
+  } | null;
+  decisions: {
+    metric: 'lcpMs' | 'cls' | 'tbtMs' | 'transferBytes';
+    status: 'pass' | 'fail' | 'inconclusive';
+    samples: number;
+    median: number | null;
+    minimum: number | null;
+    maximum: number | null;
+    limit: number;
+    reason: string;
+  }[];
+}
 export interface Run {
+  performance?: PerformanceCoverage[];
   accessibility?: AccessibilityCoverage[];
   id: string;
   projectId: string;
@@ -84,6 +103,7 @@ export interface Run {
     video: string;
     headed: boolean;
     accessibility?: boolean;
+    performance?: boolean;
     browserProjects: string[];
   };
   logTail?: string;
@@ -278,6 +298,7 @@ export class Api {
     headed = false,
     suite?: { id: string; version: number },
     accessibility = false,
+    performance = false,
   ): Promise<Run> {
     const catalogRevision =
       revision ??
@@ -295,6 +316,7 @@ export class Api {
         headed,
         video,
         accessibility,
+        performance,
       },
       key,
     );

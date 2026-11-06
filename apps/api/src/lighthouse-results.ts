@@ -44,6 +44,15 @@ const reportSchema = z.object({
   configSettings: z.object({
     formFactor: z.enum(['mobile', 'desktop']),
     throttlingMethod: z.enum(['simulate', 'devtools', 'provided']),
+    screenEmulation: z
+      .object({
+        width: measurement,
+        height: measurement,
+        deviceScaleFactor: measurement,
+        mobile: z.boolean(),
+        disabled: z.boolean(),
+      })
+      .optional(),
     throttling: z
       .object({
         rttMs: measurement,
@@ -124,6 +133,110 @@ export function summarizeLighthouse(input: unknown): LighthouseSummary {
 const budgetsSchema = z
   .object({ lcpMs: measurement, cls: measurement, tbtMs: measurement, transferBytes: measurement })
   .strict();
+export const controlledPerformanceBudgets = {
+  lcpMs: 2500,
+  cls: 0.1,
+  tbtMs: 200,
+  transferBytes: 1_000_000,
+} as const;
+export const performanceCheckpoint = z.discriminatedUnion('status', [
+  z
+    .object({
+      version: z.literal(1),
+      status: z.literal('measured'),
+      samples: z.array(lighthouseSummarySchema).length(3),
+    })
+    .strict(),
+  z
+    .object({
+      version: z.literal(1),
+      status: z.literal('unavailable'),
+      reason: z.enum(['measurement-failed', 'profile-not-supported', 'target-not-approved']),
+    })
+    .strict(),
+]);
+export type PerformanceCheckpoint = z.infer<typeof performanceCheckpoint>;
+export function importPerformanceCheckpoint(input: unknown): PerformanceCheckpoint {
+  const envelope = z
+    .discriminatedUnion('status', [
+      z
+        .object({
+          version: z.literal(1),
+          status: z.literal('measured'),
+          reports: z.array(z.unknown()).length(3),
+        })
+        .strict(),
+      z
+        .object({
+          version: z.literal(1),
+          status: z.literal('unavailable'),
+          reason: z.enum(['measurement-failed', 'profile-not-supported', 'target-not-approved']),
+        })
+        .strict(),
+    ])
+    .parse(input);
+  return envelope.status === 'unavailable'
+    ? envelope
+    : performanceCheckpoint.parse({
+        version: 1,
+        status: 'measured',
+        samples: envelope.reports.map((input) => {
+          const report = reportSchema.parse(input);
+          const screen = report.configSettings.screenEmulation;
+          const throttle = report.configSettings.throttling;
+          if (
+            report.requestedUrl !== 'http://127.0.0.1:4013/inventory.html' ||
+            report.configSettings.formFactor !== 'desktop' ||
+            report.configSettings.throttlingMethod !== 'simulate' ||
+            throttle?.rttMs !== 40 ||
+            throttle.throughputKbps !== 10_240 ||
+            throttle.cpuSlowdownMultiplier !== 1 ||
+            screen?.width !== 1350 ||
+            screen.height !== 940 ||
+            screen.deviceScaleFactor !== 1 ||
+            screen.mobile ||
+            screen.disabled
+          ) {
+            throw new Error('Unsupported benchmark measurement profile');
+          }
+          return summarizeLighthouse(input);
+        }),
+      });
+}
+export function performanceCoverage(
+  results: readonly { id: string; browser: string | null; attempts: readonly unknown[] }[],
+  artifacts: readonly {
+    resultId: string;
+    attempt: number;
+    unavailableReason?: string | undefined;
+    performance?: PerformanceCheckpoint | undefined;
+  }[],
+): {
+  resultId: string;
+  checkpoint: PerformanceCheckpoint | null;
+  decisions: PerformanceDecision[];
+}[] {
+  return results
+    .filter((result) => result.browser === 'chromium')
+    .map((result) => {
+      const matching = artifacts.filter(
+        (item) =>
+          item.resultId === result.id &&
+          item.attempt === result.attempts.length &&
+          !item.unavailableReason &&
+          item.performance,
+      );
+      const checkpoint = matching.length === 1 ? matching[0]!.performance! : null;
+      return {
+        resultId: result.id,
+        checkpoint,
+        decisions:
+          checkpoint?.status === 'measured'
+            ? evaluateLighthouseBudgets(checkpoint.samples, controlledPerformanceBudgets)
+            : [],
+      };
+    });
+}
 export interface PerformanceDecision {
   metric: Metric;
   status: 'pass' | 'fail' | 'inconclusive';

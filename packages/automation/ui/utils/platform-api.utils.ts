@@ -94,10 +94,13 @@ export class PlatformApi {
     const run = await this.launch(ids, project);
     return this.waitForCompletion(run.id);
   }
-  public async waitForCompletion(id: string): Promise<RunRecord> {
+  public async waitForCompletion(
+    id: string,
+    timeout: number = Timeouts.execution,
+  ): Promise<RunRecord> {
     await expect
       .poll(async () => (await this.run(id)).phase, {
-        timeout: Timeouts.execution,
+        timeout,
       })
       .toBe(RunStatus.completed);
     return this.run(id);

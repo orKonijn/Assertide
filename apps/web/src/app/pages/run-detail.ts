@@ -16,10 +16,19 @@ import { ActivatedRoute, Router, RouterLink, Scroll } from '@angular/router';
 import { AccessibilityReview } from '../core/accessibility-review';
 import type { Environment, Run } from '../core/api';
 import { Api, errorMessage } from '../core/api';
+import { PerformanceReview } from '../core/performance-review';
 import { ResultNotes, ResultSteps } from '../core/result-investigation';
 import { ScreenshotViewer } from '../core/screenshot-viewer';
 @Component({
-  imports: [RouterLink, DatePipe, ResultSteps, ResultNotes, ScreenshotViewer, AccessibilityReview],
+  imports: [
+    RouterLink,
+    DatePipe,
+    ResultSteps,
+    ResultNotes,
+    ScreenshotViewer,
+    AccessibilityReview,
+    PerformanceReview,
+  ],
   styles: [
     'dialog { color: var(--text); background: var(--surface); border: 1px solid var(--border); max-width: min(40rem, 90vw); border-radius: .75rem; } dialog::backdrop { background: #0009; }',
   ],
@@ -84,6 +93,9 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
       </p>
     }
     @if (run(); as current) {
+      @if (current.config?.performance) {
+        <app-performance-review [coverage]="current.performance ?? []" />
+      }
       @if (current.config?.accessibility) {
         <app-accessibility-review
           (investigate)="investigateResult($event)"

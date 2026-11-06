@@ -131,7 +131,7 @@ jobs:
         run: |
           docker build -f workers/Dockerfile -t assertide-worker:ci .
           echo "OCI_WORKER_IMAGE=$(docker image inspect --format '{{.Id}}' assertide-worker:ci)" >> "$GITHUB_ENV"
-      - run: npx tsx --test test/oci-worker.test.ts
+      - run: npx tsx --test --test-concurrency=1 test/oci-worker.test.ts test/performance-worker.test.ts
         working-directory: apps/api
       - run: node packages/automation/checks/architecture.mjs
       - run: node packages/automation/checks/reporting.mjs

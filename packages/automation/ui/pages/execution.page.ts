@@ -45,6 +45,9 @@ export class ExecutionPage {
   public accessibilityReview(): Locator {
     return this.page.getByRole('region', { name: S.accessibility, exact: true });
   }
+  public performanceReview(): Locator {
+    return this.page.getByRole('region', { name: S.performance, exact: true });
+  }
   public openAccessibilityState(resultId: string): Promise<void> {
     return this.accessibilityReview().locator('summary').filter({ hasText: resultId }).click();
   }

@@ -8,7 +8,7 @@ process.once('SIGTERM', () => process.exit(143));
 
 const safe = (name) =>
   typeof name === 'string' &&
-  /^[a-zA-Z0-9_./ -]+$/.test(name) &&
+  /^[a-zA-Z0-9_@./ -]+$/.test(name) &&
   !name.split('/').some((p) => !p || p === '.' || p === '..') &&
   !path.isAbsolute(name);
 const mode = process.argv[2];
