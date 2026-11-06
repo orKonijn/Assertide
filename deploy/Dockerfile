@@ -5,7 +5,7 @@ RUN git clone --depth 1 --branch v1.37.2 https://github.com/kubernetes/kubernete
  && test "$(git rev-parse HEAD)" = "c50e5395f1ae2d4a2c05f28fdcc38c0916cc1a32"
 ENV GOWORK=off CGO_ENABLED=0
 # Rebuild the upstream client with patched transport dependencies.
-RUN go mod edit -require=golang.org/x/net@v0.60.0 -require=golang.org/x/text@v0.41.0 \
+RUN go mod edit -require=golang.org/x/net@v0.62.0 -require=golang.org/x/text@v0.41.0 \
  && go build -mod=mod -trimpath -ldflags="-s -w -X k8s.io/component-base/version.gitVersion=v1.37.2-assertide.1 -X k8s.io/component-base/version.gitCommit=c50e5395f1ae2d4a2c05f28fdcc38c0916cc1a32" -o /kubectl ./cmd/kubectl
 FROM postgres:17-bookworm AS service
 COPY --from=node /usr/local/bin/node /usr/local/bin/node

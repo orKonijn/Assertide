@@ -19,6 +19,7 @@ Release candidate: verified locally; publication and rollout are pending.
 
 ### Verification and compatibility
 
+- Rebuild the bundled Kubernetes client with `golang.org/x/net` 0.62.0 after the image security gate identified CVE-2026-78661. The vulnerability gate remains enforced.
 - Local quick verification, five focused browser journeys, architecture/reporting checks and four desktop/mobile dark/light accessibility/reflow checks passed. The browser journey covers a result on a later page, repeated clicks, saved ownership and mobile note focus. API tests cover scoped access, administrator approval, concurrent edits, automatic expiry and unchanged recorded outcomes. Linux infrastructure CI and production rollout were not run for this unreleased change. Existing CSS-budget and logo-sizing warnings remain.
 - No database migration, new service or worker policy change is required. Matching API/web images are required when releasing triage; review records use existing storage and 365-day retention. This compatible workflow addition is prepared as **0.5.0**; publication is pending.
 
