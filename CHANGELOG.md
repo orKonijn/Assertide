@@ -4,13 +4,21 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
-## 0.7.2 — release draft
+## 0.7.2 — 2026-11-07
 
-Compatible finalization fix; publication and live verification are pending. No configuration or database migration is required.
+Published to main and deployed to [assertide.com](https://assertide.com). Results now appear before evidence transfer finishes. The live 65-case API run retained all 559 attachments without unavailable evidence. No configuration or database migration is required. See [publication evidence and verification limits](docs/evidence.md#publication---072---2026-11-07).
 
 ### Fixed
 
 - Save test results before evidence transfer and show `finalizing` while attachments are saved. Import up to eight attachments concurrently across a run, preserving result/attempt ownership and redaction. This addresses the 65-case API run whose 559 attachments kept results hidden for about 7½ minutes after test execution. The original run subsequently completed with all results, attachments and report retained. See [finalization behavior and recovery](docs/evidence.md).
+
+![Live execution shows 65 results while evidence is finalizing](docs/changelog/assets/0.7.2/finalizing-desktop.png)
+
+Completed test outcomes are available while attachments are saved.
+
+![Finalization message and result count on a 390-pixel mobile viewport](docs/changelog/assets/0.7.2/finalizing-mobile.png)
+
+The same finalization state remains readable on mobile without horizontal overflow.
 
 ## 0.7.1 — 2026-11-07
 
