@@ -10,12 +10,20 @@ export class ApiWorkspacePage {
   public readonly runButton;
   public readonly evidence;
   public readonly selectedValue;
+  public readonly environment;
+  public readonly execution;
+  public readonly older;
+  public readonly unavailable;
   public constructor(private readonly page: Page) {
     this.exchanges = page.locator(S.exchanges);
     this.heading = page.getByRole('heading', { name: S.heading, exact: true });
     this.runButton = page.getByRole('button', { name: S.run, exact: true });
     this.evidence = page.getByLabel(S.evidence);
     this.selectedValue = page.getByLabel(S.value);
+    this.environment = page.getByLabel(S.environment, { exact: true });
+    this.execution = page.getByLabel(S.execution, { exact: true });
+    this.older = page.getByRole('button', { name: S.older, exact: true });
+    this.unavailable = page.getByRole('status').filter({ hasText: S.unavailable });
   }
   public goToExchangePage(number: number): Promise<void> {
     return this.page.getByRole('button', { name: S.page(number), exact: true }).click();
@@ -63,5 +71,14 @@ export class ApiWorkspacePage {
   }
   public showCompleteExchange(): Promise<void> {
     return this.page.getByRole('button', { name: S.overview, exact: true }).click();
+  }
+  public selectEnvironment(id: string): Promise<string[]> {
+    return this.environment.selectOption(id);
+  }
+  public executionOption(id: string): Locator {
+    return this.execution.locator(`option[value="${id}"]`);
+  }
+  public loadOlder(): Promise<void> {
+    return this.older.click();
   }
 }

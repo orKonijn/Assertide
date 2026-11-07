@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
-import type { Run, TestCase } from '../core/api';
+import type { Environment, Run, TestCase } from '../core/api';
 import { Api, errorMessage } from '../core/api';
 import { JsonEvidence } from '../core/json-evidence';
 
@@ -29,7 +29,9 @@ import { JsonEvidence } from '../core/json-evidence';
       </div>
       <button
         class="primary"
-        [disabled]="busy() || !executableTests().length || api.identity()?.role === 'viewer'"
+        [disabled]="
+          busy() || !executableTests().length || !environmentId || api.identity()?.role === 'viewer'
+        "
         (click)="start()"
       >
         Run API suite
@@ -38,6 +40,25 @@ import { JsonEvidence } from '../core/json-evidence';
     @if (error()) {
       <p role="alert" class="error">{{ error() }}</p>
     }
+    <section class="card toolbar" aria-label="API execution settings">
+      <label
+        >Execution environment<select
+          name="environment"
+          aria-label="Execution environment"
+          [(ngModel)]="environmentId"
+          [disabled]="busy() || !environments().length"
+        >
+          @for (environment of environments(); track environment.id) {
+            <option [value]="environment.id">{{ environment.name }}</option>
+          }
+        </select></label
+      >
+      @if (!environments().length) {
+        <p role="status">
+          No enabled execution environment. Ask an administrator to enable one in Settings.
+        </p>
+      }
+    </section>
     <section class="card api-context">
       <div>
         <p class="eyebrow">CONTROLLED LAB</p>
@@ -66,6 +87,11 @@ import { JsonEvidence } from '../core/json-evidence';
             }
           </select></label
         >
+        @if (nextCursor()) {
+          <button type="button" [disabled]="loadingHistory()" (click)="loadHistory(true)">
+            Load older API executions
+          </button>
+        }
         @if (selectedRun(); as current) {
           <a [routerLink]="['/runs', current.id]">View execution</a>
         }
@@ -201,6 +227,10 @@ export class ApiWorkspace {
   public readonly evidence = signal('');
   public readonly error = signal('');
   public readonly busy = signal(false);
+  public readonly environments = signal<Environment[]>([]);
+  public environmentId = '';
+  public readonly nextCursor = signal<string | null>(null);
+  public readonly loadingHistory = signal(false);
   public readonly page = signal(1);
   public readonly selectedArtifact = signal('');
   public readonly inspecting = signal(false);
@@ -238,20 +268,45 @@ export class ApiWorkspace {
   }
   public async load(): Promise<void> {
     try {
-      const [catalog, history] = await Promise.all([
+      const [catalog, environments] = await Promise.all([
         this.api.get<{ items: TestCase[] }>(`/projects/${this.api.projectId()}/catalog`),
-        this.api.get<{ items: Run[] }>(`/runs?projectId=${this.api.projectId()}`),
+        this.api.get<{ items: Environment[] }>(`/projects/${this.api.projectId()}/environments`),
       ]);
       this.tests.set(catalog.items.filter((test) => test.kind === 'api'));
-      const runs = history.items
-        .filter((run) => run.selection.testIds.some((id) => id.startsWith('LAB-')))
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-      this.runs.set(runs);
-      if (runs[0]) {
-        this.choose(runs[0].id);
+      this.environments.set(environments.items.filter((environment) => environment.enabled));
+      this.environmentId =
+        this.environments().find((environment) => environment.id === 'local-lab')?.id ??
+        this.environments()[0]?.id ??
+        '';
+      await this.loadHistory();
+    } catch (error) {
+      this.error.set(errorMessage(error));
+    }
+  }
+  public async loadHistory(more = false): Promise<void> {
+    if (this.loadingHistory() || (more && !this.nextCursor())) {
+      return;
+    }
+    this.loadingHistory.set(true);
+    this.error.set('');
+    try {
+      const query = new URLSearchParams({ projectId: this.api.projectId(), browser: 'api' });
+      const cursor = this.nextCursor();
+      if (more && cursor) {
+        query.set('cursor', cursor);
+      }
+      const history = await this.api.get<{ items: Run[]; nextCursor: string | null }>(
+        `/runs?${query}`,
+      );
+      this.runs.set(more ? [...this.runs(), ...history.items] : history.items);
+      this.nextCursor.set(history.nextCursor);
+      if (!more && history.items[0]) {
+        this.choose(history.items[0].id);
       }
     } catch (error) {
       this.error.set(errorMessage(error));
+    } finally {
+      this.loadingHistory.set(false);
     }
   }
   public choose(id: string): void {
@@ -289,7 +344,12 @@ export class ApiWorkspace {
     }
   }
   public async start(): Promise<void> {
-    if (this.busy() || !this.executableTests().length || this.api.identity()?.role === 'viewer') {
+    if (
+      this.busy() ||
+      !this.environmentId ||
+      !this.executableTests().length ||
+      this.api.identity()?.role === 'viewer'
+    ) {
       return;
     }
     this.busy.set(true);
@@ -299,6 +359,10 @@ export class ApiWorkspace {
         crypto.randomUUID(),
         1,
         0,
+        'chromium',
+        undefined,
+        'off',
+        this.environmentId,
       );
       await this.router.navigate(['/runs', run.id]);
     } catch (error) {

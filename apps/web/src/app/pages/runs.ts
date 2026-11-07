@@ -189,6 +189,7 @@ export class Runs {
   public readonly hasLoaded = signal(false);
   public readonly error = signal('');
   private requestVersion = 0;
+  private appliedFilters = this.filterValues();
   public constructor() {
     void this.load();
   }
@@ -225,16 +226,11 @@ export class Runs {
   public async apply(): Promise<void> {
     this.loading.set(true);
     this.requestVersion++;
+    this.appliedFilters = this.filterValues();
     await this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
-        phase: this.phase,
-        browser: this.browser,
-        outcome: this.outcome,
-        from: this.from || null,
-        to: this.to || null,
-        suite: this.suite || null,
-        environment: this.environment || null,
+        ...this.appliedFilters,
       },
       replaceUrl: true,
     });
@@ -247,21 +243,21 @@ export class Runs {
     try {
       const query = new URLSearchParams({
         projectId: this.api.projectId(),
-        phase: this.phase,
-        browser: this.browser,
-        outcome: this.outcome,
+        phase: this.appliedFilters.phase,
+        browser: this.appliedFilters.browser,
+        outcome: this.appliedFilters.outcome,
       });
-      if (this.from) {
-        query.set('from', this.from);
+      if (this.appliedFilters.from) {
+        query.set('from', this.appliedFilters.from);
       }
-      if (this.to) {
-        query.set('to', this.to);
+      if (this.appliedFilters.to) {
+        query.set('to', this.appliedFilters.to);
       }
-      if (this.suite) {
-        query.set('suite', this.suite);
+      if (this.appliedFilters.suite) {
+        query.set('suite', this.appliedFilters.suite);
       }
-      if (this.environment) {
-        query.set('environment', this.environment);
+      if (this.appliedFilters.environment) {
+        query.set('environment', this.appliedFilters.environment);
       }
       if (more && this.nextCursor()) {
         query.set('cursor', this.nextCursor()!);
@@ -288,5 +284,24 @@ export class Runs {
         this.loading.set(false);
       }
     }
+  }
+  private filterValues(): {
+    phase: string;
+    browser: string;
+    outcome: string;
+    from: string | null;
+    to: string | null;
+    suite: string | null;
+    environment: string | null;
+  } {
+    return {
+      phase: this.phase,
+      browser: this.browser,
+      outcome: this.outcome,
+      from: this.from || null,
+      to: this.to || null,
+      suite: this.suite || null,
+      environment: this.environment || null,
+    };
   }
 }

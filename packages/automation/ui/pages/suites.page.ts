@@ -6,8 +6,12 @@ import { SuitesSelectors as S } from '../types/suites.selectors';
 import { workflow } from '../utils/allure.utils';
 export class SuitesPage {
   public readonly owner;
+  public readonly environment;
+  public readonly unavailable;
   public constructor(private readonly page: Page) {
     this.owner = page.getByLabel(S.owner, { exact: true });
+    this.environment = page.getByLabel(S.environment, { exact: true });
+    this.unavailable = page.getByRole('status').filter({ hasText: S.unavailable });
   }
   public goto(): Promise<Response | null> {
     return workflow('Open test suites', () => this.page.goto(Routes.suites));
@@ -117,5 +121,11 @@ export class SuitesPage {
     return workflow('Run saved suite', () =>
       this.card(name).getByRole('button', { name: S.run, exact: true }).click(),
     );
+  }
+  public runButton(name: string): Locator {
+    return this.card(name).getByRole('button', { name: S.run, exact: true });
+  }
+  public selectEnvironment(id: string): Promise<string[]> {
+    return this.environment.selectOption(id);
   }
 }
