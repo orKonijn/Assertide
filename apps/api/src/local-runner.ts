@@ -11,8 +11,10 @@ import { z } from 'zod';
 import { accessibilityCoverage } from './accessibility.ts';
 import {
   type Artifact,
+  type AttachmentBatch,
   attachmentSchema,
   captureAttachments,
+  captureRunAttachments,
   expireArtifacts,
 } from './artifacts.ts';
 import type { SqlConnection } from './database.ts';
@@ -631,58 +633,6 @@ export class LocalRunner {
           )
         ).rows[0]?.cancel === 'true';
       const data = await readResults(output);
-      const artifacts: Artifact[] = [];
-      if (run.config.performance) {
-        try {
-          const benchmark = await readResults(benchmarkOutput);
-          for (const spec of benchmark.suites.flatMap(flatten)) {
-            for (const test of spec.tests) {
-              for (const attempt of test.results) {
-                artifacts.push(
-                  ...(await captureAttachments(
-                    run.id,
-                    'catalog-benchmark',
-                    1,
-                    attempt.attachments
-                      .filter((item) => item.name === 'performance-checkpoint.json')
-                      .map((item) => ({
-                        ...item,
-                        ...(item.path?.startsWith('/output/')
-                          ? { path: path.join(benchmarkOutput, item.path.slice(8)) }
-                          : {}),
-                      })),
-                    redact,
-                  )),
-                );
-              }
-            }
-          }
-        } catch {
-          await this.update(run.id, { performancePhase: 'unavailable' });
-        }
-      }
-      for (const spec of data.suites.flatMap(flatten)) {
-        for (const test of spec.tests) {
-          const caseId = spec.title.split(' ')[0] ?? spec.title;
-          const resultId = test.projectName === 'api' ? caseId : `${caseId}:${test.projectName}`;
-          for (const [index, attempt] of test.results.entries()) {
-            artifacts.push(
-              ...(await captureAttachments(
-                run.id,
-                resultId,
-                index + 1,
-                attempt.attachments.map((attachment) => ({
-                  ...attachment,
-                  ...(attachment.path?.startsWith('/output/')
-                    ? { path: path.join(output, attachment.path.slice(8)) }
-                    : {}),
-                })),
-                redact,
-              )),
-            );
-          }
-        }
-      }
       const results = data.suites.flatMap(flatten).flatMap((spec) =>
         spec.tests.map((test) => {
           const attempts = test.results;
@@ -748,6 +698,60 @@ export class LocalRunner {
         }
       }
       const finalPhase = executionPhase(code, canceled, missingResults);
+      const endedAt = new Date().toISOString();
+      // Publish normalized outcomes before waiting on remote evidence transfers.
+      // The owned lease and finalizing phase still reserve execution capacity.
+      await this.update(run.id, { phase: 'finalizing', results });
+      const artifacts: Artifact[] = [];
+      const attachmentBatches: AttachmentBatch[] = [];
+      if (run.config.performance) {
+        try {
+          const benchmark = await readResults(benchmarkOutput);
+          for (const spec of benchmark.suites.flatMap(flatten)) {
+            for (const test of spec.tests) {
+              for (const attempt of test.results) {
+                artifacts.push(
+                  ...(await captureAttachments(
+                    run.id,
+                    'catalog-benchmark',
+                    1,
+                    attempt.attachments
+                      .filter((item) => item.name === 'performance-checkpoint.json')
+                      .map((item) => ({
+                        ...item,
+                        ...(item.path?.startsWith('/output/')
+                          ? { path: path.join(benchmarkOutput, item.path.slice(8)) }
+                          : {}),
+                      })),
+                    redact,
+                  )),
+                );
+              }
+            }
+          }
+        } catch {
+          await this.update(run.id, { performancePhase: 'unavailable' });
+        }
+      }
+      for (const spec of data.suites.flatMap(flatten)) {
+        for (const test of spec.tests) {
+          const caseId = spec.title.split(' ')[0] ?? spec.title;
+          const resultId = test.projectName === 'api' ? caseId : `${caseId}:${test.projectName}`;
+          for (const [index, attempt] of test.results.entries()) {
+            attachmentBatches.push({
+              resultId,
+              attempt: index + 1,
+              attachments: attempt.attachments.map((attachment) => ({
+                ...attachment,
+                ...(attachment.path?.startsWith('/output/')
+                  ? { path: path.join(output, attachment.path.slice(8)) }
+                  : {}),
+              })),
+            });
+          }
+        }
+      }
+      artifacts.push(...(await captureRunAttachments(run.id, attachmentBatches, redact)));
       await this.update(run.id, {
         phase: finalPhase,
         ...(missingResults && !canceled
@@ -756,7 +760,7 @@ export class LocalRunner {
                 'Terminal test evidence is incomplete. Check the worker evidence transfer; missing results are not test failures.',
             }
           : {}),
-        endedAt: new Date().toISOString(),
+        endedAt,
         results,
         artifacts,
         ...(run.config.accessibility

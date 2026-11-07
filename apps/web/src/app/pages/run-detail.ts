@@ -123,6 +123,9 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
             @if (current.queueReason) {
               <p>{{ current.queueReason }}. The run will start when capacity becomes available.</p>
             }
+            @if (current.phase === 'finalizing') {
+              <p>Tests have finished. Results are available below while evidence is saved.</p>
+            }
             @if (current.cancelRequested && current.phase !== 'canceled') {
               <p>Stopping workers…</p>
             }

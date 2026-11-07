@@ -8,6 +8,10 @@ Traces and video expire after 14 days; other imported artifacts expire after 30 
 
 Worker logs retain a redacted tail. Events are retained for 24 hours. Reconnecting outside the retained window triggers a snapshot resync. A report rebuild remains separate from execution outcomes.
 
+After worker execution ends, normalized results are saved under the `finalizing` phase before remote attachment uploads start. The detail page shows those results while evidence is saved. The worker retains its lease and capacity reservation until finalization finishes; stale owners cannot publish attachments. Lease recovery preserves already-saved results while marking the interrupted finalization as an infrastructure error.
+
+Attachment imports share a maximum of eight concurrent operations across the whole run, including different cases and retry attempts. This replaces serial per-attachment uploads without changing generated object keys, redaction, integrity checks, expiry, authorization or the explicit unavailable marker for a failed attachment. The recorded end time is captured before attachment transfer. Raw archives and reports retain their existing complete-manifest publication rules. No configuration or database migration is required. Existing completed runs need no replay; an old run already finalizing on a previous worker should be allowed to finish before rollout.
+
 Verified with SQL/HTTP integration tests and the browser journey, including recorded POST/GET/PUT/PATCH/DELETE evidence, a transport timeout, role revocation, artifact deletion and desktop/mobile overflow checks.
 
 ![Recorded API request and response in the running application](changelog/assets/unreleased/api-evidence.png)

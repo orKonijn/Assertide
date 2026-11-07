@@ -41,6 +41,35 @@ const config = (
   headed: false,
   video: 'off',
 });
+await test('finalizing exposes results under the owned lease and preserves them after lease recovery', async () => {
+  const db = await testDatabase();
+  const service = new PlatformService(db);
+  try {
+    await service.initialize();
+    const run = await service.launch(principal, localProjectId, config(service), randomUUID());
+    const id = String(run['id']);
+    await claimExecution(db, 'finalizer', id);
+    const results = [{ id: 'LAB-001', status: 'passed', duration: 12 }];
+    await updateOwnedRun(db, id, 'finalizer', 1, { phase: 'finalizing', results });
+    const visible = await service.get(principal, id, 'run');
+    assert.equal(visible['phase'], 'finalizing');
+    assert.deepEqual(visible['results'], results);
+    assert.equal(visible['reportPhase'], 'pending');
+    assert.equal(await claimExecution(db, 'duplicate', id), undefined);
+    await assert.rejects(updateOwnedRun(db, id, 'stale', 1, { artifacts: [] }), /Stale worker/);
+    await db.query(
+      "UPDATE platform_documents SET body=jsonb_set(body,'{leaseExpires}',to_jsonb(now()-interval '1 minute')) WHERE id=$1",
+      [id],
+    );
+    await recoverExpiredLeases(db);
+    const recovered = await service.get(principal, id, 'run');
+    assert.equal(recovered['phase'], 'infrastructure_error');
+    assert.deepEqual(recovered['results'], results);
+  } finally {
+    await db.close();
+  }
+});
+
 await test('transactional outbox and leases reject duplicate owners, stale writes and terminal changes', async () => {
   const db = await testDatabase();
   const service = new PlatformService(db);

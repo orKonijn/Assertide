@@ -4,6 +4,14 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.7.2 — release draft
+
+Compatible finalization fix; publication and live verification are pending. No configuration or database migration is required.
+
+### Fixed
+
+- Save test results before evidence transfer and show `finalizing` while attachments are saved. Import up to eight attachments concurrently across a run, preserving result/attempt ownership and redaction. This addresses the 65-case API run whose 559 attachments kept results hidden for about 7½ minutes after test execution. The original run subsequently completed with all results, attachments and report retained. See [finalization behavior and recovery](docs/evidence.md).
+
 ## 0.7.1 — 2026-11-07
 
 Published to main and deployed to [assertide.com](https://assertide.com). The signed web image passed build, startup and security checks; live launch selection, paging/filter boundaries, mobile/themes, private report access and release identity passed. No database or configuration migration is required. The full API worker logged 65 passes but its persisted results were still finalizing; Kubernetes Lighthouse CI availability also remains intermittent. See [publication evidence and precise limits](docs/environments.md#publication---071---2026-11-07).

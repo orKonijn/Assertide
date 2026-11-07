@@ -156,6 +156,7 @@ export class Runs {
     'all',
     'queued',
     'running',
+    'finalizing',
     'completed',
     'canceled',
     'infrastructure_error',

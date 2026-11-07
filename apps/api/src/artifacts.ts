@@ -51,6 +51,38 @@ const allowed = new Set([
   'application/json',
   'text/plain',
 ]);
+export interface AttachmentBatch {
+  readonly resultId: string;
+  readonly attempt: number;
+  readonly attachments: readonly z.infer<typeof attachmentSchema>[];
+}
+export async function captureRunAttachments(
+  runId: string,
+  batches: readonly AttachmentBatch[],
+  redact: (text: string) => string,
+): Promise<Artifact[]> {
+  const pending = batches.flatMap(({ resultId, attempt, attachments }) =>
+    attachments.map((attachment) => ({ resultId, attempt, attachment })),
+  );
+  const artifacts: Artifact[] = [];
+  // Bound memory and storage requests across the entire run, not per test.
+  for (let offset = 0; offset < pending.length; offset += 8) {
+    const batch = await Promise.allSettled(
+      pending
+        .slice(offset, offset + 8)
+        .map(({ resultId, attempt, attachment }) =>
+          captureAttachments(runId, resultId, attempt, [attachment], redact),
+        ),
+    );
+    for (const result of batch) {
+      if (result.status === 'rejected') {
+        throw result.reason;
+      }
+      artifacts.push(...result.value);
+    }
+  }
+  return artifacts;
+}
 export async function captureAttachments(
   runId: string,
   resultId: string,
