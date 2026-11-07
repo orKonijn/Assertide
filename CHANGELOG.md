@@ -4,9 +4,9 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
-## 0.7.1 — release draft
+## 0.7.1 — 2026-11-07
 
-Compatible QA bug fixes. Publication and live verification are pending; no database or configuration migration is required.
+Published to main and deployed to [assertide.com](https://assertide.com). The signed web image passed build, startup and security checks; live launch selection, paging/filter boundaries, mobile/themes, private report access and release identity passed. No database or configuration migration is required. The full API worker logged 65 passes but its persisted results were still finalizing; Kubernetes Lighthouse CI availability also remains intermittent. See [publication evidence and precise limits](docs/environments.md#publication---071---2026-11-07).
 
 ### Fixed
 
