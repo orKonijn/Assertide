@@ -4,9 +4,13 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.7.1 — release draft
+
+Compatible QA bug fixes. Publication and live verification are pending; no database or configuration migration is required.
+
 ### Fixed
 
-- Suite and API launches now use a selectable enabled environment instead of assuming `local-lab`; launching is disabled when none is available. Reports and API execution history can load older pages, and API history filters on the server before pagination. Execution history keeps draft filters separate until Apply, preventing mixed pages. Six focused browser regressions pass, including real alternate-environment launches and pagination recovery. See [environment behavior and actual desktop/mobile captures](docs/environments.md#launch-environment-selection). Local and unreleased; no migration or version change.
+- Suite and API launches now use a selectable enabled environment instead of assuming `local-lab`; launching is disabled when none is available. Reports and API execution history can load older pages, and API history filters on the server before pagination. Execution history keeps draft filters separate until Apply, preventing mixed pages. All 72 local acceptance tests and [full Linux verification](https://github.com/orKonijn/Assertide/actions/runs/42315071092) pass; the Linux run needed one retry for Kubernetes Lighthouse availability. See [environment behavior and actual desktop/mobile captures](docs/environments.md#launch-environment-selection).
 
 ## 0.7.0 — 2026-11-07
 
