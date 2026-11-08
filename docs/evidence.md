@@ -47,3 +47,25 @@ Measured from launch in this single live controlled run: results became visible 
 [Full Linux verification 42394327255](https://github.com/orKonijn/Assertide/actions/runs/42394327255) was still running platform browser acceptance when publication verification finished. Its controlled API/cross-browser regression stage had passed. A fully green infrastructure matrix is not claimed; the previous release also had intermittent nested Kubernetes Lighthouse availability failures. This does not replace the successful local checks, signed-image publication or live checks above.
 
 Actual sanitized desktop and mobile captures are stored in `docs/changelog/assets/0.7.2/` and shown in the changelog. These are captures of the deployed implementation.
+
+## Publication - 0.8.0 - 2026-11-09
+
+Source `e37d20ef9380cce8c12a767e1f4f437564ef7266` was pushed to main and deployed to [assertide.com](https://assertide.com). [Image publication 42533788643](https://github.com/orKonijn/Assertide/actions/runs/42533788643) passed native ARM64 builds, startup and vulnerability checks, and signing. All three images had provenance verified against the exact source and hosted publication workflow:
+
+- Service: `ghcr.io/orkonijn/assertide-service@sha256:15eb34bbe9d2d751bfc7b32ab144407d5b5b21f01dc62b783df1f129fed58af1`
+- Web: `ghcr.io/orkonijn/assertide-web@sha256:f0bb426817a1ad15b93c0eabd1cc7f293b84c977fe0fd158955741e7a9832115`
+- Worker: `ghcr.io/orkonijn/assertide-worker@sha256:73909a89a92f850e5d49d55fc69013c4340bf692e47da1ca5d8cc522f09bc507`
+
+The idle-work guard passed before rollout; a private snapshot retained previous deployment images and configuration for rollback. API, execution, report and web deployments became ready. No database migration or authentication-policy change was required.
+
+The live 65-case API suite showed 4 passed, 0 failed and 61 remaining while its execution phase was still running. Actual desktop and 390 px mobile captures show the live circle; neither viewport overflowed. The test outcomes then became available during finalization. Mixed green/red local previews remain explicitly labeled as controlled fixtures rather than actual failing production runs.
+
+The completed circle matched all 65 passing results with no failures. All 559 attachments finalized without unavailable markers; authenticated evidence was readable and checked for fixture-secret redaction, while anonymous access returned 401. The private Allure report finalized and opened successfully. The About page displayed v0.8.0 and logout revoked access. The temporary verification identity was disabled afterward, provider/application sessions revoked and project access removed; its local credential file was deleted.
+
+For this single live run, all final results were visible after 26.1 seconds, evidence finalization completed after 146.2 seconds, and the report was ready after 486.6 seconds from launch. The interim circle was already showing passes before final results appeared. These observations are not performance guarantees.
+
+[Full Linux verification 42533778596](https://github.com/orKonijn/Assertide/actions/runs/42533778596) passed the controlled API/cross-browser regression stage and was still running platform browser acceptance when live verification finished. The complete infrastructure matrix is not yet claimed green. Local quick verification, all 73 acceptance tests, the final focused live-counter/log-display check, and architecture/reporting checks passed as recorded above.
+
+![Live suite progress during an actual production execution](changelog/assets/0.8.0/live-running-desktop.png)
+
+![The same live progress display on mobile](changelog/assets/0.8.0/live-running-mobile.png)

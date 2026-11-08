@@ -4,9 +4,9 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
-## 0.8.0 — release draft
+## 0.8.0 — 2026-11-09
 
-Compatible live-progress feature. Publication verification is pending; no migration is required.
+Published to main and deployed to [assertide.com](https://assertide.com). A live 65-case suite showed progressing counts on desktop/mobile, then finished with 65 passed, 0 failed and all 559 attachments retained. Signed image checks and all 73 local browser acceptance tests passed. No migration is required. See [publication evidence and verification limits](docs/evidence.md#publication---080---2026-11-09).
 
 ### Added
 
