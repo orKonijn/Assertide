@@ -14,6 +14,36 @@ test.describe('Execution and evidence', () => {
   test.beforeEach(({ page }) => {
     execution = new ExecutionPage(page);
   });
+  test('progress ring updates before execution ends and keeps final counts on mobile', async ({
+    page,
+    api,
+    isolatedProject,
+  }) => {
+    const catalog = await api.catalog(isolatedProject.id);
+    const ids = catalog.items.filter((item) => item.id.startsWith('LAB-')).map((item) => item.id);
+    const run = await api.launch(ids, isolatedProject.id);
+    await execution.goto(run.id);
+    await expect
+      .poll(
+        async () => {
+          const state = await api.get<{ phase: string; progress?: { passed: number } }>(
+            ApiRoutes.run(run.id),
+          );
+          return state.phase === 'running' && (state.progress?.passed ?? 0) > 0;
+        },
+        { timeout: Timeouts.execution, intervals: [100, 250, 500] },
+      )
+      .toBe(true);
+    await expect(execution.progress).toContainText('remaining');
+    await api.waitForCompletion(run.id);
+    const final = await api.get<{ logTail?: string }>(ApiRoutes.run(run.id));
+    expect(final.logTail ?? '').not.toContain('ASSERTIDE_PROGRESS');
+    await expect(execution.progress).toContainText(`${ids.length} / ${ids.length} finished`);
+    await expect(execution.progress).toContainText('0 not completed');
+    await viewport(page, 'mobile');
+    expect(await fitsViewport(page)).toBe(true);
+    await screenshot(page, 'live-test-progress-mobile', execution.progress);
+  });
   test('selected API and browser cases complete with immutable source evidence', async ({
     page,
     api,

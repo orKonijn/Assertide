@@ -1,4 +1,5 @@
 export const ExecutionSelectors = {
+  progress: 'Test progress',
   performance: 'Catalog performance',
   accessibility: 'Accessibility review',
   investigateAccessibility: 'Investigate result and add a note',

@@ -79,6 +79,7 @@ export interface PerformanceCoverage {
   }[];
 }
 export interface Run {
+  progress?: { passed: number; failed: number; other: number };
   performancePhase?: string;
   performance?: PerformanceCoverage[];
   accessibility?: AccessibilityCoverage[];

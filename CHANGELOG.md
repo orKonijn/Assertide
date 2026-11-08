@@ -4,6 +4,22 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.8.0 — release draft
+
+Compatible live-progress feature. Publication verification is pending; no migration is required.
+
+### Added
+
+- Execution detail now shows a circular progress display with green passed and red failed segments, counts inside the circle, and remaining tests alongside it. Live counters update as tests finish, count retries once and distinguish skipped/canceled outcomes. Browser combinations count separately. The display supports desktop/mobile and light/dark themes; final results remain authoritative. No configuration or database migration is required.
+
+![Circular test progress in the running desktop UI with controlled mixed-outcome data](docs/changelog/assets/0.8.0/suite-progress-preview-1440-dark.png)
+
+Controlled preview in the actual application: 38 passed, 7 failed, 2 skipped/canceled and 18 remaining. This illustrates the colors, not a real run's outcomes.
+
+![Circular test progress stacked on mobile in the light theme](docs/changelog/assets/0.8.0/suite-progress-preview-390-light.png)
+
+The mobile layout keeps both counts inside the circle and provides text labels alongside color.
+
 ## 0.7.2 — 2026-11-07
 
 Published to main and deployed to [assertide.com](https://assertide.com). Results now appear before evidence transfer finishes. The live 65-case API run retained all 559 attachments without unavailable evidence. No configuration or database migration is required. See [publication evidence and verification limits](docs/evidence.md#publication---072---2026-11-07).

@@ -55,6 +55,28 @@ export default class CheckpointReporter implements Reporter {
     if (!output) {
       return;
     }
+    if (
+      process.env['RUN_PERFORMANCE'] !== 'true' &&
+      (result.status === test.expectedStatus ||
+        result.status === 'skipped' ||
+        result.status === 'interrupted' ||
+        result.retry >= test.retries)
+    ) {
+      const caseId = test.title.split(' ')[0];
+      const project = test.parent.project()?.name ?? 'api';
+      let outcome = result.status === test.expectedStatus ? 'passed' : 'failed';
+      if (result.status === 'skipped' || result.status === 'interrupted') {
+        outcome = 'other';
+      }
+      process.stdout.write(
+        '\nASSERTIDE_PROGRESS ' +
+          JSON.stringify({
+            id: `${caseId}:${project}`,
+            outcome,
+          }) +
+          '\n',
+      );
+    }
     mkdirSync(output, { recursive: true });
     // Keep binary evidence out of both this checkpoint and later JSON reporters.
     // Reporter ordering in playwright.config.ts makes every reporter use the same files.

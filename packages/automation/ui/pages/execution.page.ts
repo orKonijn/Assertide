@@ -6,6 +6,7 @@ import { Routes } from '../types/routes';
 import { workflow } from '../utils/allure.utils';
 import { AllureReportPage } from './report.page';
 export class ExecutionPage {
+  public readonly progress;
   public readonly status;
   public readonly reportLink;
   public readonly rerunDialog;
@@ -14,6 +15,7 @@ export class ExecutionPage {
   public readonly screenshotDialog;
   public readonly download;
   public constructor(private readonly page: Page) {
+    this.progress = page.getByRole('region', { name: S.progress });
     this.status = page.getByRole(S.status).first();
     this.reportLink = page.getByRole('link', {
       name: S.openReport,

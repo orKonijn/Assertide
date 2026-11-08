@@ -18,6 +18,7 @@ import type { Environment, Run } from '../core/api';
 import { Api, errorMessage } from '../core/api';
 import { PerformanceReview } from '../core/performance-review';
 import { ResultNotes, ResultSteps } from '../core/result-investigation';
+import { RunProgress } from '../core/run-progress';
 import { ScreenshotViewer } from '../core/screenshot-viewer';
 @Component({
   imports: [
@@ -28,6 +29,7 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
     ScreenshotViewer,
     AccessibilityReview,
     PerformanceReview,
+    RunProgress,
   ],
   styles: [
     'dialog { color: var(--text); background: var(--surface); border: 1px solid var(--border); max-width: min(40rem, 90vw); border-radius: .75rem; } dialog::backdrop { background: #0009; }',
@@ -93,6 +95,7 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
       </p>
     }
     @if (run(); as current) {
+      <app-run-progress [run]="current" />
       @if (current.config?.performance) {
         <app-performance-review
           [coverage]="current.performance ?? []"

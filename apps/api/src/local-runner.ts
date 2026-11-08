@@ -20,6 +20,7 @@ import {
 import type { SqlConnection } from './database.ts';
 import { defaultEnvironment, environmentSchema, resolveSecret } from './environments.ts';
 import { executionPhase } from './execution-outcome.ts';
+import { ExecutionProgress } from './execution-progress.ts';
 import { cancelWorkerJob, kubernetesCommand } from './kubernetes-worker.ts';
 import { executionPerformanceCoverage } from './lighthouse-results.ts';
 import { ociCommand, stopContainer } from './oci-worker.ts';
@@ -411,19 +412,35 @@ export class LocalRunner {
       this.child = child;
       let logs = previous;
       let sent = '';
+      let sentProgress = '';
       let pending = Promise.resolve();
+      const progress = new ExecutionProgress();
+      const functional = args.includes('--grep') && executionEnv['RUN_PERFORMANCE'] !== 'true';
       child.stdout?.on('data', (chunk: Buffer) => {
+        if (functional) {
+          progress.accept(chunk.toString());
+        }
         logs = (logs + chunk.toString()).slice(-100_000);
       });
       child.stderr?.on('data', (chunk: Buffer) => {
         logs = (logs + chunk.toString()).slice(-100_000);
       });
       const flush = (): void => {
-        const complete = redact(logs.slice(0, logs.lastIndexOf('\n') + 1));
-        if (complete !== sent) {
+        const complete = redact(
+          logs.slice(0, logs.lastIndexOf('\n') + 1).replace(/^ASSERTIDE_PROGRESS .*\r?\n/gm, ''),
+        );
+        const counts = progress.snapshot();
+        const progressKey = functional ? JSON.stringify(counts) : '';
+        if (complete !== sent || progressKey !== sentProgress) {
           sent = complete;
+          sentProgress = progressKey;
           pending = pending
-            .then(() => this.update(id, { logTail: complete }))
+            .then(() =>
+              this.update(id, {
+                logTail: complete,
+                ...(functional ? { progress: counts } : {}),
+              }),
+            )
             .catch(() => {
               return this.stopChild();
             });
