@@ -13,6 +13,7 @@ describe('Explorer history', () => {
       retries: 0,
     });
     expect(typicalDuration([sample(100), sample(900), sample(0, 'skipped')])).toBeNull();
+    expect(typicalDuration([sample(0, 'broken'), sample(0, 'failed'), sample(100)])).toBeNull();
     expect(typicalDuration([sample(100), sample(900), sample(200)])).toBe(200);
   });
   it('rejects malformed or unsupported saved views', () => {

@@ -80,7 +80,7 @@ export function typicalDuration(items: TestHistory[]): number | null {
       (item) =>
         ['passed', 'failed', 'timedOut', 'broken'].includes(item.status) &&
         Number.isFinite(item.duration) &&
-        item.duration >= 0,
+        item.duration > 0,
     )
     .map((item) => item.duration)
     .sort((a, b) => a - b);
