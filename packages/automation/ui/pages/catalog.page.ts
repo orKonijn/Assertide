@@ -15,7 +15,7 @@ export class CatalogPage {
   public constructor(public readonly page: Page) {
     this.selectedCount = page.getByText(/^[0-9]+ tests selected$/);
     this.startButtons = page.getByRole('button', {
-      name: S.start,
+      name: S.review,
       exact: true,
     });
     this.heading = page.getByRole('heading', { name: S.heading, exact: true });
@@ -86,13 +86,16 @@ export class CatalogPage {
       await this.search('');
     });
   }
-  public selectEnvironment(name: string): Promise<string[]> {
+  public async selectEnvironment(name: string): Promise<string[]> {
+    await this.openConfiguration();
     return this.page.getByLabel(S.environment, { exact: true }).selectOption({ label: name });
   }
-  public checkAccessibility(): Promise<void> {
+  public async checkAccessibility(): Promise<void> {
+    await this.openConfiguration();
     return this.page.getByLabel(S.accessibility, { exact: true }).check();
   }
-  public checkPerformance(): Promise<void> {
+  public async checkPerformance(): Promise<void> {
+    await this.openConfiguration();
     return this.page.getByLabel(S.performance, { exact: true }).check();
   }
   public performanceIssue(): Locator {
@@ -103,16 +106,24 @@ export class CatalogPage {
     workers: number,
     retries: number,
   ): Promise<void> {
+    await this.openConfiguration();
     await this.page.getByLabel(S.browser, { exact: true }).selectOption(browser);
     await this.page.getByLabel(S.workers, { exact: true }).fill(String(workers));
     await this.page.getByLabel(S.retries, { exact: true }).fill(String(retries));
   }
-  public uncheckPerformance(): Promise<void> {
+  public async uncheckPerformance(): Promise<void> {
+    await this.openConfiguration();
     return this.page.getByLabel(S.performance, { exact: true }).uncheck();
   }
   public startExecution(): Promise<void> {
-    return workflow('Start selected execution', () =>
-      this.page.getByRole('button', { name: S.start, exact: true }).first().click(),
-    );
+    return workflow('Start selected execution', async () => {
+      await this.openConfiguration();
+      await this.page.getByRole('button', { name: S.start, exact: true }).click();
+    });
+  }
+  public async openConfiguration(): Promise<void> {
+    if (!(await this.page.getByRole('dialog', { name: S.configuration }).isVisible())) {
+      await this.startButtons.first().click();
+    }
   }
 }

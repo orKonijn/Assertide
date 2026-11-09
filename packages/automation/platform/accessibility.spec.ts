@@ -72,6 +72,7 @@ test.describe('Accessible application navigation', () => {
           await inspect(route, theme, width);
           if (route === '/explorer') {
             await catalog.select([D.login]);
+            await catalog.openConfiguration();
             await inspect('Run configuration', theme, width);
           }
         }

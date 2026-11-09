@@ -52,6 +52,9 @@ export class ApiWorkspacePage {
         .click(),
     );
   }
+  public openFirstExchange(): Promise<void> {
+    return this.exchanges.first().click();
+  }
   public async download(): Promise<Download> {
     return workflow('Download redacted exchange JSON', async () => {
       const download = this.page.waitForEvent('download');

@@ -13,6 +13,21 @@ import type {
 
 /** Durable completed attempts survive termination before Playwright's final report. */
 export default class CheckpointReporter implements Reporter {
+  public onTestBegin(test: TestCase, result: TestResult): void {
+    if (process.env['RUN_OUTPUT'] && process.env['RUN_PERFORMANCE'] !== 'true') {
+      process.stdout.write(
+        '\nASSERTIDE_PROGRESS ' +
+          JSON.stringify({
+            id: `${test.title.split(' ')[0]}:${test.parent.project()?.name ?? 'api'}`,
+            outcome: 'running',
+            title: test.title.slice(0, 300),
+            startedAt: result.startTime.toISOString(),
+            retry: result.retry,
+          }) +
+          '\n',
+      );
+    }
+  }
   public onBegin(config: FullConfig): void {
     const output = process.env['RUN_OUTPUT'];
     if (!output) {
@@ -55,18 +70,14 @@ export default class CheckpointReporter implements Reporter {
     if (!output) {
       return;
     }
-    if (
-      process.env['RUN_PERFORMANCE'] !== 'true' &&
-      (result.status === test.expectedStatus ||
-        result.status === 'skipped' ||
-        result.status === 'interrupted' ||
-        result.retry >= test.retries)
-    ) {
+    if (process.env['RUN_PERFORMANCE'] !== 'true') {
       const caseId = test.title.split(' ')[0];
       const project = test.parent.project()?.name ?? 'api';
       let outcome = result.status === test.expectedStatus ? 'passed' : 'failed';
       if (result.status === 'skipped' || result.status === 'interrupted') {
         outcome = 'other';
+      } else if (result.status !== test.expectedStatus && result.retry < test.retries) {
+        outcome = 'retrying';
       }
       process.stdout.write(
         '\nASSERTIDE_PROGRESS ' +

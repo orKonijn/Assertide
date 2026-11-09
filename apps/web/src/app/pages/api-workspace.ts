@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
@@ -93,6 +93,9 @@ import { JsonEvidence } from '../core/json-evidence';
           </button>
         }
         @if (selectedRun(); as current) {
+          <button type="button" [disabled]="refreshing()" (click)="refreshSelected()">
+            Refresh execution
+          </button>
           <a [routerLink]="['/runs', current.id]">View execution</a>
         }
       </div>
@@ -263,8 +266,48 @@ export class ApiWorkspace {
     this.exchanges().find((item) => item.id === this.selectedArtifact()),
   );
   private inspectionVersion = 0;
+  public readonly refreshing = signal(false);
+  private refreshVersion = 0;
   public constructor() {
+    const timer = setInterval(() => {
+      if (
+        ['queued', 'provisioning', 'running', 'finalizing'].includes(
+          this.selectedRun()?.phase ?? '',
+        )
+      ) {
+        void this.refreshSelected();
+      }
+    }, 3000);
+    inject(DestroyRef).onDestroy(() => {
+      clearInterval(timer);
+      this.refreshVersion++;
+    });
     void this.load();
+  }
+  public async refreshSelected(): Promise<void> {
+    const id = this.selectedRun()?.id;
+    if (!id || this.refreshing()) {
+      return;
+    }
+    const version = ++this.refreshVersion;
+    this.refreshing.set(true);
+    try {
+      const run = await this.api.get<Run>(`/runs/${id}`);
+      if (version !== this.refreshVersion || this.selectedRun()?.id !== id) {
+        return;
+      }
+      this.selectedRun.set(run);
+      this.runs.update((items) => items.map((item) => (item.id === id ? run : item)));
+      this.error.set('');
+    } catch (error) {
+      if (version === this.refreshVersion) {
+        this.error.set(errorMessage(error));
+      }
+    } finally {
+      if (version === this.refreshVersion) {
+        this.refreshing.set(false);
+      }
+    }
   }
   public async load(): Promise<void> {
     try {
@@ -310,6 +353,8 @@ export class ApiWorkspace {
     }
   }
   public choose(id: string): void {
+    this.refreshVersion++;
+    this.refreshing.set(false);
     this.inspectionError.set(false);
     this.inspectionVersion++;
     this.page.set(1);
@@ -318,6 +363,7 @@ export class ApiWorkspace {
     this.error.set('');
     this.selectedRun.set(this.runs().find((run) => run.id === id) ?? null);
     this.evidence.set('');
+    void this.refreshSelected();
   }
   public async inspect(runId: string, artifactId: string): Promise<void> {
     const version = ++this.inspectionVersion;

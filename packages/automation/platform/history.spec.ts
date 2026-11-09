@@ -134,6 +134,7 @@ test.describe('Allure report history', () => {
     await page.reload();
     await expect(execution.note(note)).toBeVisible();
     await expect(execution.download).toBeVisible();
+    await execution.openEnvironment();
     await expect(execution.section('Execution environment')).toBeVisible();
     await viewport(page, 'mobile');
     expect(await fitsViewport(page)).toBe(true);

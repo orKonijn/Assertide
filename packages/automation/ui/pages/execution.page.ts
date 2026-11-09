@@ -53,7 +53,8 @@ export class ExecutionPage {
   public openAccessibilityState(resultId: string): Promise<void> {
     return this.accessibilityReview().locator('summary').filter({ hasText: resultId }).click();
   }
-  public investigateAccessibility(): Promise<void> {
+  public async investigateAccessibility(): Promise<void> {
+    await this.closeInvestigation();
     return this.accessibilityReview()
       .getByRole('button', { name: S.investigateAccessibility, exact: true })
       .click();
@@ -64,7 +65,8 @@ export class ExecutionPage {
   public triageDialog(): Locator {
     return this.page.getByRole('dialog', { name: S.triage, exact: true });
   }
-  public openTriage(): Promise<void> {
+  public async openTriage(): Promise<void> {
+    await this.closeInvestigation();
     return this.accessibilityReview()
       .getByRole('button', { name: S.triageButton, exact: true })
       .click();
@@ -123,6 +125,7 @@ export class ExecutionPage {
   }
   public reviewRerun(id: string): Promise<void> {
     return workflow('Review selected rerun', async () => {
+      await this.closeInvestigation();
       await this.page.getByRole('checkbox', { name: S.selectRerun(id), exact: true }).check();
       await this.page.getByRole('button', { name: S.rerunChecked, exact: true }).click();
     });
@@ -150,5 +153,18 @@ export class ExecutionPage {
   }
   public note(value: string): Locator {
     return this.page.getByText(value, { exact: true });
+  }
+  public async closeInvestigation(): Promise<void> {
+    const close = this.page.getByRole('button', { name: 'Close investigation', exact: true });
+    if (await close.isVisible()) {
+      await close.click();
+    }
+  }
+  public async openEnvironment(): Promise<void> {
+    await this.closeInvestigation();
+    await this.page
+      .locator('summary')
+      .filter({ hasText: 'Source and execution environment' })
+      .click();
   }
 }

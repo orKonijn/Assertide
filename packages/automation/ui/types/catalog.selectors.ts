@@ -24,6 +24,8 @@ export const CatalogSelectors = {
   save: 'Save test metadata',
   environment: 'Environment',
   start: 'Start execution',
+  review: 'Run selected',
+  configuration: 'Configure execution',
   select: (id: string) => `Select ${id}`,
   edit: (id: string) => `Edit ${id}`,
 } as const;

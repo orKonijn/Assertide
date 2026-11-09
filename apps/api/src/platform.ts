@@ -883,6 +883,103 @@ export function mountPlatform(
     }),
   );
   app.get(
+    '/v1/projects/:project/test-history',
+    handler(async (req, res, principal) => {
+      const project = String(req.params['project']);
+      service.authorize(principal, project);
+      const parsed = z
+        .object({
+          environment: z.string().regex(/^[a-z][a-z0-9-]{0,63}$/),
+          revision: z.string().min(1).max(100),
+        })
+        .safeParse(req.query);
+      if (!parsed.success) {
+        throw new ApiError(422, 'Invalid history scope');
+      }
+      const rows = await service.db.query<{
+        result: unknown;
+        ended_at: string;
+        run_id: string;
+        retries: number;
+      }>(
+        `WITH ranked AS (SELECT r AS result, body->>'endedAt' AS ended_at, id AS run_id, COALESCE((body->'config'->>'retries')::int,0) AS retries,
+        row_number() OVER (PARTITION BY r->>'id' ORDER BY body->>'endedAt' DESC,id DESC) AS position
+        FROM platform_documents CROSS JOIN LATERAL jsonb_array_elements(COALESCE(body->'results','[]'::jsonb)) r
+        WHERE kind='run' AND organization_id=$1 AND project_id=$2 AND body->>'phase' IN ('completed','canceled','timed_out','infrastructure_error')
+        AND body->'config'->>'environmentId'=$3 AND body->'config'->>'catalogRevision'=$4)
+        SELECT result,ended_at,run_id,retries FROM ranked WHERE position<=5 ORDER BY ended_at DESC,run_id DESC`,
+        [principal.organizationId, project, parsed.data.environment, parsed.data.revision],
+      );
+      const resultSchema = z.object({
+        id: z.string(),
+        caseId: z.string().optional(),
+        status: z.string(),
+        expectedFailure: z.boolean().optional(),
+        duration: z.number().nonnegative().default(0),
+      });
+      res.json({
+        items: rows.rows.map((row) => {
+          const r = resultSchema.parse(row.result);
+          return {
+            id: r.id,
+            caseId: r.caseId ?? r.id.split(':')[0],
+            status:
+              r.expectedFailure && ['passed', 'failed'].includes(r.status)
+                ? ({ passed: 'failed', failed: 'passed' }[r.status] ?? r.status)
+                : r.status,
+            duration: r.duration,
+            endedAt: row.ended_at,
+            runId: row.run_id,
+            retries: row.retries,
+          };
+        }),
+        scope: 'Same project, source revision and environment; last five outcomes per case/browser',
+      });
+    }),
+  );
+  app.get(
+    '/v1/runs/:id/comparison',
+    handler(async (req, res, principal) => {
+      const run = await service.get(principal, String(req.params['id']), 'run');
+      const config = z
+        .object({
+          catalogRevision: z.string(),
+          environmentId: z.string(),
+          browserProjects: z.array(z.string()),
+          selection: z.object({ testIds: z.array(z.string()) }),
+          workers: z.number(),
+          retries: z.number(),
+        })
+        .parse(run['config']);
+      const previous = (
+        await service.db.query<{ body: Record<string, unknown> }>(
+          `SELECT body FROM platform_documents WHERE kind='run' AND organization_id=$1 AND project_id=$2 AND body->>'phase'='completed'
+       AND body->>'endedAt'<$3 AND body->'config'->>'catalogRevision'=$4 AND body->'config'->>'environmentId'=$5
+       AND body->'config'->'browserProjects'=$6::jsonb AND body->'config'->'selection'=$7::jsonb
+       AND body->'config'->>'workers'=$8 AND body->'config'->>'retries'=$9 ORDER BY body->>'endedAt' DESC,id DESC LIMIT 1`,
+          [
+            principal.organizationId,
+            run['projectId'],
+            run['startedAt'] ?? run['createdAt'],
+            config.catalogRevision,
+            config.environmentId,
+            JSON.stringify(config.browserProjects),
+            JSON.stringify(config.selection),
+            String(config.workers),
+            String(config.retries),
+          ],
+        )
+      ).rows[0]?.body;
+      res.json({
+        previous: previous
+          ? { id: previous['id'], endedAt: previous['endedAt'], results: previous['results'] }
+          : null,
+        reason:
+          'Same project, source revision, environment, selection, browsers, workers and retry policy',
+      });
+    }),
+  );
+  app.get(
     '/v1/projects/:project/environments',
     handler(async (req, res, principal) => {
       service.authorize(principal, String(req.params['project']));
@@ -915,8 +1012,29 @@ export function mountPlatform(
   app.get(
     '/v1/projects/:project/suites',
     handler(async (req, res, principal) => {
+      const project = String(req.params['project']);
+      service.authorize(principal, project);
+      const filter = z
+        .object({
+          cursor: z.uuid().optional(),
+          limit: z.coerce.number().int().min(1).max(200).default(200),
+        })
+        .safeParse(req.query);
+      if (!filter.success) {
+        throw new ApiError(422, 'Invalid suite pagination');
+      }
+      const rows = (
+        await service.db.query<Row>(
+          "SELECT body,version FROM platform_documents WHERE organization_id=$1 AND project_id=$2 AND kind='suite' AND ($3::text IS NULL OR id>$3) ORDER BY id LIMIT $4",
+          [principal.organizationId, project, filter.data.cursor ?? null, filter.data.limit + 1],
+        )
+      ).rows;
+      const items = rows
+        .slice(0, filter.data.limit)
+        .map((row): Record<string, unknown> => ({ ...row.body, version: row.version }));
       res.json({
-        items: await service.list(principal, String(req.params['project']), 'suite'),
+        items,
+        nextCursor: rows.length > filter.data.limit ? items.at(-1)?.['id'] : null,
       });
     }),
   );

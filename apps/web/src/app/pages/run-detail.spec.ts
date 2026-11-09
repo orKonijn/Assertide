@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 
 import type { Run } from '../core/api';
 import { Api } from '../core/api';
+import { Notifications } from '../core/notifications';
 import { RunDetail } from './run-detail';
 
 class Stream extends EventTarget {
@@ -45,6 +46,7 @@ describe('Run detail response ordering', () => {
   afterEach(() => {
     TestBed.resetTestingModule();
     vi.unstubAllGlobals();
+    sessionStorage.clear();
   });
   function setup(): {
     component: RunDetail;
@@ -87,6 +89,46 @@ describe('Run detail response ordering', () => {
     pending[0].resolve(run('running'));
     await Promise.resolve();
     expect(component.run()?.phase).toBe('completed');
+  });
+  it('announces a confirmed failure once across updates and component reloads', async () => {
+    const first = setup();
+    const failed = { ...run('running'), progress: { passed: 0, failed: 1, other: 0 } };
+    first.pending[0].resolve(failed);
+    await Promise.resolve();
+    expect(TestBed.inject(Notifications).history()).toHaveLength(1);
+    const refresh = first.component.load();
+    first.pending[1].resolve(failed);
+    await refresh;
+    expect(TestBed.inject(Notifications).history()).toHaveLength(1);
+    TestBed.resetTestingModule();
+    const reloaded = setup();
+    reloaded.pending[0].resolve(failed);
+    await Promise.resolve();
+    expect(TestBed.inject(Notifications).history()).toHaveLength(0);
+  });
+  it('filters live and final outcomes while retaining selected rerun cases', () => {
+    const { component } = setup();
+    component.toggle('LAB-001');
+    component.run.set({
+      ...run('running'),
+      progress: {
+        passed: 1,
+        failed: 1,
+        other: 0,
+        outcomes: [
+          { id: 'LAB-001:api', status: 'passed' },
+          { id: 'LAB-002:api', status: 'failed' },
+        ],
+        active: [
+          { id: 'UI-001:chromium', title: 'Active', startedAt: '2026-11-09T00:00:00Z', retry: 1 },
+        ],
+      },
+    });
+    component.setResultFilter('running');
+    expect(component.filteredResults().map((r) => r.id)).toEqual(['UI-001:chromium']);
+    component.setResultFilter('failed');
+    expect(component.filteredResults().map((r) => r.id)).toEqual(['LAB-002']);
+    expect(component.selected()).toEqual(['LAB-001']);
   });
   it('ignores stale history and errors after newer responses', async () => {
     const { component, pending } = setup();

@@ -14,10 +14,15 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink, Scroll } from '@angular/router';
 
 import { AccessibilityReview } from '../core/accessibility-review';
-import type { Environment, Run } from '../core/api';
+import type { CaseResult, Environment, Run } from '../core/api';
 import { Api, errorMessage } from '../core/api';
+import { Modal } from '../core/modal';
+import { Notifications } from '../core/notifications';
 import { PerformanceReview } from '../core/performance-review';
 import { ResultNotes, ResultSteps } from '../core/result-investigation';
+import { RunActivity } from '../core/run-activity';
+import { RunApiEvidence } from '../core/run-api-evidence';
+import { failedResult, RunComparison } from '../core/run-comparison';
 import { RunProgress } from '../core/run-progress';
 import { ScreenshotViewer } from '../core/screenshot-viewer';
 @Component({
@@ -30,8 +35,89 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
     AccessibilityReview,
     PerformanceReview,
     RunProgress,
+    RunActivity,
+    RunApiEvidence,
+    RunComparison,
+    Modal,
   ],
   styles: [
+    `
+      dialog.investigation-panel {
+        margin: 0 0 0 auto;
+        height: 100dvh;
+        max-height: 100dvh;
+        width: min(48rem, 55vw);
+        max-width: 100vw;
+        border-radius: 0;
+        padding: 1.5rem;
+        overflow: auto;
+      }
+      .investigation-panel pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .investigation-panel header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+      .result-filters {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+      }
+      .result-filters [aria-pressed='true'] {
+        background: var(--brand);
+        color: var(--on-brand);
+      }
+      .run-live-summary {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 1rem;
+        align-items: start;
+      }
+      .execution-summary {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      .execution-summary .metric {
+        font-size: 1.25rem;
+        margin: 0.5rem 0;
+      }
+      .execution-overview {
+        gap: 1rem;
+      }
+      .execution-summary .execution-overview,
+      .execution-summary .execution-report {
+        grid-column: auto;
+      }
+      .execution-summary .card {
+        padding: 1rem;
+      }
+      .secondary-details {
+        margin: 1rem 0;
+      }
+      .secondary-details > summary {
+        padding: 0.8rem;
+        cursor: pointer;
+      }
+      @media (max-width: 800px) {
+        .execution-summary {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .run-live-summary {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        dialog.investigation-panel {
+          width: 100vw;
+          padding: 1rem;
+        }
+      }
+    `,
     'dialog { color: var(--text); background: var(--surface); border: 1px solid var(--border); max-width: min(40rem, 90vw); border-radius: .75rem; } dialog::backdrop { background: #0009; }',
   ],
   template: `
@@ -95,7 +181,10 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
       </p>
     }
     @if (run(); as current) {
-      <app-run-progress [run]="current" />
+      <div class="run-live-summary">
+        <app-run-progress [run]="current" (filter)="setResultFilter($event)" />
+        <app-run-activity [run]="current" />
+      </div>
       @if (current.config?.performance) {
         <app-performance-review
           [coverage]="current.performance ?? []"
@@ -203,24 +292,28 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
         </section>
       </div>
       @if (current.toolchain; as tools) {
-        <section class="card">
-          <h2>Execution environment</h2>
-          <p>Allure {{ tools.allure }} · Playwright integration {{ tools.allureIntegration }}</p>
-          <p>
-            Playwright {{ tools.playwright }} · Node {{ tools.node }} · {{ tools.platform }}/{{
-              tools.architecture
-            }}
-          </p>
-          @for (browser of tools.browserBuilds; track browser.name) {
-            <p>{{ browser.name }} {{ browser.version }} · build {{ browser.revision }}</p>
-          }
-          @if (current.workerImage) {
-            <p class="muted">
-              Isolated worker image:
-              <code class="wrap-anywhere">{{ current.workerImage }}</code>
+        <details class="secondary-details">
+          <summary>Source and execution environment</summary>
+          <section class="card">
+            <h2>Execution environment</h2>
+            <p class="wrap-anywhere">Source revision: {{ current.source?.revision }}</p>
+            <p>Allure {{ tools.allure }} · Playwright integration {{ tools.allureIntegration }}</p>
+            <p>
+              Playwright {{ tools.playwright }} · Node {{ tools.node }} · {{ tools.platform }}/{{
+                tools.architecture
+              }}
             </p>
-          }
-        </section>
+            @for (browser of tools.browserBuilds; track browser.name) {
+              <p>{{ browser.name }} {{ browser.version }} · build {{ browser.revision }}</p>
+            }
+            @if (current.workerImage) {
+              <p class="muted">
+                Isolated worker image:
+                <code class="wrap-anywhere">{{ current.workerImage }}</code>
+              </p>
+            }
+          </section>
+        </details>
       }
       <section class="card execution-results">
         <div class="section-heading">
@@ -234,9 +327,19 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
             </button>
           }
         </div>
+        <div class="result-filters" role="group" aria-label="Filter test results">
+          @for (filter of resultFilters; track filter.value) {
+            <button
+              [attr.aria-pressed]="resultFilter() === filter.value"
+              (click)="setResultFilter(filter.value)"
+            >
+              {{ filter.label }} ({{ filterCount(filter.value) }})
+            </button>
+          }
+        </div>
         <nav class="result-pagination" aria-label="Result pages">
           <span class="muted" role="status"
-            >{{ current.results?.length ?? 0 }} results · Page {{ currentResultPage() }} of
+            >{{ filteredResults().length }} results · Page {{ currentResultPage() }} of
             {{ resultPageCount() }} · {{ selected().length }} checked</span
           >
           <div class="catalog-page-buttons">
@@ -301,100 +404,131 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
                         ></span
                         >{{ result.id }} · {{ result.status }}
                       </summary>
-                      <a [routerLink]="['/runs', id]" [queryParams]="{ result: result.id }"
-                        >Link to this result</a
-                      >
-                      <p>{{ result.title }}</p>
-                      @if (result.assertion; as values) {
-                        <dl>
-                          <dt>Expected</dt>
-                          <dd>
-                            <pre>{{ values.expected }}</pre>
-                          </dd>
-                          <dt>Actual</dt>
-                          <dd>
-                            <pre>{{ values.actual }}</pre>
-                          </dd>
-                        </dl>
-                      }
-                      @if (result.quarantined) {
-                        <p class="badge">Quarantined · excluded from headline metrics</p>
-                      }
-                      @if (result.expectedFailure) {
-                        <p class="badge">Expected failure</p>
-                      }
-                      @if (result.status === 'passed' && (result.attempts?.length ?? 0) > 1) {
-                        <p class="badge">Passed after retry</p>
-                      }
-                      @if (result.category && result.category !== 'none') {
-                        <p>
-                          Failure category: {{ result.category }} · rules
-                          {{ result.categoryRuleVersion }}. This classification is a starting point
-                          for investigation.
-                        </p>
-                      }
-                      @for (attempt of result.attempts ?? []; track $index) {
-                        <p>
-                          Attempt {{ $index + 1 }} · {{ attempt.status }} · {{ attempt.duration }}ms
-                        </p>
-                        @if (attempt.steps?.length) {
-                          <app-result-steps [steps]="attempt.steps" />
-                        }
-                        @if (attempt.error) {
-                          <pre>{{ attempt.error }}</pre>
-                        }
-                      }
-                      @if (result.error) {
-                        <pre>{{ result.error }}</pre>
-                      }
-                      @for (artifact of current.artifacts ?? []; track artifact.id) {
-                        @if (artifact.resultId === result.id) {
-                          <div class="card">
-                            <p>
-                              Attempt {{ artifact.attempt }} ·
-                              {{ artifact.createdAt | date: 'short' }}
-                            </p>
-                            @if (artifact.unavailableReason) {
-                              <p>{{ artifact.name }}: {{ artifact.unavailableReason }}</p>
-                            } @else {
-                              @if (artifact.name === 'screenshot') {
-                                <app-screenshot-viewer
-                                  [url]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
-                                  [description]="result.title + ' · attempt ' + artifact.attempt"
-                                />
-                              }
-                              @if (artifact.name === 'trace') {
-                                <a
-                                  [href]="'/v1/runs/' + id + '/traces/' + artifact.id"
-                                  target="_blank"
-                                  rel="noopener"
-                                  >Open private trace viewer</a
-                                >
-                              }
-                              <a [href]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
-                                >Download {{ artifact.name }}</a
-                              >
-                            }
-                            <p class="muted">
-                              {{ artifact.redactionPolicy }} · Expires
-                              {{ artifact.expiresAt | date: 'shortDate' }}
-                            </p>
-                          </div>
-                        }
-                      }
                       @if (expanded().includes(result.id)) {
-                        <app-result-notes [runId]="id" [resultId]="result.id" />
+                        <dialog
+                          appModal
+                          class="investigation-panel"
+                          aria-label="Investigate test result"
+                          (dismissed)="closeInvestigation(result.id)"
+                        >
+                          <header>
+                            <h2>{{ result.id }}</h2>
+                            <button autofocus (click)="closeInvestigation(result.id)">
+                              Close investigation
+                            </button>
+                          </header>
+                          <a [routerLink]="['/runs', id]" [queryParams]="{ result: result.id }"
+                            >Link to this result</a
+                          >
+                          <p>{{ result.title }}</p>
+                          @if (!current.results?.length) {
+                            <p class="muted">
+                              Live outcome. Timing, attempts and evidence will appear when the
+                              worker finalizes results.
+                            </p>
+                          }
+                          @if (result.assertion; as values) {
+                            <dl>
+                              <dt>Expected</dt>
+                              <dd>
+                                <pre>{{ values.expected }}</pre>
+                              </dd>
+                              <dt>Actual</dt>
+                              <dd>
+                                <pre>{{ values.actual }}</pre>
+                              </dd>
+                            </dl>
+                          }
+                          @if (result.quarantined) {
+                            <p class="badge">Quarantined · excluded from headline metrics</p>
+                          }
+                          @if (result.expectedFailure) {
+                            <p class="badge">Expected failure</p>
+                          }
+                          @if (result.status === 'passed' && (result.attempts?.length ?? 0) > 1) {
+                            <p class="badge">Passed after retry</p>
+                          }
+                          @if (result.category && result.category !== 'none') {
+                            <p>
+                              Failure category: {{ result.category }} · rules
+                              {{ result.categoryRuleVersion }}. This classification is a starting
+                              point for investigation.
+                            </p>
+                          }
+                          @for (attempt of result.attempts ?? []; track $index) {
+                            <p>
+                              Attempt {{ $index + 1 }} · {{ attempt.status }} ·
+                              {{ attempt.duration }}ms
+                            </p>
+                            @if (attempt.steps?.length) {
+                              <app-result-steps [steps]="attempt.steps" />
+                            }
+                            @if (attempt.error) {
+                              <pre>{{ attempt.error }}</pre>
+                            }
+                          }
+                          @if (result.error) {
+                            <pre>{{ result.error }}</pre>
+                          }
+                          @for (artifact of current.artifacts ?? []; track artifact.id) {
+                            @if (artifact.resultId === result.id) {
+                              <div class="card">
+                                <p>
+                                  Attempt {{ artifact.attempt }} ·
+                                  {{ artifact.createdAt | date: 'short' }}
+                                </p>
+                                @if (artifact.unavailableReason) {
+                                  <p>{{ artifact.name }}: {{ artifact.unavailableReason }}</p>
+                                } @else {
+                                  @if (artifact.name.startsWith('api-')) {
+                                    <app-run-api-evidence [runId]="id" [artifactId]="artifact.id" />
+                                  }
+                                  @if (artifact.name === 'screenshot') {
+                                    <app-screenshot-viewer
+                                      [url]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
+                                      [description]="
+                                        result.title + ' · attempt ' + artifact.attempt
+                                      "
+                                    />
+                                  }
+                                  @if (artifact.name === 'trace') {
+                                    <a
+                                      [href]="'/v1/runs/' + id + '/traces/' + artifact.id"
+                                      target="_blank"
+                                      rel="noopener"
+                                      >Open private trace viewer</a
+                                    >
+                                  }
+                                  <a [href]="'/v1/runs/' + id + '/artifacts/' + artifact.id"
+                                    >Download {{ artifact.name }}</a
+                                  >
+                                }
+                                <p class="muted">
+                                  {{ artifact.redactionPolicy }} · Expires
+                                  {{ artifact.expiresAt | date: 'shortDate' }}
+                                </p>
+                              </div>
+                            }
+                          }
+                          @if (current.results?.length && expanded().includes(result.id)) {
+                            <app-result-notes [runId]="id" [resultId]="result.id" />
+                          }
+                        </dialog>
                       }
                     </details>
                     <p class="result-title">{{ result.title }}</p>
                   </td>
-                  <td data-label="Duration">{{ result.duration }} ms</td>
-                  <td data-label="Attempts">{{ result.attempts?.length || 1 }}</td>
+                  <td data-label="Duration">
+                    {{ current.results?.length ? result.duration + ' ms' : 'Pending' }}
+                  </td>
+                  <td data-label="Attempts">
+                    {{ current.results?.length ? result.attempts?.length || 1 : 'Pending' }}
+                  </td>
                 </tr>
               } @empty {
                 <tr>
                   <td colspan="4" class="empty">
-                    Results appear as execution finishes. No outcomes have been recorded yet.
+                    No tests match this filter yet. Live outcomes appear as tests finish.
                   </td>
                 </tr>
               }
@@ -402,12 +536,14 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
           </table>
         </div>
       </section>
-      <section class="card">
+      <app-run-comparison [run]="current" />
+      <details class="card">
+        <summary>Worker log</summary>
         <h2>Worker log</h2>
         <pre tabindex="0" aria-label="Worker log">{{
           current.logTail || 'Waiting for worker output.'
         }}</pre>
-      </section>
+      </details>
       @if (history().length) {
         <section class="card">
           <h2>Compatible execution history</h2>
@@ -433,6 +569,41 @@ import { ScreenshotViewer } from '../core/screenshot-viewer';
   `,
 })
 export class RunDetail {
+  private readonly notices = inject(Notifications);
+  private readonly notified = new Set<string>();
+  public readonly resultFilter = signal('all');
+  public readonly resultFilters = [
+    { value: 'all', label: 'All' },
+    { value: 'failed', label: 'Failed' },
+    { value: 'passed', label: 'Passed' },
+    { value: 'running', label: 'Running' },
+    { value: 'other', label: 'Skipped / Canceled' },
+  ];
+  public readonly displayResults = computed<CaseResult[]>(() => {
+    const run = this.run();
+    if (run?.results?.length) {
+      return run.results;
+    }
+    const completed = (run?.progress?.outcomes ?? []).map((item) => ({
+      id: item.id.replace(/:api$/, ''),
+      title: item.id,
+      status: item.status === 'other' ? 'skipped' : item.status,
+      duration: 0,
+    }));
+    const active =
+      run?.phase === 'running'
+        ? (run.progress?.active ?? []).map((item) => ({
+            id: item.id.replace(/:api$/, ''),
+            title: item.title,
+            status: 'running',
+            duration: 0,
+          }))
+        : [];
+    return [...completed, ...active];
+  });
+  public readonly filteredResults = computed(() =>
+    this.displayResults().filter((result) => this.matchesFilter(result, this.resultFilter())),
+  );
   public readonly api = inject(Api);
   private readonly router = inject(Router);
   public id = '';
@@ -447,12 +618,10 @@ export class RunDetail {
   );
   public readonly resultPage = signal<number | null>(null);
   public readonly resultPageCount = computed(() =>
-    Math.max(1, Math.ceil((this.run()?.results?.length ?? 0) / 10)),
+    Math.max(1, Math.ceil(this.filteredResults().length / 10)),
   );
   public readonly currentResultPage = computed(() => {
-    const index = (this.run()?.results ?? []).findIndex(
-      (result) => result.id === this.focusedResult(),
-    );
+    const index = this.filteredResults().findIndex((result) => result.id === this.focusedResult());
     return Math.max(
       1,
       Math.min(
@@ -462,7 +631,7 @@ export class RunDetail {
     );
   });
   public readonly pageResults = computed(() =>
-    (this.run()?.results ?? []).slice(
+    this.filteredResults().slice(
       (this.currentResultPage() - 1) * 10,
       this.currentResultPage() * 10,
     ),
@@ -555,17 +724,54 @@ export class RunDetail {
         this.connect();
       });
   }
+  public filterCount(filter: string): number {
+    return this.displayResults().filter((result) => this.matchesFilter(result, filter)).length;
+  }
+  public setResultFilter(filter: string): void {
+    this.expanded.set([]);
+    this.focusedResult.set('');
+    this.resultFilter.set(filter);
+    this.resultPage.set(1);
+  }
+  public closeInvestigation(id: string): void {
+    this.expanded.update((ids) => ids.filter((item) => item !== id));
+    this.focusedResult.set('');
+    const details = this.resultDetails().find(
+      (item) => item.nativeElement.dataset['resultId'] === id,
+    )?.nativeElement;
+    if (details) {
+      details.open = false;
+      requestAnimationFrame(() => {
+        if (details.isConnected) {
+          details.querySelector('summary')?.focus({ preventScroll: true });
+        }
+      });
+    }
+    void this.router.navigate([], {
+      queryParams: { result: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
   public toggleResult(id: string, event: Event): void {
     const open = (event.target as HTMLDetailsElement).open;
     this.expanded.update((items) =>
       open ? [...new Set([...items, id])] : items.filter((item) => item !== id),
     );
+    if (open) {
+      void this.router.navigate([], {
+        queryParams: { result: id },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
   }
   public async investigateResult(id: string): Promise<void> {
     if (!this.run()?.results?.some((result) => result.id === id)) {
       return;
     }
     this.investigationReady.set(false);
+    this.resultFilter.set('all');
     this.pendingInvestigation.set(id);
     const navigated = await this.router.navigate(['/runs', this.id], {
       queryParams: { result: id },
@@ -611,6 +817,26 @@ export class RunDetail {
         return;
       }
       this.run.set(run);
+      if ((run.progress?.failed ?? 0) > 0 || run.results?.some(failedResult)) {
+        const key = `assertide.failure.${this.api.identity()?.subject}.${run.projectId}.${id}`;
+        if (!this.notified.has(key)) {
+          this.notified.add(key);
+          try {
+            if (!sessionStorage.getItem(key)) {
+              sessionStorage.setItem(key, 'seen');
+              this.notices.success(
+                'First confirmed test failure in this run. Open Failed results to investigate.',
+                'warning',
+              );
+            }
+          } catch {
+            this.notices.success(
+              'First confirmed test failure in this run. Open Failed results to investigate.',
+              'warning',
+            );
+          }
+        }
+      }
       this.history.set([]);
       if (run.historyStream) {
         const data = await this.api.get<{
@@ -715,6 +941,21 @@ export class RunDetail {
     } finally {
       this.busy.set(false);
     }
+  }
+  private matchesFilter(result: CaseResult, filter: string): boolean {
+    if (filter === 'all') {
+      return true;
+    }
+    if (filter === 'failed') {
+      return failedResult(result);
+    }
+    if (filter === 'passed') {
+      return !failedResult(result) && ['passed', 'failed'].includes(result.status);
+    }
+    if (filter === 'other') {
+      return ['skipped', 'canceled', 'interrupted'].includes(result.status);
+    }
+    return result.status === 'running';
   }
   private connect(): void {
     this.stream?.close();

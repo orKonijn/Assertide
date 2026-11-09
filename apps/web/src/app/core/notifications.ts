@@ -4,6 +4,7 @@ interface Notice {
   id: number;
   message: string;
   at: string;
+  kind: 'success' | 'warning';
 }
 @Injectable({ providedIn: 'root' })
 export class Notifications {
@@ -23,8 +24,8 @@ export class Notifications {
     this.seenThrough.set(this.nextId);
     this.historyOpen.set(open);
   }
-  public success(message: string): void {
-    const item = { id: ++this.nextId, message, at: new Date().toISOString() };
+  public success(message: string, kind: 'success' | 'warning' = 'success'): void {
+    const item = { id: ++this.nextId, message, at: new Date().toISOString(), kind };
     this.history.update((items) => [item, ...items].slice(0, 50));
     this.active.set([item]);
     const timer = setTimeout(() => {
@@ -124,7 +125,9 @@ export class Notifications {
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <path d="m6 12 4 4 8-8" /></svg
+                <path
+                  [attr.d]="item.kind === 'warning' ? 'M12 4v10m0 4v2' : 'm6 12 4 4 8-8'"
+                /></svg
             ></span>
             <div class="notification-event-text">
               <p>{{ item.message }}</p>

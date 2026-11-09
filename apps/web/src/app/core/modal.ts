@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  DestroyRef,
   Directive,
   ElementRef,
   HostListener,
@@ -11,8 +12,19 @@ import {
 export class Modal {
   private readonly element = inject<ElementRef<HTMLDialogElement>>(ElementRef);
   public readonly dismissed = output<void>();
+  private opener: HTMLElement | null = null;
   public constructor() {
-    afterNextRender(() => this.element.nativeElement.showModal());
+    afterNextRender(() => {
+      const active = this.element.nativeElement.ownerDocument.activeElement;
+      this.opener = active instanceof HTMLElement ? active : null;
+      this.element.nativeElement.showModal();
+    });
+    inject(DestroyRef).onDestroy(() => {
+      this.element.nativeElement.close();
+      if (this.opener?.isConnected) {
+        this.opener.focus({ preventScroll: true });
+      }
+    });
   }
   @HostListener('close')
   public closed(): void {

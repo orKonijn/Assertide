@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 
 import type { Run } from './api';
 
@@ -24,7 +24,9 @@ export function progressCounts(run: Run): {
       }
     }
   } else if (run.progress) {
-    Object.assign(counts, run.progress);
+    counts.passed = run.progress.passed;
+    counts.failed = run.progress.failed;
+    counts.other = run.progress.other;
   }
   const finished = counts.passed + counts.failed + counts.other;
   const total = Math.max(
@@ -46,6 +48,7 @@ export function progressCounts(run: Run): {
           <circle class="track" cx="100" cy="100" r="88" />
           <circle
             class="passed-arc"
+            (pointerdown)="filter.emit('passed')"
             cx="100"
             cy="100"
             r="88"
@@ -54,6 +57,7 @@ export function progressCounts(run: Run): {
           />
           <circle
             class="failed-arc"
+            (pointerdown)="filter.emit('failed')"
             cx="100"
             cy="100"
             r="88"
@@ -89,6 +93,10 @@ export function progressCounts(run: Run): {
           }
         </p>
         <p class="muted">{{ message() }}</p>
+        <div class="actions">
+          <button (click)="filter.emit('passed')">Show passed tests</button
+          ><button (click)="filter.emit('failed')">Show failed tests</button>
+        </div>
       </div>
     </section>
   `,
@@ -101,17 +109,17 @@ export function progressCounts(run: Run): {
       .progress-card {
         display: flex;
         align-items: center;
-        gap: 2rem;
-        padding: 1.5rem 2rem;
+        gap: 1.5rem;
+        padding: 1rem 1.5rem;
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 0.75rem;
       }
       .progress-ring {
         position: relative;
-        width: 200px;
-        height: 200px;
-        flex: 0 0 200px;
+        width: 160px;
+        height: 160px;
+        flex: 0 0 160px;
       }
       svg {
         width: 100%;
@@ -132,13 +140,14 @@ export function progressCounts(run: Run): {
         stroke: var(--danger);
       }
       .ring-counts {
+        pointer-events: none;
         position: absolute;
         inset: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 1rem;
+        gap: 0.6rem;
       }
       .ring-caption {
         font-size: 0.65rem;
@@ -198,6 +207,7 @@ export function progressCounts(run: Run): {
   ],
 })
 export class RunProgress {
+  public readonly filter = output<string>();
   public readonly run = input.required<Run>();
   public readonly counts = computed(() => progressCounts(this.run()));
   public readonly terminal = computed(() =>

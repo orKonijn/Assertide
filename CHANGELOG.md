@@ -4,6 +4,20 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## Unreleased
 
+## 0.9.0 — 2026-11-09
+
+Release candidate: explorer history and run investigation workflows. Publication is pending final image and live checks. This compatible feature release needs no database migration.
+
+### Added
+
+- Test explorer now includes recent scoped outcomes, history filters, grouping, device-local saved views and duration estimates when enough comparable samples exist. Selection stays across pages and filters; a sticky selection bar opens a dedicated execution configuration panel with multiple-browser selection.
+- Run detail now shows actual active tests and retries, clickable outcome filters, a mobile-ready investigation panel with private API evidence, first-failure notifications and comparison with an earlier compatible run. Test, evidence and report status remain separate. Source and worker-log details are collapsed. See [behavior, compatibility and actual UI captures](docs/run-explorer-workflows.md).
+
+### Fixed
+
+- API workspace now refreshes active execution status and finalized evidence without requiring reselection, while preserving the inspected exchange.
+- Suite lists and pickers retrieve every page instead of silently omitting suites beyond the first 200. API clients can follow the new `nextCursor` field.
+
 ## 0.8.0 — 2026-11-09
 
 Published to main and deployed to [assertide.com](https://assertide.com). A live 65-case suite showed progressing counts on desktop/mobile, then finished with 65 passed, 0 failed and all 559 attachments retained. Signed image checks and all 73 local browser acceptance tests passed. No migration is required. See [publication evidence and verification limits](docs/evidence.md#publication---080---2026-11-09).

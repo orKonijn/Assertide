@@ -79,7 +79,15 @@ export interface PerformanceCoverage {
   }[];
 }
 export interface Run {
-  progress?: { passed: number; failed: number; other: number };
+  progress?: {
+    passed: number;
+    failed: number;
+    other: number;
+    active?: { id: string; title: string; startedAt: string; retry: number }[];
+    outcomes?: { id: string; status: string }[];
+  };
+  startedAt?: string;
+  endedAt?: string;
   performancePhase?: string;
   performance?: PerformanceCoverage[];
   accessibility?: AccessibilityCoverage[];
@@ -226,6 +234,9 @@ export class Api {
     this.projectId.set(id);
   }
   public get<T>(path: string): Promise<T> {
+    if (/^\/projects\/[^/]+\/suites$/.test(path)) {
+      return this.allSuites<T>(path);
+    }
     return firstValueFrom(
       this.http.get<T>(`/v1${path}`).pipe(
         catchError((error: unknown) => {
@@ -301,6 +312,7 @@ export class Api {
     suite?: { id: string; version: number },
     accessibility = false,
     performance = false,
+    browsers?: string[],
   ): Promise<Run> {
     const catalogRevision =
       revision ??
@@ -312,7 +324,7 @@ export class Api {
         selection: { testIds },
         ...(suite ? { suite } : {}),
         environmentId,
-        browserProjects: testIds.some((id) => id.startsWith('UI-')) ? [browser] : [],
+        browserProjects: testIds.some((id) => id.startsWith('UI-')) ? (browsers ?? [browser]) : [],
         workers,
         retries,
         headed,
@@ -322,5 +334,31 @@ export class Api {
       },
       key,
     );
+  }
+  private async allSuites<T>(path: string): Promise<T> {
+    const items: Suite[] = [];
+    let cursor: string | null = null;
+    const seen = new Set<string>();
+    const cursors = new Set<string>();
+    do {
+      const page: { items: Suite[]; nextCursor?: string | null } = await this.get(
+        `${path}?${new URLSearchParams({ limit: '200', ...(cursor ? { cursor } : {}) })}`,
+      );
+      for (const suite of page.items) {
+        if (!seen.has(suite.id)) {
+          seen.add(suite.id);
+          items.push(suite);
+        }
+      }
+      const next = page.nextCursor ?? null;
+      if (next && cursors.has(next)) {
+        throw new Error('Suite pagination did not advance');
+      }
+      if (next) {
+        cursors.add(next);
+      }
+      cursor = next;
+    } while (cursor);
+    return { items } as T;
   }
 }
