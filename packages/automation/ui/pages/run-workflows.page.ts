@@ -55,6 +55,24 @@ export class RunWorkflowsPage {
   public refreshWorkspace(): Promise<void> {
     return this.page.getByRole('button', { name: 'Refresh execution', exact: true }).click();
   }
+  public async selectionClearsNotifications(): Promise<boolean> {
+    const action = await this.page
+      .locator('.selection-bar')
+      .getByRole('button', { name: 'Run selected', exact: true })
+      .boundingBox();
+    const bell = await this.page
+      .getByRole('button', { name: 'Notification history', exact: true })
+      .boundingBox();
+    if (!action || !bell) {
+      return false;
+    }
+    return (
+      action.x + action.width <= bell.x ||
+      bell.x + bell.width <= action.x ||
+      action.y + action.height <= bell.y ||
+      bell.y + bell.height <= action.y
+    );
+  }
   private async openViews(): Promise<void> {
     const views = this.page.locator('details.view-options');
     if (!(await views.evaluate((element) => element.hasAttribute('open')))) {

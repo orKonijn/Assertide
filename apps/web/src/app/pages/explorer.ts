@@ -28,7 +28,7 @@ import { readSelectionDraft, writeSelectionDraft } from '../core/selection-draft
       }
       .selection-bar {
         position: sticky;
-        bottom: 1rem;
+        bottom: 4.5rem;
         z-index: 8;
         display: flex;
         justify-content: space-between;

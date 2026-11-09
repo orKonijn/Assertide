@@ -32,12 +32,14 @@ test.describe('Explorer and investigation workflows', () => {
     await expect(workflows.historyFilter()).toHaveValue('never');
     await expect(workflows.grouping()).toHaveValue('feature');
     await expect(catalog.selection(D.lifecycle)).toBeChecked();
+    expect(await workflows.selectionClearsNotifications()).toBe(true);
     await catalog.openConfiguration();
     await expect(workflows.configuration()).toContainText('Not enough history');
     await viewport(page, 'mobile');
     expect(await fitsViewport(page)).toBe(true);
     await workflows.closeConfiguration();
     await expect(catalog.startButtons.first()).toBeFocused();
+    expect(await workflows.selectionClearsNotifications()).toBe(true);
   });
   test('recorded outcomes populate history, support comparison and open private API evidence', async ({
     page,
