@@ -6,7 +6,7 @@ Search, type, priority and history filters narrow the catalog without clearing s
 
 Recent outcomes show the last five recorded results per case/browser for the active project, current source revision and selected environment. API cases have no browser. “Never run” means no recorded result within this scope, not no execution anywhere in the product. “Recently failed” means at least one of those five outcomes failed in the last seven days. Loading and unavailable history are distinct from an empty history.
 
-Typical duration is the median of at least three measured outcomes. The launch estimate additionally matches retry policy for every selected case/browser. It approximates parallel testing time using the configured worker count and the longest individual test. It excludes startup, evidence transfer and report generation. Missing samples show “Not enough history”; estimates are not guarantees.
+Typical duration is the median of at least three positive measured outcomes; missing and zero durations are excluded. The launch estimate additionally matches retry policy for every selected case/browser. It approximates parallel testing time using the configured worker count and the longest individual test. It excludes startup, evidence transfer and report generation. Missing samples show “Not enough history”; estimates are not guarantees.
 
 Named views store search, type, priority, ordering, history scope, grouping, browser and environment in this browser's local storage, scoped to account and project. They do not save test selections or credentials, and do not synchronize between devices. Save with the same name to replace a view; Delete named view removes it. Test selections retain their existing tab/session scope.
 
@@ -43,3 +43,21 @@ The screenshots below are from the actual running application with controlled re
 ![Live progress and active retry in the dark desktop theme](changelog/assets/0.9.0/run-1440-dark.png)
 
 ![Investigation assertions and evidence panel on mobile](changelog/assets/0.9.0/investigation-390-light.png)
+
+## Publication — 0.9.0 — 2026-11-09
+
+Published to main and deployed to [assertide.com](https://assertide.com) from commit `e0a3d49b9a892b49656773c3230c4c10de954d1b`. Version 0.9.0 is a compatible feature release after 0.8.0. No database or configuration migration is required.
+
+[Image publication 42539814771](https://github.com/orKonijn/Assertide/actions/runs/42539814771) passed. The service, web and worker provenance was independently verified against the exact source commit and the hosted publication workflow before deployment. All four application deployments became ready after an idle-work guard and matching-image rollout.
+
+| Image   | Deployed digest                                                           |
+| ------- | ------------------------------------------------------------------------- |
+| Service | `sha256:3776d807394706cb915960ee8e57eeb5cf793601d05729fa48f8c9ab70d4bf14` |
+| Web     | `sha256:fb57d49755063a67f1e0687618a9a57f4d8909201be6c9a1d8b027d2423f02c5` |
+| Worker  | `sha256:bb9ea9834dd3773d5ef7d0e50217ed09c76b6bfe36a129f517ddf6fb07fc0bcb` |
+
+Live verification used a dedicated controlled project and temporary identity. Saved views, grouping and selection survived reload. A reviewed API/Chromium/Firefox launch passed all three executions, displayed real worker activity and exposed private API exchanges through the investigation panel. A second compatible execution selected the first as its comparison predecessor.
+
+The live 65-case API suite passed all cases and retained all 559 attachments without unavailable evidence. Progress updated on desktop and mobile; all results appeared during finalization. From launch, results were observed at about 37 seconds, evidence completion at about 154 seconds and the report ready at about 492 seconds. These are observations from one controlled pilot run, not performance guarantees. The API workspace followed completion automatically and preserved the inspected exchange through manual refresh. Private evidence denied anonymous access; the Allure report opened on the private report origin. The About page showed 0.9.0 and logout revoked application access. The temporary identity was disabled, sessions revoked, project access removed and its local credential file deleted afterward.
+
+The local checks and screenshots described above remain the implementation evidence. [Full Linux verification 42539791452](https://github.com/orKonijn/Assertide/actions/runs/42539791452) was still running browser acceptance at publication after completing controlled regression. Its later infrastructure checks were not yet complete; image publication and live smoke checks do not establish a full Linux CI pass.

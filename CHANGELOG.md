@@ -6,7 +6,7 @@ Noteworthy completed changes are recorded here. Entries under Unreleased have no
 
 ## 0.9.0 — 2026-11-09
 
-Release candidate: explorer history and run investigation workflows. Publication is pending final image and live checks. This compatible feature release needs no database migration.
+Published to main and deployed to [assertide.com](https://assertide.com): explorer history and run investigation workflows. Signed images and live saved-view, multi-browser, comparison, investigation and automatic evidence-refresh checks passed. The live API suite finished with 65 passes and all 559 attachments retained; its private Allure report opened successfully. This compatible feature release needs no database migration. Full Linux CI was still running at publication; see [publication evidence and verification limits](docs/run-explorer-workflows.md#publication---090---2026-11-09).
 
 ### Added
 
